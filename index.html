@@ -5369,6 +5369,205 @@ body.hide-floating .tiktok-bar { display: none !important; }
     background: linear-gradient(135deg, #4f46e5, #7c3aed);
     box-shadow: 0 12px 40px rgba(124, 58, 237, .5), 0 4px 12px rgba(0, 0, 0, .15);
 }
+/* ═══ USER ROW ACTIONS DROPDOWN ═══ */
+.user-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: .6rem !important;
+    padding: .7rem .75rem !important;
+    width: 100% !.userimportant;
+    box-sizing: border-box !important-row;
+}
+
+ .u-info {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: .15rem !important;
+}
+
+.user-row .u-name {
+    font-weight: 700 !important;
+    font-size: .85rem !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.user-row .u-email {
+    font-size: .72rem !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    color: var(--text-3) !important;
+}
+
+.user-row .u-role {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+}
+
+.user-row .u-settings-wrap {
+    position: relative !important;
+    flex-shrink: 0 !important;
+}
+
+.user-row .u-settings-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+    border: 1.5px solid var(--border) !important;
+    background: var(--surface) !important;
+    color: var(--text-2) !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: .95rem !important;
+    transition: all .18s ease !important;
+    padding: 0 !important;
+}
+
+.user-row .u-settings-btn:hover {
+    background: var(--primary-light) !important;
+    color: var(--primary-dark) !important;
+    border-color: var(--primary) !important;
+    transform: rotate(90deg) !important;
+}
+
+.user-row .u-settings-btn.active {
+    background: var(--primary) !important;
+    color: #fff !important;
+    border-color: var(--primary) !important;
+    transform: rotate(90deg) !important;
+}
+
+.user-row .u-settings-menu {
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    right: 0 !important;
+    min-width: 220px !important;
+    background: var(--surface) !important;
+    border: 1.5px solid var(--border) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 32px rgba(15,23,42,.15),
+                0 4px 12px rgba(15,23,42,.08) !important;
+    padding: .35rem !important;
+    display: none !important;
+    flex-direction: column !important;
+    gap: .1rem !important;
+    z-index: 5000 !important;
+    animation: uSettingsIn .18s cubic-bezier(.34,1.56,.64,1) !important;
+    transform-origin: top right !important;
+}
+
+[data-theme="dark"] .user-row .u-settings-menu {
+    box-shadow: 0 12px 32px rgba(0,0,0,.5),
+                0 4px 12px rgba(0,0,0,.3) !important;
+}
+
+.user-row .u-settings-menu.show {
+    display: flex !important;
+}
+
+@keyframes uSettingsIn {
+    from { opacity: 0; transform: scale(.9) translateY(-4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.user-row .u-settings-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: .55rem !important;
+    padding: .55rem .65rem !important;
+    border: none !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    color: var(--text) !important;
+    font-size: .82rem !important;
+    font-weight: 600 !important;
+    font-family: inherit !important;
+    cursor: pointer !important;
+    text-align: left !important;
+    transition: background .12s !important;
+    white-space: nowrap !important;
+    width: 100% !important;
+}
+
+.user-row .u-settings-item:hover {
+    background: var(--surface-2) !important;
+}
+
+.user-row .u-settings-item i {
+    width: 18px !important;
+    text-align: center !important;
+    font-size: .85rem !important;
+    color: var(--text-3) !important;
+    flex-shrink: 0 !important;
+}
+
+.user-row .u-settings-item:hover i {
+    color: var(--primary) !important;
+}
+
+.user-row .u-settings-item.danger {
+    color: var(--danger) !important;
+}
+
+.user-row .u-settings-item.danger i {
+    color: var(--danger) !important;
+}
+
+.user-row .u-settings-item.danger:hover {
+    background: var(--danger-light) !important;
+}
+
+.user-row .u-settings-item.disabled {
+    opacity: .4 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+.user-row .u-settings-divider {
+    height: 1px !important;
+    background: var(--border) !important;
+    margin: .25rem .35rem !important;
+    border: none !important;
+}
+
+/* Badge nhỏ trên nút settings nếu có cảnh báo */
+.user-row .u-settings-btn .u-settings-badge {
+    position: absolute !important;
+    top: -5px !important;
+    right: -5px !important;
+    min-width: 16px !important;
+    height: 16px !important;
+    padding: 0 .35rem !important;
+    border-radius: 50px !important;
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #fff !important;
+    font-size: .55rem !important;
+    font-weight: 900 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 6px rgba(245,158,11,.5), 0 0 0 2px var(--surface) !important;
+    z-index: 10 !important;
+    line-height: 1 !important;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    .user-row {
+        flex-wrap: nowrap !important;
+    }
+    .user-row .u-settings-menu {
+        min-width: 200px !important;
+    }
+}
 
 /* INTRO */
 
@@ -19886,53 +20085,7 @@ function renderUsers(items) {
         var targetIsSuper = (u.email || '').toLowerCase() === SUPER_ADMIN.toLowerCase();
         var targetIsSubAdmin = isAdmin && u.isSubAdmin && !targetIsSuper;
         var canModifyAdmin = superAdmin && isAdmin && !isMe && !targetIsSuper;
-
-        var roleBtn = isAdmin
-            ? (canModifyAdmin
-                ? '<button class="u-btn" onclick="changeRole(\'' + escapeJs(u.email) + '\', \'user\')" title="Hạ xuống User"><i class="fas fa-user"></i></button>'
-                : '<button class="u-btn" disabled title="Không thể hạ quyền"><i class="fas fa-user"></i></button>')
-            : (superAdmin
-                ? '<button class="u-btn" onclick="changeRole(\'' + escapeJs(u.email) + '\', \'admin\')" title="Nâng lên Admin"><i class="fas fa-shield-alt"></i></button>'
-                : '<button class="u-btn" disabled title="Chỉ Super Admin"><i class="fas fa-shield-alt"></i></button>');
-
-        var permBtn = '';
-        if (superAdmin && targetIsSubAdmin) {
-            permBtn = '<button class="u-btn" style="background:rgba(6,182,212,.1);color:#06b6d4;border-color:rgba(6,182,212,.4);" onclick="openPermissionModal(\'' + escapeJs(u.email) + '\')" title="Phân quyền"><i class="fas fa-user-shield"></i></button>';
-        }
-
         var canDelete = superAdmin || hasPermission('canDeleteUser');
-        var deleteBtn = isMe
-            ? '<button class="u-btn danger" disabled title="Không thể tự xóa"><i class="fas fa-trash"></i></button>'
-            : (targetIsSuper
-                ? '<button class="u-btn danger" disabled title="Không thể xóa Super Admin"><i class="fas fa-trash"></i></button>'
-                : (isAdmin
-                    ? (canModifyAdmin
-                        ? '<button class="u-btn danger" onclick="deleteUser(\'' + escapeJs(u.email) + '\')" title="Xóa"><i class="fas fa-trash"></i></button>'
-                        : '<button class="u-btn danger" disabled title="Chỉ Super Admin"><i class="fas fa-trash"></i></button>')
-                    : (canDelete
-                        ? '<button class="u-btn danger" onclick="deleteUser(\'' + escapeJs(u.email) + '\')" title="Xóa"><i class="fas fa-trash"></i></button>'
-                        : '<button class="u-btn danger" disabled title="Không có quyền xóa"><i class="fas fa-trash"></i></button>')));
-
-        var expiryBtn = '';
-        if (!isAdmin) {
-            var btnCls = 'u-btn expiry';
-            var tooltip = 'Chỉnh hạn sử dụng';
-            if (u.isPermanent) tooltip = 'Chỉnh hạn (Vĩnh viễn 💎)';
-            else if (u.expiresAt) {
-                var d = getExpiryDate(u.expiresAt);
-                if (d && !isNaN(d.getTime())) {
-                    var daysLeftExp = Math.ceil((d.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
-                    tooltip = 'Chỉnh hạn (còn ' + Math.max(0, daysLeftExp) + ' ngày)';
-                    if (daysLeftExp <= 7) btnCls += ' urgent';
-                }
-            } else tooltip = 'Chỉnh hạn (Vĩnh viễn)';
-            expiryBtn = '<button class="' + btnCls + '" onclick="openEditExpiry(\'' + escapeJs(u.email) + '\')" title="' + escapeHtml(tooltip) + '"><i class="fas fa-calendar-alt"></i></button>';
-        }
-
-        var historyBtn = '';
-        if (!targetIsSuper || isMe) {
-            historyBtn = '<button class="u-btn history" onclick="openUserRenewalHistory(\'' + escapeJs(u.email) + '\')" title="Xem lịch sử gia hạn"><i class="fas fa-history"></i></button>';
-        }
 
         var last = lastLoginMap[(u.email || '').toLowerCase()];
         var lastLoginHtml = last
@@ -19940,10 +20093,13 @@ function renderUsers(items) {
             : '<div class="u-last-login"><i class="fas fa-times-circle"></i> Chưa đăng nhập</div>';
 
         var expiryHtml = '';
-        if (isAdmin) expiryHtml = '<div class="u-expiry permanent"><i class="fas fa-infinity"></i> Vĩnh viễn</div>';
-        else if (u.isPermanent) expiryHtml = '<div class="u-expiry permanent perm" onclick="openEditExpiry(\'' + escapeJs(u.email) + '\')"><i class="fas fa-crown"></i> 💎 Vĩnh viễn</div>';
-        else if (!u.expiresAt) expiryHtml = '<div class="u-expiry permanent" onclick="openEditExpiry(\'' + escapeJs(u.email) + '\')"><i class="fas fa-infinity"></i> Vĩnh viễn</div>';
-        else {
+        if (isAdmin) {
+            expiryHtml = '<div class="u-expiry permanent"><i class="fas fa-infinity"></i> Vĩnh viễn</div>';
+        } else if (u.isPermanent) {
+            expiryHtml = '<div class="u-expiry permanent perm" onclick="openEditExpiry(\'' + escapeJs(u.email) + '\')"><i class="fas fa-crown"></i> 💎 Vĩnh viễn</div>';
+        } else if (!u.expiresAt) {
+            expiryHtml = '<div class="u-expiry permanent" onclick="openEditExpiry(\'' + escapeJs(u.email) + '\')"><i class="fas fa-infinity"></i> Vĩnh viễn</div>';
+        } else {
             var expDate = getExpiryDate(u.expiresAt);
             if (expDate && !isNaN(expDate.getTime())) {
                 var daysLeft = Math.ceil((expDate.getTime() - now) / (24 * 60 * 60 * 1000));
@@ -19970,13 +20126,88 @@ function renderUsers(items) {
             roleBadge = '<span class="u-role user">user</span>';
         }
 
+        var settingsItems = '';
+
+        if (!targetIsSuper || isMe) {
+            settingsItems +=
+                '<button class="u-settings-item" onclick="event.stopPropagation();openUserRenewalHistory(\'' + escapeJs(u.email) + '\')">' +
+                    '<i class="fas fa-history" style="color:#7c3aed"></i> Lịch sử gia hạn' +
+                '</button>';
+        }
+
+        settingsItems +=
+            '<button class="u-settings-item" onclick="event.stopPropagation();openAdminDeviceView(\'' + escapeJs(u.email) + '\')">' +
+                '<i class="fas fa-mobile-screen-button" style="color:#0891b2"></i> Xem thiết bị' +
+            '</button>';
+
+        settingsItems +=
+            '<button class="u-settings-item" onclick="event.stopPropagation();openDamAdminModal()">' +
+                '<i class="fas fa-user-secret" style="color:#d97706"></i> Máy nghi vấn' +
+            '</button>';
+
+        if (!isAdmin) {
+            settingsItems +=
+                '<button class="u-settings-item" onclick="event.stopPropagation();openEditExpiry(\'' + escapeJs(u.email) + '\')">' +
+                    '<i class="fas fa-calendar-alt" style="color:#f59e0b"></i> Chỉnh hạn sử dụng' +
+                '</button>';
+        }
+
+        if (superAdmin && targetIsSubAdmin) {
+            settingsItems +=
+                '<button class="u-settings-item" onclick="event.stopPropagation();openPermissionModal(\'' + escapeJs(u.email) + '\')">' +
+                    '<i class="fas fa-user-shield" style="color:#06b6d4"></i> Phân quyền admin' +
+                '</button>';
+        }
+
+        if (!targetIsSuper && !isMe) {
+            if (isAdmin && canModifyAdmin) {
+                settingsItems +=
+                    '<button class="u-settings-item" onclick="event.stopPropagation();changeRole(\'' + escapeJs(u.email) + '\',\'user\')">' +
+                        '<i class="fas fa-user"></i> Hạ xuống User' +
+                    '</button>';
+            } else if (!isAdmin && superAdmin) {
+                settingsItems +=
+                    '<button class="u-settings-item" onclick="event.stopPropagation();changeRole(\'' + escapeJs(u.email) + '\',\'admin\')">' +
+                        '<i class="fas fa-shield-alt"></i> Nâng lên Admin' +
+                    '</button>';
+            }
+        }
+
+        var canDeleteThis = false;
+        if (!isMe && !targetIsSuper) {
+            if (isAdmin) canDeleteThis = canModifyAdmin;
+            else canDeleteThis = canDelete;
+        }
+
+        if (canDeleteThis) {
+            settingsItems +=
+                '<div class="u-settings-divider"></div>' +
+                '<button class="u-settings-item danger" onclick="event.stopPropagation();deleteUser(\'' + escapeJs(u.email) + '\')">' +
+                    '<i class="fas fa-trash"></i> Xóa tài khoản' +
+                '</button>';
+        }
+
+        var settingsBadge = '';
+        if (typeof warnDevices !== 'undefined' && warnDevices.length > 0 && isAdmin) {
+            settingsBadge = '<span class="u-settings-badge">' + warnDevices.length + '</span>';
+        }
+
         return '<div class="user-row" data-email="' + escapeHtml(u.email) + '">' +
             '<div class="u-info">' +
                 '<div class="u-name">' + escapeHtml(u.name || u.email.split('@')[0]) + (isMe ? ' <span style="color:#94a3b8;font-size:.7rem">(bạn)</span>' : '') + '</div>' +
                 '<div class="u-email">' + escapeHtml(u.email) + '</div>' +
                 lastLoginHtml + expiryHtml +
-            '</div>' + roleBadge +
-            '<div class="u-actions">' + historyBtn + permBtn + expiryBtn + roleBtn + deleteBtn + '</div>' +
+            '</div>' +
+            roleBadge +
+            '<div class="u-settings-wrap">' +
+                '<button class="u-settings-btn" type="button" ' +
+                    'onclick="event.stopPropagation();toggleUserSettings(this)" ' +
+                    'title="Cài đặt">' +
+                    '<i class="fas fa-ellipsis-v"></i>' +
+                    settingsBadge +
+                '</button>' +
+                '<div class="u-settings-menu">' + settingsItems + '</div>' +
+            '</div>' +
         '</div>';
     }).join('');
 }
@@ -21035,6 +21266,43 @@ window.testTelegram = function() {
     }
     setInterval(sync, 500);
 })();
+/* ═══ TOGGLE USER SETTINGS MENU ═══ */
+window.toggleUserSettings = function(btn) {
+    var menu = btn.nextElementSibling;
+    if (!menu) return;
+
+    /* Đóng tất cả menu khác */
+    document.querySelectorAll('.user-row .u-settings-menu.show').forEach(function(m) {
+        if (m !== menu) m.classList.remove('show');
+    });
+    document.querySelectorAll('.user-row .u-settings-btn.active').forEach(function(b) {
+        if (b !== btn) b.classList.remove('active');
+    });
+
+    var isOpen = menu.classList.toggle('show');
+    btn.classList.toggle('active', isOpen);
+};
+
+/* Đóng menu khi click ra ngoài */
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.u-settings-wrap')) return;
+    document.querySelectorAll('.user-row .u-settings-menu.show').forEach(function(m) {
+        m.classList.remove('show');
+    });
+    document.querySelectorAll('.user-row .u-settings-btn.active').forEach(function(b) {
+        b.classList.remove('active');
+    });
+});
+
+/* Đóng menu khi scroll */
+document.addEventListener('scroll', function() {
+    document.querySelectorAll('.user-row .u-settings-menu.show').forEach(function(m) {
+        m.classList.remove('show');
+    });
+    document.querySelectorAll('.user-row .u-settings-btn.active').forEach(function(b) {
+        b.classList.remove('active');
+    });
+}, true);
 
 
 /* INTRO */
