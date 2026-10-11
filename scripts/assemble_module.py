@@ -73,7 +73,7 @@ body.pf-assemble-active .pf-assemble-mode{display:flex}
 .pf-assemble-next-btn{margin-top:.75rem;padding:.65rem 1.3rem;border-radius:50px;border:none;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-size:.88rem;font-weight:800;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:.45rem;box-shadow:0 6px 18px rgba(22,163,74,.45);transition:transform .2s,box-shadow .2s;animation:pfNextBtnIn .4s cubic-bezier(.34,1.56,.64,1);align-self:center}
 .pf-assemble-next-btn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 10px 26px rgba(22,163,74,.6)}
 .pf-assemble-next-btn:active{transform:translateY(0) scale(.97)}
-.pf-assemble-next-btn:disabled{opacity:.6;cursor:not-allowed;pointer-events:none}
+.pf-assemble-next-btn:disabled{opacity:.5;cursor:not-allowed;pointer-events:none}
 .pf-assemble-next-btn i{animation:pfNextBtnArrow 1s ease-in-out infinite}
 @keyframes pfNextBtnArrow{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
 .pf-assemble-actions{display:flex;gap:clamp(.4rem,.8vw,.6rem);justify-content:center;flex-wrap:wrap}
@@ -302,11 +302,48 @@ var pfInsertPos = 0;
 var pfInfoVisible = false;
 var pfTransitioning = false;
 
+var pfActionLock = false;
+var pfLockTimer = null;
+var PF_LOCK_MS = 500;
+var pfLastNextTime = 0;
+var pfLastToggleTime = 0;
+var pfLastPickTime = 0;
+var pfLastShuffleTime = 0;
+var pfLastInfoTime = 0;
+var PF_TAP_THRESHOLD = 300;
+var PF_NEXT_THRESHOLD = 800;
+var PF_TOGGLE_THRESHOLD = 500;
+var PF_PICK_THRESHOLD = 80;
+
 var pfAutoShuffleTimer = null;
 var pfAutoShuffleCountdown = null;
 var pfAutoShuffleRemain = 12;
 var AUTO_SHUFFLE_SECONDS = 12;
 var PF_AUTO_SHUFFLE_PREF_KEY = 'pfAutoShufflePref';
+
+function pfAcquireLock(ms){
+if(pfActionLock) return false;
+pfActionLock = true;
+if(pfLockTimer) clearTimeout(pfLockTimer);
+pfLockTimer = setTimeout(function(){
+pfActionLock = false;
+pfLockTimer = null;
+}, ms || PF_LOCK_MS);
+return true;
+}
+
+function pfReleaseLock(){
+pfActionLock = false;
+if(pfLockTimer){
+clearTimeout(pfLockTimer);
+pfLockTimer = null;
+}
+}
+
+function pfIsTapTooFast(lastTime, threshold){
+var now = Date.now();
+return (now - lastTime) < (threshold || PF_TAP_THRESHOLD);
+}
 
 function pfIsHanzi(ch){
 if(!ch) return false;
@@ -554,6 +591,9 @@ layer.parentNode.removeChild(layer);
 }
 
 function pfPickWord(poolIdx){
+if(pfTransitioning) return;
+if(pfIsTapTooFast(pfLastPickTime, PF_PICK_THRESHOLD)) return;
+pfLastPickTime = Date.now();
 if(pfAssembleAnswerIdx.indexOf(poolIdx) !== -1) return;
 var pickedWord = pfAssembleWords[poolIdx];
 pfAssembleAnswerIdx.splice(pfInsertPos, 0, poolIdx);
@@ -584,6 +624,7 @@ pfUpdateStatusText();
 }
 
 function pfUnpickWord(pos){
+if(pfAssembleAnswerIdx.length === 0) return;
 if(pos < 0 || pos >= pfAssembleAnswerIdx.length) return;
 pfAssembleAnswerIdx.splice(pos, 1);
 if(pfInsertPos > pos) pfInsertPos--;
@@ -713,6 +754,8 @@ pfUpdateAutoShuffleUI();
 }
 
 function pfToggleAutoShuffle(){
+if(pfIsTapTooFast(pfLastShuffleTime, 250)) return;
+pfLastShuffleTime = Date.now();
 if(pfAutoShuffleTimer){
 pfStopAutoShuffle();
 pfSetAutoShufflePref(false);
@@ -783,6 +826,8 @@ infoEl.classList.add('pf-info-hidden');
 }
 
 function pfToggleInfo(){
+if(pfIsTapTooFast(pfLastInfoTime, 100)) return;
+pfLastInfoTime = Date.now();
 pfInfoVisible = !pfInfoVisible;
 var hintBtn = document.getElementById('pfAssembleHintBtn');
 if(hintBtn){
@@ -824,6 +869,7 @@ gap.addEventListener('click', (function(p){
 return function(e){
 e.stopPropagation();
 e.preventDefault();
+if(pfTransitioning) return;
 pfSetCursor(p);
 };
 })(pos));
@@ -850,6 +896,9 @@ btn.addEventListener('click', (function(p){
 return function(e){
 e.stopPropagation();
 e.preventDefault();
+if(pfTransitioning) return;
+if(pfIsTapTooFast(pfLastPickTime, PF_PICK_THRESHOLD)) return;
+pfLastPickTime = Date.now();
 var currentStatus = pfCheckAssembleStatus();
 if(currentStatus === 'wrong'){
 var wp = pfGetWrongPositions();
@@ -875,6 +924,7 @@ poolEl.querySelectorAll('.pf-word:not(.used)').forEach(function(btn){
 btn.addEventListener('click', function(e){
 e.stopPropagation();
 e.preventDefault();
+if(pfTransitioning) return;
 var idx = parseInt(this.dataset.poolIdx, 10);
 if(!isNaN(idx)) pfPickWord(idx);
 });
@@ -1106,6 +1156,7 @@ answerEl.querySelectorAll('.pf-phrase-word').forEach(function(el){
 el.addEventListener('click', function(e){
 e.stopPropagation();
 e.preventDefault();
+if(pfTransitioning) return;
 var text = el.getAttribute('data-tts-text') || '';
 if(!text) return;
 pfSpeakText(text);
@@ -1116,6 +1167,7 @@ setTimeout(function(){ el.classList.remove('playing'); }, 1200);
 }
 
 function pfSetCursor(pos){
+if(pfTransitioning) return;
 if(pos < 0) pos = 0;
 if(pos > pfAssembleAnswerIdx.length) pos = pfAssembleAnswerIdx.length;
 pfInsertPos = pos;
@@ -1185,10 +1237,15 @@ btn.innerHTML = '<i class="fas fa-arrow-right"></i> Câu tiếp theo';
 btn.addEventListener('click', function(e){
 e.preventDefault();
 e.stopPropagation();
+var now = Date.now();
 if(pfTransitioning) return;
+if(now - pfLastNextTime < PF_NEXT_THRESHOLD) return;
+pfLastNextTime = now;
+if(!pfAcquireLock(1200)) return;
 pfTransitioning = true;
 btn.disabled = true;
 btn.style.pointerEvents = 'none';
+btn.style.opacity = '.5';
 pfRemoveNextBtn();
 if(pfAutoShuffleTimer) pfStopAutoShuffle();
 pfCleanupParticles();
@@ -1197,7 +1254,10 @@ pfInsertPos = 0;
 if(typeof window.pfNext === 'function'){
 window.pfNext();
 }
-setTimeout(function(){ pfTransitioning = false; }, 600);
+setTimeout(function(){
+pfTransitioning = false;
+pfReleaseLock();
+}, 900);
 });
 var modeEl = document.getElementById('pfAssembleMode');
 if(modeEl){
@@ -1298,6 +1358,11 @@ btn.setAttribute('aria-label', 'Đang ở chế độ Gõ tự do');
 }
 
 function pfToggleAssembleMode(){
+var now = Date.now();
+if(now - pfLastToggleTime < PF_TOGGLE_THRESHOLD) return;
+pfLastToggleTime = now;
+if(pfTransitioning) return;
+if(!pfAcquireLock(400)) return;
 if(!pfAssembleMode){
 var testWords = pfGetCurrentTestWords();
 if(testWords.length < 2){
@@ -1311,6 +1376,7 @@ statusEl.textContent = '';
 }
 }, 2000);
 }
+pfReleaseLock();
 return;
 }
 }
@@ -1341,6 +1407,7 @@ if(inp) inp.focus();
 try{
 localStorage.setItem('pfAssembleMode', pfAssembleMode ? '1' : '0');
 }catch(e){}
+setTimeout(function(){ pfReleaseLock(); }, 350);
 }
 
 function patchLoadPracticeFull(){
@@ -1353,6 +1420,7 @@ pfCleanupParticles();
 pfAssembleAnswerIdx = [];
 pfInsertPos = 0;
 pfTransitioning = false;
+pfReleaseLock();
 var r = orig.apply(this, arguments);
 pfUpdateToggleBtnUI();
 if(pfAssembleMode) pfResetAssemble();
@@ -1367,16 +1435,19 @@ var origNext = window.pfNext;
 if(typeof origNext !== 'function') return;
 window.__pfNextHooked = true;
 window.pfNext = function(){
+if(pfTransitioning) return;
+pfTransitioning = true;
 pfRemoveNextBtn();
 if(pfAutoShuffleTimer) pfStopAutoShuffle();
 pfCleanupParticles();
 pfAssembleAnswerIdx = [];
 pfInsertPos = 0;
-pfTransitioning = false;
 var r = origNext.apply(this, arguments);
 setTimeout(function(){
 if(pfAssembleMode) pfResetAssemble();
-}, 50);
+pfTransitioning = false;
+pfReleaseLock();
+}, 400);
 return r;
 };
 }
@@ -1593,6 +1664,7 @@ if(shuffleBtn && !shuffleBtn.__bound){
 shuffleBtn.__bound = true;
 shuffleBtn.addEventListener('click', function(e){
 e.preventDefault();
+if(pfTransitioning) return;
 pfToggleAutoShuffle();
 });
 }
@@ -1601,6 +1673,9 @@ if(clearBtn && !clearBtn.__bound){
 clearBtn.__bound = true;
 clearBtn.addEventListener('click', function(e){
 e.preventDefault();
+if(pfTransitioning) return;
+if(pfIsTapTooFast(pfLastPickTime, 200)) return;
+pfLastPickTime = Date.now();
 pfAssembleAnswerIdx = [];
 pfInsertPos = 0;
 pfRemoveNextBtn();
@@ -1621,6 +1696,7 @@ if(hintBtn && !hintBtn.__bound){
 hintBtn.__bound = true;
 hintBtn.addEventListener('click', function(e){
 e.preventDefault();
+if(pfTransitioning) return;
 pfToggleInfo();
 });
 }
@@ -1628,6 +1704,7 @@ var answerEl = document.getElementById('pfAssembleAnswer');
 if(answerEl && !answerEl.__bound){
 answerEl.__bound = true;
 answerEl.addEventListener('click', function(e){
+if(pfTransitioning) return;
 if(e.target === answerEl){
 pfSetCursor(pfAssembleAnswerIdx.length);
 }
@@ -1642,6 +1719,15 @@ if(pfAutoShuffleTimer) pfStopAutoShuffle();
 pfCleanupParticles();
 pfRemoveNextBtn();
 pfTransitioning = false;
+pfReleaseLock();
+pfLastNextTime = 0;
+pfLastToggleTime = 0;
+pfLastPickTime = 0;
+pfLastShuffleTime = 0;
+pfLastInfoTime = 0;
+if(typeof window.__pfAssembleCleanup === 'function'){
+window.__pfAssembleCleanup();
+}
 return fn.apply(this, arguments);
 };
 }
@@ -1658,11 +1744,23 @@ window.closePracticeFull = wrapClose(origClose2);
 }, 500);
 }
 })();
-setInterval(function(){
+var pfToggleCheckInterval = setInterval(function(){
 var modal = document.getElementById('practiceFullModal');
 if(!modal || !modal.classList.contains('show')) return;
 pfUpdateToggleBtnUI();
 }, 800);
+window.__pfAssembleCleanup = function(){
+if(pfToggleCheckInterval){
+clearInterval(pfToggleCheckInterval);
+pfToggleCheckInterval = null;
+}
+if(pfLockTimer){
+clearTimeout(pfLockTimer);
+pfLockTimer = null;
+}
+pfActionLock = false;
+pfTransitioning = false;
+};
 }
 
 if(document.readyState === 'loading'){
@@ -1687,7 +1785,19 @@ isInfoVisible:function(){ return pfInfoVisible; },
 showMnemonicForWord: window.pfShowMnemonicForWord,
 speakText: pfSpeakText,
 cleanupParticles: pfCleanupParticles,
-isTransitioning:function(){ return pfTransitioning; }
+isTransitioning:function(){ return pfTransitioning; },
+isLocked:function(){ return pfActionLock; },
+releaseLock: pfReleaseLock,
+acquireLock: pfAcquireLock,
+resetTimers:function(){
+pfLastNextTime = 0;
+pfLastToggleTime = 0;
+pfLastPickTime = 0;
+pfLastShuffleTime = 0;
+pfLastInfoTime = 0;
+pfReleaseLock();
+pfTransitioning = false;
+}
 };
 
 })();
