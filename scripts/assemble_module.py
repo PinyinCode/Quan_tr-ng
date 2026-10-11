@@ -311,7 +311,7 @@ var pfLastPickTime = 0;
 var pfLastShuffleTime = 0;
 var pfLastInfoTime = 0;
 var PF_TAP_THRESHOLD = 300;
-var PF_NEXT_THRESHOLD = 800;
+var PF_NEXT_THRESHOLD = 1200;
 var PF_TOGGLE_THRESHOLD = 500;
 var PF_PICK_THRESHOLD = 80;
 
@@ -418,6 +418,33 @@ return RAW_DATA[k];
 }
 }catch(e){}
 return null;
+}
+
+function pfFindCurrentIndex(){
+try{
+if(typeof pfCurrentStt === 'undefined' || !pfCurrentStt) return -1;
+if(typeof RAW_DATA === 'undefined' || !Array.isArray(RAW_DATA)) return -1;
+for(var k=0;k<RAW_DATA.length;k++){
+if(String(RAW_DATA[k].stt) === String(pfCurrentStt)){
+return k;
+}
+}
+}catch(e){}
+return -1;
+}
+
+function pfFindNextStt(){
+var idx = pfFindCurrentIndex();
+if(idx === -1) return null;
+if(idx >= RAW_DATA.length - 1) return null;
+return RAW_DATA[idx + 1].stt;
+}
+
+function pfFindPrevStt(){
+var idx = pfFindCurrentIndex();
+if(idx === -1) return null;
+if(idx <= 0) return null;
+return RAW_DATA[idx - 1].stt;
 }
 
 function pfShuffleArray(arr){
@@ -1227,6 +1254,72 @@ var old = document.getElementById('pfAssembleNextBtn');
 if(old) old.remove();
 }
 
+function pfNavigateToStt(stt){
+if(stt === null || stt === undefined) return false;
+
+try{
+if(typeof window.loadPracticeFull === 'function'){
+window.loadPracticeFull(stt);
+return true;
+}
+}catch(err){
+console.warn('[Assemble] loadPracticeFull error:', err);
+}
+
+try{
+if(typeof window.loadPracticeFullById === 'function'){
+window.loadPracticeFullById(stt);
+return true;
+}
+}catch(err2){
+console.warn('[Assemble] loadPracticeFullById error:', err2);
+}
+
+try{
+if(typeof window.pfNext === 'function' && stt !== null){
+window.pfNext();
+return true;
+}
+}catch(err3){
+console.warn('[Assemble] pfNext error:', err3);
+}
+
+return false;
+}
+
+function pfGoToNextQuestion(){
+if(pfTransitioning) return false;
+pfTransitioning = true;
+if(pfAutoShuffleTimer) pfStopAutoShuffle();
+pfCleanupParticles();
+pfRemoveNextBtn();
+pfAssembleAnswerIdx = [];
+pfInsertPos = 0;
+
+var nextStt = pfFindNextStt();
+var ok = false;
+
+if(nextStt !== null){
+ok = pfNavigateToStt(nextStt);
+}
+
+if(!ok && typeof window.pfNext === 'function'){
+try{
+window.pfNext();
+ok = true;
+}catch(err){
+console.warn('[Assemble] Fallback pfNext error:', err);
+}
+}
+
+setTimeout(function(){
+pfTransitioning = false;
+pfReleaseLock();
+}, 700);
+
+return ok;
+}
+
 function pfShowNextBtn(){
 pfRemoveNextBtn();
 var btn = document.createElement('button');
@@ -1241,23 +1334,11 @@ var now = Date.now();
 if(pfTransitioning) return;
 if(now - pfLastNextTime < PF_NEXT_THRESHOLD) return;
 pfLastNextTime = now;
-if(!pfAcquireLock(1200)) return;
-pfTransitioning = true;
+if(!pfAcquireLock(1500)) return;
 btn.disabled = true;
 btn.style.pointerEvents = 'none';
 btn.style.opacity = '.5';
-pfRemoveNextBtn();
-if(pfAutoShuffleTimer) pfStopAutoShuffle();
-pfCleanupParticles();
-pfAssembleAnswerIdx = [];
-pfInsertPos = 0;
-if(typeof window.pfNext === 'function'){
-window.pfNext();
-}
-setTimeout(function(){
-pfTransitioning = false;
-pfReleaseLock();
-}, 900);
+pfGoToNextQuestion();
 });
 var modeEl = document.getElementById('pfAssembleMode');
 if(modeEl){
@@ -1436,7 +1517,6 @@ if(typeof origNext !== 'function') return;
 window.__pfNextHooked = true;
 window.pfNext = function(){
 if(pfTransitioning) return;
-pfTransitioning = true;
 pfRemoveNextBtn();
 if(pfAutoShuffleTimer) pfStopAutoShuffle();
 pfCleanupParticles();
@@ -1447,7 +1527,7 @@ setTimeout(function(){
 if(pfAssembleMode) pfResetAssemble();
 pfTransitioning = false;
 pfReleaseLock();
-}, 400);
+}, 500);
 return r;
 };
 }
@@ -1761,6 +1841,14 @@ pfLockTimer = null;
 pfActionLock = false;
 pfTransitioning = false;
 };
+setTimeout(function(){
+try{
+console.log('[Assemble] pfNext:', typeof window.pfNext);
+console.log('[Assemble] loadPracticeFull:', typeof window.loadPracticeFull);
+console.log('[Assemble] pfCurrentStt:', typeof pfCurrentStt !== 'undefined' ? pfCurrentStt : 'undefined');
+console.log('[Assemble] RAW_DATA length:', typeof RAW_DATA !== 'undefined' ? RAW_DATA.length : 'undefined');
+}catch(e){}
+}, 1000);
 }
 
 if(document.readyState === 'loading'){
@@ -1797,7 +1885,13 @@ pfLastShuffleTime = 0;
 pfLastInfoTime = 0;
 pfReleaseLock();
 pfTransitioning = false;
-}
+},
+getCurrentStt:function(){ return typeof pfCurrentStt !== 'undefined' ? pfCurrentStt : null; },
+getNextStt: pfFindNextStt,
+getPrevStt: pfFindPrevStt,
+getCurrentIndex: pfFindCurrentIndex,
+goNext: pfGoToNextQuestion,
+navigateToStt: pfNavigateToStt
 };
 
 })();
