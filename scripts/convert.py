@@ -58,7 +58,11 @@ from device_limiter import (
     build_device_html,
     build_device_js,
 )
-
+from device_account_monitor import (
+    build_dam_css,
+    build_dam_html,
+    build_dam_js,
+)
 def _js_str(s):
     if s is None:
         return ""
@@ -353,6 +357,7 @@ full_css = (
     + "\n/* FULLWIDTH */\n" + FULLWIDTH_CSS
     + "\n/* LOGIN FALLBACK */\n" + build_login_fallback_css()
     + "\n/* DEVICE LIMITER */\n" + build_device_css()
+    + "\n/* DEVICE ACCOUNT MONITOR */\n" + build_dam_css()
 )
 ui_html = build_ui_html()
 ui_html = patch_html(ui_html)
@@ -416,6 +421,7 @@ full_body = (
     + "\n" + build_admin_chat_html()
     + "\n" + build_login_fallback_html()
     + "\n" + build_device_html()
+    + "\n" + build_dam_html()
     + '\n</div>'
 )
 
@@ -1088,6 +1094,7 @@ full_js = (
     + "\n/* GRADING */\n" + _build_grading_js()
     + "\n/* LOGIN FALLBACK */\n" + build_login_fallback_js()
     + "\n/* DEVICE LIMITER */\n" + build_device_js()
+    + "\n/* DEVICE ACCOUNT MONITOR */\n" + build_dam_js()
 )
 full_js = full_js.replace('<script>', '').replace('</script>', '')
 full_js = full_js.replace('<SCRIPT>', '').replace('</SCRIPT>', '')
