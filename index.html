@@ -8471,7 +8471,6 @@ body.pf-assemble-active #pfHintBtn,body.pf-assemble-active #pfRevealBtn,body.pf-
 @keyframes damSlideUp{from{transform:translateY(30px) scale(.95);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
 .dam-icon{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:1.5rem;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;box-shadow:0 8px 20px rgba(245,158,11,.35)}
 .dam-icon.danger{background:linear-gradient(135deg,#dc2626,#b91c1c);box-shadow:0 8px 20px rgba(220,38,38,.35)}
-.dam-icon.info{background:linear-gradient(135deg,#0891b2,#06b6d4);box-shadow:0 8px 20px rgba(6,182,212,.35)}
 .dam-title{font-size:1.2rem;font-weight:800;margin-bottom:.4rem;color:var(--text)}
 .dam-subtitle{font-size:.85rem;color:var(--text-2);margin-bottom:1.25rem;line-height:1.55}
 .dam-info-box{padding:.85rem 1rem;background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(251,191,36,.05));border:1.5px solid rgba(245,158,11,.35);border-radius:12px;font-size:.82rem;color:#92400e;line-height:1.55;margin-bottom:1.25rem}
@@ -8491,11 +8490,11 @@ body.pf-assemble-active #pfHintBtn,body.pf-assemble-active #pfRevealBtn,body.pf-
 .dam-item-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;flex-wrap:wrap}
 .dam-item-device{font-weight:800;font-size:.88rem;color:var(--text);display:flex;align-items:center;gap:.4rem}
 .dam-item-device i{color:#0891b2;font-size:1rem}
-.dam-item-device-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.7rem;color:var(--text-3);word-break:break-all;margin-top:.15rem}
-.dam-item-time{font-size:.7rem;color:var(--text-3)}
+.dam-item-fp{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.7rem;color:var(--text-3);word-break:break-all;margin-top:.15rem}
+.dam-item-browsers{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.35rem}
+.dam-browser-tag{display:inline-flex;align-items:center;gap:.25rem;padding:.15rem .45rem;border-radius:6px;background:var(--surface);border:1px solid var(--border);font-size:.68rem;font-weight:600;color:var(--text-2)}
 .dam-item-accounts{display:flex;flex-direction:column;gap:.3rem;margin:.5rem 0}
 .dam-acc-row{display:flex;justify-content:space-between;gap:.5rem;font-size:.78rem;color:var(--text-2);padding:.3rem .55rem;border-radius:6px;background:var(--surface)}
-.dam-acc-row.current{border-left:3px solid #0891b2;background:rgba(6,182,212,.08)}
 .dam-acc-email{font-weight:600;word-break:break-all}
 .dam-acc-time{color:var(--text-3);font-size:.7rem;white-space:nowrap}
 .dam-item-actions{display:flex;gap:.35rem;margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--border);flex-wrap:wrap}
@@ -8523,9 +8522,6 @@ body.pf-assemble-active #pfHintBtn,body.pf-assemble-active #pfRevealBtn,body.pf-
 @keyframes damSpin{to{transform:rotate(360deg)}}
 .dam-edit-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:none;background:var(--surface-2);color:var(--text-2);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:.15s}
 .dam-edit-close:hover{background:var(--danger-light);color:var(--danger)}
-.u-btn.dam-btn-row{background:rgba(245,158,11,.1);color:#d97706;border-color:rgba(245,158,11,.4);position:relative}
-.u-btn.dam-btn-row:hover{background:var(--amber);color:#fff;border-color:var(--amber);transform:scale(1.08)}
-.u-btn.dam-btn-row .dam-mini-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 .35rem;border-radius:50px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:.6rem;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(245,158,11,.5),0 0 0 2px var(--surface);animation:damPulse 1.5s ease-in-out infinite}
 @media (max-width:500px){
 .dam-box{padding:1.4rem 1.15rem;border-radius:16px}
 .dam-icon{width:48px;height:48px;font-size:1.25rem}
@@ -11836,12 +11832,12 @@ body.has-floating-group #quickSearchRoot{
         <div class="dam-icon"><i class="fas fa-hourglass-half"></i></div>
         <div class="dam-title">Vui lòng chờ 60 phút</div>
         <div class="dam-subtitle">
-            Máy này vừa đăng nhập <b id="damCooldownCount">0</b> tài khoản khác nhau trong vòng 60 phút qua.
+            Thiết bị này vừa đăng nhập <b id="damCooldownCount">0</b> tài khoản khác nhau trong vòng 60 phút qua.
         </div>
 
         <div class="dam-info-box">
             <i class="fas fa-shield-halved"></i>
-            Để bảo vệ tài khoản, hệ thống <b>tạm chặn đăng nhập</b> trên máy này trong:
+            Để bảo vệ tài khoản, hệ thống <b>tạm chặn đăng nhập</b> trên thiết bị này trong:
             <br><br>
             <b id="damCooldownTime" style="font-size:1.3em">60:00</b>
             <br><br>
@@ -11854,16 +11850,33 @@ body.has-floating-group #quickSearchRoot{
     </div>
 </div>
 
+<div class="dam-modal" id="damBlockedModal">
+    <div class="dam-box">
+        <div class="dam-icon danger"><i class="fas fa-ban"></i></div>
+        <div class="dam-title">Thiết bị đã bị chặn</div>
+        <div class="dam-subtitle">
+            Admin đã chặn thiết bị này khỏi hệ thống do phát hiện đăng nhập nhiều tài khoản.
+        </div>
+        <div class="dam-info-box">
+            <i class="fas fa-info-circle"></i>
+            Nếu bạn cho rằng đây là nhầm lẫn, vui lòng liên hệ admin kèm mã thiết bị:
+            <br><br>
+            <b id="damBlockedFp">—</b>
+        </div>
+        <button type="button" class="dam-btn secondary" id="damBlockedCloseBtn">
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </button>
+    </div>
+</div>
+
 <div class="dam-modal" id="damAdminModal">
     <div class="dam-box">
         <button class="dam-edit-close" id="damAdminCloseBtn"><i class="fas fa-times"></i></button>
-
         <div class="dam-icon"><i class="fas fa-user-secret"></i></div>
         <div class="dam-title">Quản lý thiết bị nghi vấn</div>
         <div class="dam-subtitle">
-            Theo dõi thiết bị đăng nhập nhiều tài khoản. Chỉ cảnh báo — admin tự quyết định.
+            Theo dõi thiết bị (theo vân tay fingerprint) đăng nhập nhiều tài khoản — kể cả khi đổi trình duyệt.
         </div>
-
         <div class="dam-tabs">
             <button type="button" class="dam-tab active" data-dam-tab="warn">
                 <i class="fas fa-triangle-exclamation"></i>
@@ -11881,7 +11894,6 @@ body.has-floating-group #quickSearchRoot{
                 <span class="count" id="damWhitelistCount">0</span>
             </button>
         </div>
-
         <div class="dam-list" id="damList">
             <div class="dam-empty"><i class="fas fa-spinner fa-pulse"></i>Đang tải...</div>
         </div>
@@ -31862,6 +31874,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     var MAX_ACCOUNTS_PER_DEVICE = 3;
     var COOLDOWN_MINUTES = 60;
     var COOLDOWN_MS = COOLDOWN_MINUTES * 60 * 1000;
+    var FP_CACHE_KEY = 'dam_fingerprint_cache';
 
     var currentTab = 'warn';
     var allDevices = [];
@@ -31869,6 +31882,8 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     var blockedDevices = [];
     var whitelistDevices = [];
     var _cooldownInterval = null;
+    var _cooldownStartTime = 0;
+    var _fpPromise = null;
 
     function $(id) { return document.getElementById(id); }
     function esc(s) {
@@ -31884,40 +31899,116 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         if (s < 86400) return Math.floor(s / 3600) + ' giờ trước';
         return Math.floor(s / 86400) + ' ngày trước';
     }
-    function getDeviceId() {
-        if (window.__dvlDebug && typeof window.__dvlDebug.getDeviceId === 'function') {
-            try { return window.__dvlDebug.getDeviceId(); } catch(e) {}
-        }
-        try {
-            var saved = localStorage.getItem('dvl_device_id');
-            if (saved && saved.length > 8) return saved;
-        } catch(e) {}
-        return 'unknown';
-    }
-    function getDeviceName() {
-        if (window.__dvlDebug && typeof window.__dvlDebug.getDeviceName === 'function') {
-            try { return window.__dvlDebug.getDeviceName(); } catch(e) {}
-        }
-        return 'Thiết bị';
-    }
-    function getDeviceType() {
+
+    function detectBrowser() {
         try {
             var ua = navigator.userAgent || '';
-            if (/Mobile|iPhone|Android.*Mobile/i.test(ua)) return 'mobile';
-            if (/iPad|Tablet|Android/i.test(ua)) return 'tablet';
-            return 'desktop';
-        } catch(e) { return 'desktop'; }
+            if (/Edg\//.test(ua)) return 'Edge';
+            if (/OPR\//.test(ua) || /Opera/.test(ua)) return 'Opera';
+            if (/CocCoc/.test(ua)) return 'CocCoc';
+            if (/Brave/.test(ua)) return 'Brave';
+            if (/Firefox\//.test(ua)) return 'Firefox';
+            if (/Chrome\//.test(ua)) return 'Chrome';
+            if (/Safari\//.test(ua)) return 'Safari';
+            return 'Unknown';
+        } catch(e) { return 'Unknown'; }
     }
-    function getDeviceIcon(type) {
-        if (type === 'mobile') return 'fa-mobile-screen-button';
-        if (type === 'tablet') return 'fa-tablet-screen-button';
+
+    function detectOS() {
+        try {
+            var ua = navigator.userAgent || '';
+            if (/Windows NT 10/.test(ua)) return 'Windows 10/11';
+            if (/Windows NT 6\.3/.test(ua)) return 'Windows 8.1';
+            if (/Windows NT 6\.2/.test(ua)) return 'Windows 8';
+            if (/Windows NT 6\.1/.test(ua)) return 'Windows 7';
+            if (/Windows/.test(ua)) return 'Windows';
+            if (/iPhone/.test(ua)) return 'iPhone';
+            if (/iPad/.test(ua)) return 'iPad';
+            if (/Android/.test(ua)) return 'Android';
+            if (/Macintosh/.test(ua)) return 'MacBook';
+            if (/Mac OS X/.test(ua)) return 'Mac';
+            if (/Linux/.test(ua)) return 'Linux';
+            return 'Unknown';
+        } catch(e) { return 'Unknown'; }
+    }
+
+    function getDeviceIcon() {
+        var os = detectOS();
+        if (os === 'iPhone' || os === 'Android') return 'fa-mobile-screen-button';
+        if (os === 'iPad') return 'fa-tablet-screen-button';
         return 'fa-desktop';
     }
 
-    async function loadDeviceDoc(deviceId) {
-        if (!db || !deviceId) return null;
+    function loadCachedFp() {
         try {
-            var doc = await db.collection('device_logins').doc(deviceId).get();
+            var cached = localStorage.getItem(FP_CACHE_KEY);
+            if (cached && cached.length > 5) return cached;
+        } catch(e) {}
+        return null;
+    }
+
+    function saveCachedFp(fp) {
+        try { localStorage.setItem(FP_CACHE_KEY, fp); } catch(e) {}
+    }
+
+    function getFallbackFp() {
+        try {
+            var data = [
+                navigator.userAgent || '',
+                navigator.language || '',
+                screen.width + 'x' + screen.height + 'x' + screen.colorDepth,
+                Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+                navigator.hardwareConcurrency || 0,
+                navigator.platform || ''
+            ].join('|');
+            var hash = 0;
+            for (var i = 0; i < data.length; i++) {
+                hash = ((hash << 5) - hash) + data.charCodeAt(i);
+                hash = hash & hash;
+            }
+            return 'fb_' + Math.abs(hash).toString(36);
+        } catch(e) { return 'fb_unknown'; }
+    }
+
+    async function getFingerprint() {
+        if (_fpPromise) return _fpPromise;
+
+        _fpPromise = (async function() {
+            var cached = loadCachedFp();
+            if (cached) return cached;
+
+            if (typeof FingerprintJS === 'undefined') {
+                console.warn('[DAM] FingerprintJS chưa load, dùng fallback');
+                var fb = getFallbackFp();
+                saveCachedFp(fb);
+                return fb;
+            }
+
+            try {
+                var fp = await FingerprintJS.load();
+                var result = await fp.get();
+                var visitorId = result.visitorId;
+                if (visitorId && visitorId.length > 5) {
+                    saveCachedFp(visitorId);
+                    console.log('[DAM] Fingerprint:', visitorId);
+                    return visitorId;
+                }
+            } catch(e) {
+                console.warn('[DAM] FingerprintJS error:', e);
+            }
+
+            var fb2 = getFallbackFp();
+            saveCachedFp(fb2);
+            return fb2;
+        })();
+
+        return _fpPromise;
+    }
+
+    async function loadDeviceDoc(fp) {
+        if (!db || !fp) return null;
+        try {
+            var doc = await db.collection('device_logins').doc(fp).get();
             if (!doc.exists) return null;
             return doc.data();
         } catch(e) {
@@ -31926,10 +32017,10 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         }
     }
 
-    async function saveDeviceDoc(deviceId, data) {
-        if (!db || !deviceId) return false;
+    async function saveDeviceDoc(fp, data) {
+        if (!db || !fp) return false;
         try {
-            await db.collection('device_logins').doc(deviceId).set(data, { merge: true });
+            await db.collection('device_logins').doc(fp).set(data, { merge: true });
             return true;
         } catch(e) {
             console.warn('[DAM] Save device error:', e);
@@ -31939,25 +32030,33 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
     async function registerAccountOnDevice(email) {
         if (!email || !db) return { allowed: true };
-        var deviceId = getDeviceId();
-        var now = Date.now();
 
-        var docData = await loadDeviceDoc(deviceId) || {};
+        var fp = await getFingerprint();
+        if (!fp) return { allowed: true };
+
+        var now = Date.now();
+        var docData = await loadDeviceDoc(fp) || {};
         var accounts = Array.isArray(docData.accounts) ? docData.accounts : [];
         var emailLower = email.toLowerCase();
 
         if (docData.blocked === true) {
-            return { blocked: true, deviceId: deviceId };
+            return { blocked: true, fp: fp };
         }
 
         if (docData.whitelisted === true) {
-            if (accounts.indexOf(emailLower) === -1) {
-                accounts.push({ email: emailLower, firstSeen: now, lastSeen: now });
-                await saveDeviceDoc(deviceId, {
-                    accounts: accounts,
-                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-                });
+            var foundWl = -1;
+            for (var wl = 0; wl < accounts.length; wl++) {
+                if (accounts[wl].email === emailLower) { foundWl = wl; break; }
             }
+            if (foundWl < 0) {
+                accounts.push({ email: emailLower, firstSeen: now, lastSeen: now, browser: detectBrowser(), os: detectOS() });
+            } else {
+                accounts[foundWl].lastSeen = now;
+            }
+            await saveDeviceDoc(fp, {
+                accounts: accounts,
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            });
             return { allowed: true, whitelisted: true };
         }
 
@@ -31968,7 +32067,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
         if (foundIdx >= 0) {
             accounts[foundIdx].lastSeen = now;
-            await saveDeviceDoc(deviceId, {
+            await saveDeviceDoc(fp, {
                 accounts: accounts,
                 lastSeen: firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -31985,25 +32084,21 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             });
             var latestMs = sortedRecent[0].lastSeen || now;
             var remainMs = Math.max(0, (latestMs + COOLDOWN_MS) - now);
-
-            return {
-                cooldown: true,
-                remainMs: remainMs,
-                deviceId: deviceId,
-                recentCount: recent.length
-            };
+            return { cooldown: true, remainMs: remainMs, fp: fp, recentCount: recent.length };
         }
 
         accounts.push({
             email: emailLower,
             firstSeen: now,
-            lastSeen: now
+            lastSeen: now,
+            browser: detectBrowser(),
+            os: detectOS()
         });
 
-        await saveDeviceDoc(deviceId, {
-            deviceId: deviceId,
-            deviceName: getDeviceName(),
-            deviceType: getDeviceType(),
+        await saveDeviceDoc(fp, {
+            fp: fp,
+            os: detectOS(),
+            browsers: getUniqueBrowsers(accounts),
             accounts: accounts,
             firstSeen: docData.firstSeen || now,
             lastSeen: firebase.firestore.FieldValue.serverTimestamp()
@@ -32011,7 +32106,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
         if (accounts.length > MAX_ACCOUNTS_PER_DEVICE) {
             try {
-                await db.collection('device_logins').doc(deviceId).update({
+                await db.collection('device_logins').doc(fp).update({
                     warned: true,
                     warnedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     warnedCount: accounts.length
@@ -32021,9 +32116,9 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             if (typeof notifyTelegramDeviceWarning === 'function') {
                 try {
                     notifyTelegramDeviceWarning({
-                        deviceId: deviceId,
-                        deviceName: getDeviceName(),
-                        deviceType: getDeviceType(),
+                        fp: fp,
+                        os: detectOS(),
+                        browsers: getUniqueBrowsers(accounts),
                         email: emailLower,
                         totalAccounts: accounts.length,
                         accounts: accounts.slice(-5).map(function(a) { return a.email; })
@@ -32033,6 +32128,14 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         }
 
         return { allowed: true };
+    }
+
+    function getUniqueBrowsers(accounts) {
+        var set = {};
+        accounts.forEach(function(a) {
+            if (a.browser) set[a.browser] = true;
+        });
+        return Object.keys(set);
     }
 
     window.notifyTelegramDeviceWarning = function(info) {
@@ -32045,19 +32148,20 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                 return;
             }
 
+            var browsers = (info.browsers && info.browsers.length > 0) ? info.browsers.join(', ') : 'Không rõ';
+
             var msg = '⚠️ <b>CẢNH BÁO THIẾT BỊ NGHI VẤN</b>\n';
             msg += '━━━━━━━━━━━━━━━━━━━━\n';
-            msg += '📱 <b>' + escapeHtml(info.deviceName || 'Không rõ') + '</b>\n';
-            msg += '🔑 ID: <code>' + escapeHtml((info.deviceId || '').substring(0, 20)) + '...</code>\n';
+            msg += '💻 OS: <b>' + esc(info.os || 'Không rõ') + '</b>\n';
+            msg += '🌐 Trình duyệt: <b>' + esc(browsers) + '</b>\n';
+            msg += '🔑 FP: <code>' + esc((info.fp || '').substring(0, 16)) + '...</code>\n';
             msg += '👥 Tổng tài khoản: <b>' + (info.totalAccounts || 0) + '</b>\n';
-            msg += '⏱ Vừa login với: <b>' + escapeHtml(info.email) + '</b>\n\n';
+            msg += '⏱ Vừa login với: <b>' + esc(info.email) + '</b>\n\n';
             if (info.accounts && info.accounts.length > 0) {
                 msg += '<b>5 tài khoản gần nhất:</b>\n';
-                info.accounts.forEach(function(acc) {
-                    msg += '• ' + escapeHtml(acc) + '\n';
-                });
+                info.accounts.forEach(function(acc) { msg += '• ' + esc(acc) + '\n'; });
             }
-            msg += '\n👉 Vào Admin Panel → nút 🔍 để xem và xử lý.';
+            msg += '\n👉 Vào Admin Panel → nút 🔍 để xử lý.';
 
             fetch('https://api.telegram.org/bot' + tgToken + '/sendMessage', {
                 method: 'POST',
@@ -32107,94 +32211,87 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                 blockedDevices.push(d);
             } else if (d.whitelisted === true) {
                 whitelistDevices.push(d);
-            } else if (accountCount > MAX_ACCOUNTS_PER_DEVICE) {
-                warnDevices.push(d);
-            } else if (d.warned === true) {
+            } else if (accountCount > MAX_ACCOUNTS_PER_DEVICE || d.warned === true) {
                 warnDevices.push(d);
             }
         });
 
-        var warnCountEl = $('damWarnCount');
-        var blockedCountEl = $('damBlockedCount');
-        var whitelistCountEl = $('damWhitelistCount');
-
-        if (warnCountEl) warnCountEl.textContent = warnDevices.length;
-        if (blockedCountEl) blockedCountEl.textContent = blockedDevices.length;
-        if (whitelistCountEl) whitelistCountEl.textContent = whitelistDevices.length;
+        var wc = $('damWarnCount');
+        var bc = $('damBlockedCount');
+        var wlc = $('damWhitelistCount');
+        if (wc) wc.textContent = warnDevices.length;
+        if (bc) bc.textContent = blockedDevices.length;
+        if (wlc) wlc.textContent = whitelistDevices.length;
     }
 
     function renderDeviceItem(d, status) {
         var accounts = Array.isArray(d.accounts) ? d.accounts : [];
         var accountCount = accounts.length;
-        var icon = getDeviceIcon(d.deviceType || 'desktop');
+        var icon = getDeviceIcon(d.os || '');
         var lastMs = d.lastSeen ? (d.lastSeen.toMillis ? d.lastSeen.toMillis() : d.lastSeen.seconds * 1000) : 0;
 
         var statusBadge = '';
         if (status === 'warn') {
-            statusBadge = '<span class="dam-badge new">' +
-                '<i class="fas fa-exclamation-triangle"></i> CẢNH BÁO</span>';
+            statusBadge = '<span class="dam-badge new"><i class="fas fa-exclamation-triangle"></i> CẢNH BÁO</span>';
         } else if (status === 'blocked') {
-            statusBadge = '<span class="dam-badge blocked">' +
-                '<i class="fas fa-ban"></i> ĐÃ BLOCK</span>';
-        } else if (status === 'whitelist') {
-            statusBadge = '<span class="dam-badge ok">' +
-                '<i class="fas fa-check-circle"></i> WHITELIST</span>';
+            statusBadge = '<span class="dam-badge blocked"><i class="fas fa-ban"></i> ĐÃ BLOCK</span>';
+        } else {
+            statusBadge = '<span class="dam-badge ok"><i class="fas fa-check-circle"></i> WHITELIST</span>';
+        }
+
+        var browsersHtml = '';
+        if (Array.isArray(d.browsers) && d.browsers.length > 0) {
+            browsersHtml = '<div class="dam-item-browsers">';
+            d.browsers.forEach(function(b) {
+                browsersHtml += '<span class="dam-browser-tag"><i class="fas fa-globe"></i> ' + esc(b) + '</span>';
+            });
+            browsersHtml += '</div>';
         }
 
         var accRows = '';
         accounts.slice(-6).forEach(function(a) {
-            var lastAccMs = a.lastSeen || 0;
             accRows += '<div class="dam-acc-row">' +
                 '<span class="dam-acc-email">' + esc(a.email) + '</span>' +
-                '<span class="dam-acc-time">' + timeAgo(lastAccMs) + '</span>' +
+                '<span class="dam-acc-time">' + timeAgo(a.lastSeen || 0) + '</span>' +
             '</div>';
         });
         if (accounts.length > 6) {
             accRows += '<div class="dam-acc-row" style="opacity:.6;justify-content:center">' +
-                '... và ' + (accounts.length - 6) + ' tài khoản khác' +
-            '</div>';
+                '... và ' + (accounts.length - 6) + ' tài khoản khác</div>';
         }
 
         var actions = '';
         if (status === 'warn') {
             actions =
                 '<button class="dam-action-btn danger" onclick="damBlockDevice(\'' + esc(d._id) + '\')">' +
-                    '<i class="fas fa-ban"></i> Block thiết bị' +
-                '</button>' +
+                    '<i class="fas fa-ban"></i> Block thiết bị</button>' +
                 '<button class="dam-action-btn ok" onclick="damWhitelistDevice(\'' + esc(d._id) + '\')">' +
-                    '<i class="fas fa-check"></i> Whitelist' +
-                '</button>' +
+                    '<i class="fas fa-check"></i> Whitelist</button>' +
                 '<button class="dam-action-btn" onclick="damIgnoreWarning(\'' + esc(d._id) + '\')">' +
-                    '<i class="fas fa-eye-slash"></i> Bỏ qua' +
-                '</button>';
+                    '<i class="fas fa-eye-slash"></i> Bỏ qua</button>';
         } else if (status === 'blocked') {
             actions =
                 '<button class="dam-action-btn ok" onclick="damUnblockDevice(\'' + esc(d._id) + '\')">' +
-                    '<i class="fas fa-unlock"></i> Mở block' +
-                '</button>' +
+                    '<i class="fas fa-unlock"></i> Mở block</button>' +
                 '<button class="dam-action-btn ok" onclick="damWhitelistDevice(\'' + esc(d._id) + '\')">' +
-                    '<i class="fas fa-check"></i> Whitelist' +
-                '</button>';
-        } else if (status === 'whitelist') {
+                    '<i class="fas fa-check"></i> Whitelist</button>';
+        } else {
             actions =
                 '<button class="dam-action-btn" onclick="damRemoveWhitelist(\'' + esc(d._id) + '\')">' +
-                    '<i class="fas fa-times"></i> Bỏ whitelist' +
-                '</button>';
+                    '<i class="fas fa-times"></i> Bỏ whitelist</button>';
         }
 
-        return '<div class="dam-item ' + (status === 'warn' ? 'warn' : status === 'blocked' ? 'blocked' : 'whitelisted') + '">' +
+        return '<div class="dam-item ' + status + '">' +
             '<div class="dam-item-head">' +
                 '<div>' +
-                    '<div class="dam-item-device">' +
-                        '<i class="fas ' + icon + '"></i> ' + esc(d.deviceName || 'Thiết bị') +
-                    '</div>' +
-                    '<div class="dam-item-device-id">' + esc((d._id || '').substring(0, 24)) + '...</div>' +
+                    '<div class="dam-item-device"><i class="fas ' + icon + '"></i> ' + esc(d.os || 'Thiết bị') + '</div>' +
+                    '<div class="dam-item-fp">FP: ' + esc((d._id || '').substring(0, 20)) + '...</div>' +
                 '</div>' +
                 statusBadge +
             '</div>' +
-            '<div style="font-size:.75rem;color:var(--text-2);margin-bottom:.35rem">' +
-                '<b style="color:var(--text)">' + accountCount + '</b> tài khoản · ' +
-                'Lần cuối: ' + timeAgo(lastMs) +
+            browsersHtml +
+            '<div style="font-size:.75rem;color:var(--text-2);margin:.35rem 0">' +
+                '<b style="color:var(--text)">' + accountCount + '</b> tài khoản · Lần cuối: ' + timeAgo(lastMs) +
             '</div>' +
             '<div class="dam-item-accounts">' + accRows + '</div>' +
             '<div class="dam-item-actions">' + actions + '</div>' +
@@ -32208,7 +32305,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         var items = [];
         if (currentTab === 'warn') items = warnDevices;
         else if (currentTab === 'blocked') items = blockedDevices;
-        else if (currentTab === 'whitelist') items = whitelistDevices;
+        else items = whitelistDevices;
 
         if (!items.length) {
             var emptyMsg = '';
@@ -32220,17 +32317,15 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         }
 
         var html = '';
-        items.forEach(function(d) {
-            html += renderDeviceItem(d, currentTab);
-        });
+        items.forEach(function(d) { html += renderDeviceItem(d, currentTab); });
         listEl.innerHTML = html;
     }
 
-    window.damBlockDevice = async function(deviceId) {
-        if (!db || !deviceId) return;
-        if (!confirm('BLOCK thiết bị này?\n\nUser sẽ không thể đăng nhập bất kỳ tài khoản nào trên thiết bị này nữa.\n\nTiếp tục?')) return;
+    window.damBlockDevice = async function(fp) {
+        if (!db || !fp) return;
+        if (!confirm('BLOCK thiết bị này?\n\nMọi tài khoản sẽ không thể đăng nhập trên thiết bị này nữa.')) return;
         try {
-            await db.collection('device_logins').doc(deviceId).update({
+            await db.collection('device_logins').doc(fp).update({
                 blocked: true,
                 blockedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 blockedBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.email : 'unknown'
@@ -32244,11 +32339,11 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         } catch(e) { alert('Lỗi: ' + e.message); }
     };
 
-    window.damUnblockDevice = async function(deviceId) {
-        if (!db || !deviceId) return;
+    window.damUnblockDevice = async function(fp) {
+        if (!db || !fp) return;
         if (!confirm('Mở block cho thiết bị này?')) return;
         try {
-            await db.collection('device_logins').doc(deviceId).update({
+            await db.collection('device_logins').doc(fp).update({
                 blocked: false,
                 unblockedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 unblockedBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.email : 'unknown'
@@ -32257,16 +32352,16 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             categorizeDevices();
             renderList();
             if (typeof showUserChangedToast === 'function') {
-                showUserChangedToast('✅ Đã mở block thiết bị', 'success');
+                showUserChangedToast('✅ Đã mở block', 'success');
             }
         } catch(e) { alert('Lỗi: ' + e.message); }
     };
 
-    window.damWhitelistDevice = async function(deviceId) {
-        if (!db || !deviceId) return;
-        if (!confirm('Whitelist thiết bị này?\n\nThiết bị sẽ KHÔNG bị cảnh báo khi login nhiều tài khoản.\n\nChỉ dùng cho máy hợp lệ (máy test, máy của gia đình dùng chung).')) return;
+    window.damWhitelistDevice = async function(fp) {
+        if (!db || !fp) return;
+        if (!confirm('Whitelist thiết bị này?\n\nThiết bị sẽ KHÔNG bị cảnh báo khi login nhiều tài khoản.')) return;
         try {
-            await db.collection('device_logins').doc(deviceId).update({
+            await db.collection('device_logins').doc(fp).update({
                 whitelisted: true,
                 blocked: false,
                 whitelistedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -32281,14 +32376,13 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         } catch(e) { alert('Lỗi: ' + e.message); }
     };
 
-    window.damRemoveWhitelist = async function(deviceId) {
-        if (!db || !deviceId) return;
+    window.damRemoveWhitelist = async function(fp) {
+        if (!db || !fp) return;
         if (!confirm('Bỏ whitelist thiết bị này?')) return;
         try {
-            await db.collection('device_logins').doc(deviceId).update({
+            await db.collection('device_logins').doc(fp).update({
                 whitelisted: false,
-                removedFromWhitelistAt: firebase.firestore.FieldValue.serverTimestamp(),
-                removedFromWhitelistBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.email : 'unknown'
+                removedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             await loadAllDevices();
             categorizeDevices();
@@ -32296,14 +32390,13 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         } catch(e) { alert('Lỗi: ' + e.message); }
     };
 
-    window.damIgnoreWarning = async function(deviceId) {
-        if (!db || !deviceId) return;
-        if (!confirm('Bỏ qua cảnh báo cho thiết bị này?\n\nSẽ ẩn khỏi tab "Cảnh báo".')) return;
+    window.damIgnoreWarning = async function(fp) {
+        if (!db || !fp) return;
+        if (!confirm('Bỏ qua cảnh báo cho thiết bị này?')) return;
         try {
-            await db.collection('device_logins').doc(deviceId).update({
+            await db.collection('device_logins').doc(fp).update({
                 warned: false,
-                ignoredAt: firebase.firestore.FieldValue.serverTimestamp(),
-                ignoredBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.email : 'unknown'
+                ignoredAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             await loadAllDevices();
             categorizeDevices();
@@ -32334,6 +32427,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         if (countEl) countEl.textContent = recentCount || MAX_ACCOUNTS_PER_DEVICE;
 
         if (_cooldownInterval) clearInterval(_cooldownInterval);
+        _cooldownStartTime = Date.now();
 
         function updateTimer() {
             var remain = remainMs - (Date.now() - _cooldownStartTime);
@@ -32349,7 +32443,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             if (timeEl) timeEl.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
         }
 
-        window._cooldownStartTime = Date.now();
         updateTimer();
         _cooldownInterval = setInterval(updateTimer, 1000);
 
@@ -32362,37 +32455,21 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         }
     }
 
-    function injectAdminButton() {
-        var userList = document.getElementById('userList');
-        if (!userList) return;
+    function showBlockedModal(fp) {
+        var modal = $('damBlockedModal');
+        if (!modal) return;
+        modal.classList.add('show');
 
-        var rows = userList.querySelectorAll('.user-row[data-email]');
-        rows.forEach(function(row) {
-            if (row.querySelector('.dam-btn-row')) return;
+        var fpEl = $('damBlockedFp');
+        if (fpEl) fpEl.textContent = fp || '—';
 
-            var actions = row.querySelector('.u-actions');
-            if (!actions) return;
-
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'u-btn dam-btn-row';
-            btn.title = 'Xem thiết bị nghi vấn';
-            btn.innerHTML = '<i class="fas fa-user-secret"></i>';
-
-            if (warnDevices.length > 0) {
-                btn.innerHTML += '<span class="dam-mini-badge">' + warnDevices.length + '</span>';
-            }
-
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                openDamAdminModal();
-            });
-
-            var deleteBtn = actions.querySelector('.u-btn.danger');
-            if (deleteBtn) actions.insertBefore(btn, deleteBtn);
-            else actions.appendChild(btn);
-        });
+        var closeBtn = $('damBlockedCloseBtn');
+        if (closeBtn) {
+            closeBtn.onclick = function() {
+                modal.classList.remove('show');
+                if (typeof auth !== 'undefined' && auth) auth.signOut();
+            };
+        }
     }
 
     function openDamAdminModal() {
@@ -32433,12 +32510,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             });
         }
 
-        var injectTimer = setInterval(function() {
-            try { injectAdminButton(); } catch(e) {}
-        }, 2000);
-
-        setTimeout(function() { clearInterval(injectTimer); }, 120000);
-
         document.addEventListener('keydown', function(e) {
             if (e.key !== 'Escape') return;
             var m = $('damAdminModal');
@@ -32454,17 +32525,23 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
     window.__damRegisterAccount = registerAccountOnDevice;
     window.__damShowCooldown = showCooldownModal;
+    window.__damShowBlocked = showBlockedModal;
     window.__damOpenAdmin = openDamAdminModal;
     window.__damDebug = {
         register: registerAccountOnDevice,
         load: loadAllDevices,
         categorize: categorizeDevices,
         openAdmin: openDamAdminModal,
+        getFingerprint: getFingerprint,
+        resetFp: function() {
+            try { localStorage.removeItem(FP_CACHE_KEY); } catch(e) {}
+            _fpPromise = null;
+        },
         maxAccounts: MAX_ACCOUNTS_PER_DEVICE,
         cooldownMin: COOLDOWN_MINUTES
     };
 
-    console.log('[DAM] Module loaded OK — max ' + MAX_ACCOUNTS_PER_DEVICE + ' accounts/device, cooldown ' + COOLDOWN_MINUTES + 'min');
+    console.log('[DAM] Module loaded OK — max ' + MAX_ACCOUNTS_PER_DEVICE + ' accounts/device (fingerprint), cooldown ' + COOLDOWN_MINUTES + 'min');
 })();
 
 
