@@ -32528,6 +32528,10 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     window.__damShowCooldown = showCooldownModal;
     window.__damShowBlocked = showBlockedModal;
     window.__damOpenAdmin = openDamAdminModal;
+    window.openDamAdminModal = openDamAdminModal;
+    window.openAdminDeviceView = function(email) {
+        openDamAdminModal();
+    };
     window.__damDebug = {
         register: registerAccountOnDevice,
         load: loadAllDevices,
