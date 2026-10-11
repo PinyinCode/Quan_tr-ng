@@ -17871,6 +17871,18 @@ async function handleAuthChange(user) {
         return;
     }
 
+    /* ═══ CHẶN ANONYMOUS — Phòng xa ═══ */
+    if (user.isAnonymous === true || !user.email) {
+        console.warn('[Auth] Chặn Anonymous user:', user.uid);
+        await auth.signOut();
+        if (typeof showLoginError === 'function') {
+            showLoginError('Vui lòng đăng nhập bằng Google hoặc Email để sử dụng ứng dụng.');
+        }
+        enterDemoMode();
+        return;
+    }
+    /* ═══ END CHẶN ANONYMOUS ═══ */
+
     var email = (user.email || '').toLowerCase();
     var cacheKey = 'user_cache_' + email;
     var cached = null;
@@ -17911,6 +17923,29 @@ async function handleAuthChange(user) {
             console.warn('[DVL] Register error:', _dvlErr);
         }
         /* ═══ END CHECK DEVICE ═══ */
+
+        /* ═══ CHECK DEVICE ACCOUNT MONITOR ═══ */
+        try {
+            if (window.__damRegisterAccount && currentUser && currentUser.email) {
+                var _damResult = await window.__damRegisterAccount(currentUser.email);
+
+                if (_damResult && _damResult.blocked) {
+                    if (typeof auth !== 'undefined' && auth) auth.signOut();
+                    alert('🚫 Thiết bị này đã bị admin chặn.\n\nVui lòng liên hệ admin để biết thêm chi tiết.');
+                    return;
+                }
+
+                if (_damResult && _damResult.cooldown) {
+                    if (window.__damShowCooldown) {
+                        window.__damShowCooldown(_damResult.remainMs, _damResult.recentCount);
+                    }
+                    return;
+                }
+            }
+        } catch(_damErr) {
+            console.warn('[DAM] Register error:', _damErr);
+        }
+        /* ═══ END CHECK DEVICE ACCOUNT MONITOR ═══ */
 
         publishTierState();
         applyUserUI();
@@ -18053,6 +18088,29 @@ async function handleAuthChange(user) {
             console.warn('[DVL] Register error:', _dvlErr2);
         }
         /* ═══ END CHECK DEVICE ═══ */
+
+        /* ═══ CHECK DEVICE ACCOUNT MONITOR ═══ */
+        try {
+            if (window.__damRegisterAccount && currentUser && currentUser.email) {
+                var _damResult2 = await window.__damRegisterAccount(currentUser.email);
+
+                if (_damResult2 && _damResult2.blocked) {
+                    if (typeof auth !== 'undefined' && auth) auth.signOut();
+                    alert('🚫 Thiết bị này đã bị admin chặn.\n\nVui lòng liên hệ admin để biết thêm chi tiết.');
+                    return;
+                }
+
+                if (_damResult2 && _damResult2.cooldown) {
+                    if (window.__damShowCooldown) {
+                        window.__damShowCooldown(_damResult2.remainMs, _damResult2.recentCount);
+                    }
+                    return;
+                }
+            }
+        } catch(_damErr2) {
+            console.warn('[DAM] Register error:', _damErr2);
+        }
+        /* ═══ END CHECK DEVICE ACCOUNT MONITOR ═══ */
 
         publishTierState();
         applyUserUI();
