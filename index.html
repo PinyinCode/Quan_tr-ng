@@ -18576,6 +18576,39 @@ window.userConfirmPaid = async function() {
 
 function renderPendingConfirm() {
     var zaloUrl = RENEWAL_SUPPORT_ZALO ? 'https://zalo.me/' + RENEWAL_SUPPORT_ZALO.replace(/\D/g, '') : '#';
+
+    /* ⭐ Lấy thông tin gói + mã CK để hiện QR */
+    var pkg = renewalSelectedPkg;
+    var code = renewalCurrentReq ? renewalCurrentReq.code : '';
+    var amount = pkg ? pkg.amount : 0;
+    var durationText = (pkg && pkg.permanent)
+        ? '<b style="color:#dc2626">💎 VĨNH VIỄN</b>'
+        : (pkg ? pkg.days + ' ngày' : '');
+
+    var qrHtml = '';
+    if (pkg && code) {
+        var qrUrl = 'https://img.vietqr.io/image/' + BANK_CONFIG.bank_id + '-' + BANK_CONFIG.account_no + '-compact2.png' +
+                    '?amount=' + amount + '&addInfo=' + encodeURIComponent(code) + '&accountName=' + encodeURIComponent(BANK_CONFIG.account_name);
+
+        qrHtml =
+            '<div class="renewal-section-title" style="margin-top:1.25rem"><i class="fas fa-qrcode"></i> Thông tin chuyển khoản</div>' +
+            '<div class="renewal-current">' +
+                '<div class="rc-icon"><i class="fas fa-shopping-cart"></i></div>' +
+                '<div class="rc-info"><div class="rc-title">Gói ' + escapeHtml(pkg.label || '') + '</div>' +
+                '<div class="rc-desc">Số tiền: <b>' + formatMoney(amount) + ' VNĐ</b> · ' + durationText + '</div></div></div>' +
+            '<div class="qr-wrap">' +
+                '<img class="qr-img" src="' + qrUrl + '" alt="QR" onerror="this.style.display=\'none\'">' +
+                '<div class="qr-hint">Quét QR để chuyển khoản. Hoặc chuyển thủ công theo thông tin bên dưới.</div></div>' +
+            '<div class="bank-info">' +
+                '<div class="bank-row"><span class="br-label">Ngân hàng</span><span class="br-value">' + escapeHtml(BANK_CONFIG.bank_name) + '</span></div>' +
+                '<div class="bank-row"><span class="br-label">Số TK</span><span class="br-value">' + escapeHtml(BANK_CONFIG.account_no) +
+                    '<button class="copy-btn" onclick="copyText(\'' + escapeJs(BANK_CONFIG.account_no) + '\', this)"><i class="fas fa-copy"></i></button></span></div>' +
+                '<div class="bank-row"><span class="br-label">Chủ TK</span><span class="br-value">' + escapeHtml(BANK_CONFIG.account_name) + '</span></div>' +
+                '<div class="bank-row"><span class="br-label">Số tiền</span><span class="br-value code">' + formatMoney(amount) + 'đ</span></div>' +
+                '<div class="bank-row"><span class="br-label">Nội dung</span><span class="br-value code">' + escapeHtml(code) +
+                    '<button class="copy-btn" onclick="copyText(\'' + escapeJs(code) + '\', this)"><i class="fas fa-copy"></i></button></span></div></div>';
+    }
+
     $('renewalBody').innerHTML =
         '<div class="renewal-success">' +
             '<div class="icon" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);box-shadow:0 8px 24px rgba(124,58,237,.4)">' +
@@ -18586,10 +18619,12 @@ function renderPendingConfirm() {
                 '<i class="fas fa-exclamation-triangle" style="color:#dc2626"></i>' +
                 '<div><b>Lưu ý:</b> Nếu admin không xác nhận trong <b>24 giờ</b>, lệnh sẽ tự động bị hủy.</div></div>' +
             '<div class="info-box"><i class="fas fa-info-circle" style="color:#7c3aed"></i>' +
-                '<div>Nếu sau <b>10 phút</b> chưa được gia hạn, liên hệ Zalo kèm mã: <b>' + escapeHtml(renewalCurrentReq.code) + '</b></div></div>' +
+                '<div>Nếu sau <b>10 phút</b> chưa được gia hạn, liên hệ Zalo kèm mã: <b>' + escapeHtml(code) + '</b></div></div>' +
             '<div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:.5rem">' +
                 '<a class="renewal-btn" href="' + zaloUrl + '" target="_blank" rel="noopener"><i class="fas fa-comment-dots"></i> Liên hệ Zalo</a>' +
-                '<button class="renewal-btn primary" onclick="closeRenewalModal()"><i class="fas fa-check"></i> Đóng</button></div></div>';
+                '<button class="renewal-btn primary" onclick="closeRenewalModal()"><i class="fas fa-check"></i> Đóng</button></div>' +
+            qrHtml +
+        '</div>';
 }
 
 function listenRenewalRequest(reqId) {
