@@ -18580,6 +18580,7 @@ function renderPendingConfirm() {
     /* ⭐ Lấy thông tin gói + mã CK để hiện QR */
     var pkg = renewalSelectedPkg;
     var code = renewalCurrentReq ? renewalCurrentReq.code : '';
+    var reqId = renewalCurrentReq ? renewalCurrentReq.id : '';
     var amount = pkg ? pkg.amount : 0;
     var durationText = (pkg && pkg.permanent)
         ? '<b style="color:#dc2626">💎 VĨNH VIỄN</b>'
@@ -18609,6 +18610,16 @@ function renderPendingConfirm() {
                     '<button class="copy-btn" onclick="copyText(\'' + escapeJs(code) + '\', this)"><i class="fas fa-copy"></i></button></span></div></div>';
     }
 
+    /* ⭐ Nút Hủy & chọn lại — chỉ hiện khi có reqId */
+    var cancelBtnHtml = '';
+    if (reqId) {
+        cancelBtnHtml =
+            '<button class="renewal-btn" onclick="cancelRenewalAndRestart()" ' +
+                    'style="border-color:#dc2626;color:#dc2626">' +
+                '<i class="fas fa-sync-alt"></i> Hủy & chọn lại' +
+            '</button>';
+    }
+
     $('renewalBody').innerHTML =
         '<div class="renewal-success">' +
             '<div class="icon" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);box-shadow:0 8px 24px rgba(124,58,237,.4)">' +
@@ -18622,10 +18633,48 @@ function renderPendingConfirm() {
                 '<div>Nếu sau <b>10 phút</b> chưa được gia hạn, liên hệ Zalo kèm mã: <b>' + escapeHtml(code) + '</b></div></div>' +
             '<div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:.5rem">' +
                 '<a class="renewal-btn" href="' + zaloUrl + '" target="_blank" rel="noopener"><i class="fas fa-comment-dots"></i> Liên hệ Zalo</a>' +
+                cancelBtnHtml +
                 '<button class="renewal-btn primary" onclick="closeRenewalModal()"><i class="fas fa-check"></i> Đóng</button></div>' +
             qrHtml +
         '</div>';
 }
+window.cancelRenewalAndRestart = async function() {
+    if (!renewalCurrentReq || !renewalCurrentReq.id) {
+        alert('Không tìm thấy lệnh để hủy.');
+        return;
+    }
+
+    if (!confirm('Hủy lệnh hiện tại để chọn gói mới?\n\nMã CK cũ sẽ không còn hiệu lực.')) {
+        return;
+    }
+
+    try {
+        await db.collection('renewal_requests').doc(renewalCurrentReq.id).update({
+            status: 'cancelled',
+            cancelledAt: firebase.firestore.FieldValue.serverTimestamp(),
+            cancelledBy: 'user_replace',
+            cancelReason: 'User hủy để chọn gói mới'
+        });
+
+        /* Reset state */
+        renewalCurrentReq = null;
+        renewalSelectedPkg = null;
+        window.__renewalPendingSnap = null;
+
+        /* Cập nhật badge */
+        if (typeof checkPendingRenewalBadge === 'function') {
+            checkPendingRenewalBadge();
+        }
+
+        /* Về màn chọn gói */
+        renderRenewalStep1();
+
+        console.log('✅ Đã hủy lệnh cũ, về màn chọn gói');
+    } catch(e) {
+        alert('❌ Lỗi hủy lệnh: ' + e.message);
+        console.error('Cancel renewal error:', e);
+    }
+};
 
 function listenRenewalRequest(reqId) {
     if (renewalListener) { try { renewalListener(); } catch(e) {} }
