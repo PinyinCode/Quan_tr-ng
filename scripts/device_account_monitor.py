@@ -814,6 +814,10 @@ def build_dam_js():
     window.__damShowCooldown = showCooldownModal;
     window.__damShowBlocked = showBlockedModal;
     window.__damOpenAdmin = openDamAdminModal;
+    window.openDamAdminModal = openDamAdminModal;
+    window.openAdminDeviceView = function(email) {
+        openDamAdminModal();
+    };
     window.__damDebug = {
         register: registerAccountOnDevice,
         load: loadAllDevices,
