@@ -18357,54 +18357,107 @@ function initPracticeFull() {
         }
     }
     (function setupWidthControl() {
-        var MIN_WIDTH_VW = 40;
-        var MAX_WIDTH_VW = 100;
-        var STEP = 5;
-        var STORAGE_KEY = 'pfContentWidthVW_v2';
+    /* ═══════════════════════════════════════════════════════════
+       ⭐ NÚT +/- ĐIỀU KHIỂN TẤT CẢ THÔNG SỐ (ZOOM TỔNG THỂ)
+       - Chỉnh --pf-scale → áp dụng cho: font, padding, ô, gap, nav
+       - Chỉnh --ui-scale → áp dụng cho: header, filters, dataset
+       - Lưu vào localStorage, load lại khi mở app
+       ═══════════════════════════════════════════════════════════ */
+    var MIN_SCALE = 0.7;
+    var MAX_SCALE = 1.6;
+    var STEP = 0.05;       /* Mỗi lần bấm +/- : 5% */
+    var STORAGE_KEY = 'pfUserScale_v1';
 
-        var ctrl = document.getElementById('pfWidthCtrl');
-        var btnPlus = document.getElementById('pfWidthPlus');
-        var btnMinus = document.getElementById('pfWidthMinus');
-        var indicator = document.getElementById('pfWidthIndicator');
-        if (!ctrl || !btnPlus || !btnMinus || !indicator) return;
+    var btnPlus = document.getElementById('pfWidthPlus');
+    var btnMinus = document.getElementById('pfWidthMinus');
+    var indicator = document.getElementById('pfWidthIndicator');
+    if (!btnPlus || !btnMinus || !indicator) return;
 
-        function getSaved() {
-            try {
-                var v = parseFloat(localStorage.getItem(STORAGE_KEY));
-                if (!isNaN(v) && v >= MIN_WIDTH_VW && v <= MAX_WIDTH_VW) return v;
-            } catch(e) {}
-            return 95;
+    /* Lấy user scale đã lưu, hoặc 1.0 mặc định */
+    function getSavedUserScale() {
+        try {
+            var v = parseFloat(localStorage.getItem(STORAGE_KEY));
+            if (!isNaN(v) && v >= MIN_SCALE && v <= MAX_SCALE) return v;
+        } catch(e) {}
+        return 1.0;
+    }
+
+    function saveUserScale(v) {
+        try { localStorage.setItem(STORAGE_KEY, String(v)); } catch(e) {}
+    }
+
+    /* ⭐ ÁP DỤNG: nhân userScale với base scale (auto tính) */
+    function applyUserScale(userScale) {
+        var rootStyle = document.documentElement.style;
+
+        /* Đọc base scale đã được auto_scale.js set */
+        var basePf = parseFloat(
+            getComputedStyle(document.documentElement)
+                .getPropertyValue('--pf-scale-base')
+        ) || 1;
+        var baseUi = parseFloat(
+            getComputedStyle(document.documentElement)
+                .getPropertyValue('--ui-scale-base')
+        ) || 1;
+
+        /* Nếu chưa có base (fallback) → dùng giá trị hiện tại */
+        if (!basePf || isNaN(basePf)) {
+            basePf = parseFloat(
+                rootStyle.getPropertyValue('--pf-scale')
+            ) || 1;
+        }
+        if (!baseUi || isNaN(baseUi)) {
+            baseUi = parseFloat(
+                rootStyle.getPropertyValue('--ui-scale')
+            ) || 1;
         }
 
-        function applyWidth(vw) {
-            document.documentElement.style.setProperty('--pf-content-max', vw + 'vw');
-            indicator.textContent = Math.round(vw) + '%';
-            btnPlus.disabled = (vw >= MAX_WIDTH_VW);
-            btnMinus.disabled = (vw <= MIN_WIDTH_VW);
-            try { localStorage.setItem(STORAGE_KEY, String(vw)); } catch(e) {}
-        }
+        /* ⭐ Set final = base × user */
+        rootStyle.setProperty('--pf-scale', (basePf * userScale).toFixed(3));
+        rootStyle.setProperty('--ui-scale', (baseUi * userScale).toFixed(3));
 
-        var currentVW = getSaved();
-        applyWidth(currentVW);
+        /* Hiển thị % */
+        indicator.textContent = Math.round(userScale * 100) + '%';
 
-        btnPlus.addEventListener('click', function(e) {
-            e.stopPropagation();
-            e.preventDefault();
-            if (currentVW >= MAX_WIDTH_VW) return;
-            currentVW = Math.min(MAX_WIDTH_VW, currentVW + STEP);
-            applyWidth(currentVW);
-        });
+        /* Disable nút khi đạt giới hạn */
+        btnPlus.disabled = (userScale >= MAX_SCALE - 0.001);
+        btnMinus.disabled = (userScale <= MIN_SCALE + 0.001);
+    }
 
-        btnMinus.addEventListener('click', function(e) {
-            e.stopPropagation();
-            e.preventDefault();
-            if (currentVW <= MIN_WIDTH_VW) return;
-            currentVW = Math.max(MIN_WIDTH_VW, currentVW - STEP);
-            applyWidth(currentVW);
-        });
+    var currentScale = getSavedUserScale();
+    applyUserScale(currentScale);
 
-        console.log('[PF Width] Control setup OK — current: ' + currentVW + '%');
-    })();
+    btnPlus.addEventListener('click', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        if (currentScale >= MAX_SCALE) return;
+        currentScale = Math.min(MAX_SCALE, +(currentScale + STEP).toFixed(3));
+        applyUserScale(currentScale);
+        saveUserScale(currentScale);
+    });
+
+    btnMinus.addEventListener('click', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        if (currentScale <= MIN_SCALE) return;
+        currentScale = Math.max(MIN_SCALE, +(currentScale - STEP).toFixed(3));
+        applyUserScale(currentScale);
+        saveUserScale(currentScale);
+    });
+
+    /* Reset về 100% khi double-click vào indicator */
+    indicator.addEventListener('dblclick', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        currentScale = 1.0;
+        applyUserScale(currentScale);
+        saveUserScale(currentScale);
+    });
+    indicator.title = 'Double-click để reset 100%';
+    indicator.style.cursor = 'pointer';
+
+    console.log('[PF Scale] Control setup OK — current userScale: ' + currentScale);
+})();
 }
 function pfBuildDatasetSelect() {
     var sel = $('pfDatasetSelect');
