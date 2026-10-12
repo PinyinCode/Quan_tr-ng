@@ -5206,13 +5206,6 @@ function initAuthUI() {
     scheduleAutoExpire();
 }
 
-/* ============ TIMEOUT FALLBACK ============ */
-setTimeout(function() {
-    if (!appInitialized) {
-        console.warn('Auth timeout, entering demo mode');
-        enterDemoMode();
-    }
-}, 5000);
 
 /* ═══════════════════════════════════════════════════════════════
    📱 TELEGRAM NOTIFICATION
