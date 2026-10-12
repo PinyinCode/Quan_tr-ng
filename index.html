@@ -18133,14 +18133,23 @@ function logLogin(u) {
 }
 
 /* ============ ADMIN SEARCH & FILTER ============ */
+function normalizeSearchText(s) {
+    if (s == null) return '';
+    var str = String(s).toLowerCase();
+    str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    str = str.replace(/đ/g, 'd');
+    return str;
+}
+
 function filterUsers(items) {
-    var query = adminSearchQuery.toLowerCase().trim();
+    var rawQuery = adminSearchQuery.trim().toLowerCase();
+    var query = normalizeSearchText(rawQuery);
     var filter = adminCurrentFilter;
     var now = Date.now();
     return items.filter(function(u) {
         if (query) {
-            var email = (u.email || '').toLowerCase();
-            var name = (u.name || '').toLowerCase();
+            var email = normalizeSearchText(u.email || '');
+            var name = normalizeSearchText(u.name || '');
             if (email.indexOf(query) === -1 && name.indexOf(query) === -1) return false;
         }
         if (filter === 'all') return true;
