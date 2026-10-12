@@ -3491,6 +3491,56 @@ body.practice-full-open .pf-tiktok-float {
         left: 8px !important;
     }
 }
+/* ═══════════════════════════════════════════════════════════ */
+/* THU NHỎ NÚT "CHẤM ĐIỂM" / "XEM ĐÁP ÁN"                     */
+/* ═══════════════════════════════════════════════════════════ */
+
+/* Thu nhỏ chiều cao + font + padding */
+.reveal-actions button {
+    padding: clamp(.4rem, .9vh, .55rem) clamp(.5rem, 1vw, .7rem) !important;
+    font-size: clamp(.72rem, .85vw, .82rem) !important;
+    font-weight: 600 !important;
+    border-radius: 10px !important;
+    gap: clamp(.3rem, .6vmin, .45rem) !important;
+    border-width: 1.5px !important;
+    min-height: 0 !important;
+}
+
+/* Icon nhỏ lại */
+.reveal-actions button i {
+    font-size: clamp(.75rem, .9vw, .85rem) !important;
+}
+
+/* Grid 2 cột — không cho button chiếm full width */
+.reveal-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: clamp(.4rem, .8vw, .6rem) !important;
+    width: 100% !important;
+    max-width: 420px !important;   /* ⭐ Giới hạn chiều rộng tối đa */
+    margin: 0 auto !important;      /* ⭐ Căn giữa */
+}
+
+/* Landscape: còn nhỏ hơn nữa */
+@media (orientation: landscape) and (min-height: 300px) {
+    .reveal-actions {
+        max-width: 380px !important;
+    }
+    .reveal-actions button {
+        padding: .35rem .5rem !important;
+        font-size: .7rem !important;
+    }
+    .reveal-actions button i {
+        font-size: .72rem !important;
+    }
+}
+
+/* Mobile dọc: cho phép rộng hơn chút */
+@media (max-width: 500px) and (orientation: portrait) {
+    .reveal-actions {
+        max-width: 90% !important;
+    }
+}
 """
 def build_ui_html():
     return r"""
