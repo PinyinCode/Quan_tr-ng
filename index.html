@@ -3399,6 +3399,69 @@ body.practice-full-open .pf-tiktok-float {
 .pf-width-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
 .pf-width-indicator{font-size:.62rem;font-weight:800;color:var(--text-3);background:var(--surface-2);border:1px solid var(--border);border-radius:50px;padding:.15rem .4rem;text-align:center;min-width:34px;line-height:1;letter-spacing:.02em}
 @media (max-width:768px){.pf-width-ctrl{display:none!important}}
+/* ⭐ HIỆU ỨNG GÕ ĐÚNG CÂU — ĐỒNG BỘ VỚI CHẾ ĐỘ GHÉP TỪ */
+.practice-full-input.celebrate {
+    animation: celebrateInputGlow 1.2s cubic-bezier(.34, 1.4, .64, 1);
+    border-color: var(--success) !important;
+    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.15),
+                0 8px 24px rgba(22, 163, 74, 0.2) !important;
+    background: linear-gradient(135deg,
+        rgba(22, 163, 74, 0.06),
+        rgba(34, 197, 94, 0.03)) !important;
+}
+
+@keyframes celebrateInputGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+        transform: scale(1);
+    }
+    30% {
+        box-shadow: 0 0 0 12px rgba(22, 163, 74, 0.18),
+                    0 8px 32px rgba(22, 163, 74, 0.35);
+        transform: scale(1.01);
+    }
+    100% {
+        box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.12),
+                    0 4px 16px rgba(22, 163, 74, 0.2);
+        transform: scale(1);
+    }
+}
+
+.practice-full-input.wrong-shake {
+    animation: wrongShakeFull 0.4s ease-out;
+    border-color: var(--danger) !important;
+}
+
+@keyframes wrongShakeFull {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+
+/* ⭐ Preview chuyển thành giao diện phrase word xanh khi đúng */
+.pf-preview-correct {
+    background: linear-gradient(135deg,
+        rgba(22, 163, 74, 0.08),
+        rgba(34, 197, 94, 0.04)) !important;
+    border: 2px solid var(--success) !important;
+    border-radius: 14px !important;
+    padding: clamp(0.7rem, 1.4vh, 1rem) clamp(0.7rem, 1.4vw, 1rem) !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: clamp(0.4rem, 0.8vw, 0.6rem) !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    animation: pfAssembleCorrectGlow 1.2s cubic-bezier(.34, 1.4, .64, 1);
+    min-height: auto !important;
+}
+
+/* ⭐ Nút "Câu tiếp theo" của Gõ tự do — thêm margin để tách khỏi ô nhập */
+#pfFullAnswerNextBtn {
+    margin-top: 0.75rem;
+    align-self: center;
+}
 
 
 /* ═══ Nút Chấm điểm + Xem đáp án ═══ */
@@ -15319,6 +15382,9 @@ function loadPracticeFull(stt) {
         if (String(filtered[i].stt) === String(stt)) { idx = i; break; }
     }
     if (idx === -1) return;
+    if (typeof resetFullAnswerState === 'function') {
+        resetFullAnswerState();
+    }
     if (!$('pfSearchInput').value && !$('pfHskFilter').value && !$('pfSubjectFilter').value) {
         $('pfSearchInput').value = $('searchInput').value;
         $('pfHskFilter').value = $('hskFilter').value;
@@ -15792,23 +15858,220 @@ function toggleGrade() {
 function checkFullAnswer() {
     var input = $('pfInput');
     var statusEl = $('pfStatus');
+    var previewEl = $('pfPreview');
     var val = input.value.trim();
+
+    // ⭐ Nếu đang có hiệu ứng câu đúng → bỏ qua khi user gõ lại
+    if (previewEl && previewEl.classList.contains('answer-revealed')) {
+        return;
+    }
+
     if (!val) {
         statusEl.textContent = '';
         statusEl.className = 'practice-full-status';
         return;
     }
+
     var result = smartCheck(val, pfCurrentAnswer);
+
     if (result.status === 'correct') {
-        statusEl.textContent = 'ĐÚNG';
-        statusEl.className = 'practice-full-status correct';
+        // ⭐ Reset hiệu ứng cũ
+        statusEl.classList.remove('partial', 'wrong');
+        input.classList.remove('wrong-shake');
+
+        // ⭐ Hiện hiệu ứng giống chế độ Ghép từ
+        showFullAnswerSuccess(input, previewEl, statusEl);
+
     } else if (result.status === 'partial') {
-        statusEl.textContent = (result.reason || 'GẦN ĐÚNG');
+        statusEl.textContent = '⚠️ ' + (result.reason || 'GẦN ĐÚNG');
         statusEl.className = 'practice-full-status partial';
+        statusEl.classList.remove('correct', 'wrong');
+        input.classList.remove('wrong-shake');
+
     } else {
-        statusEl.textContent = 'SAI';
+        statusEl.textContent = '❌ SAI';
         statusEl.className = 'practice-full-status wrong';
+        statusEl.classList.remove('correct', 'partial');
+
+        // ⭐ Rung nhẹ ô nhập khi sai
+        input.classList.add('wrong-shake');
+        setTimeout(function() { input.classList.remove('wrong-shake'); }, 400);
     }
+}
+/* ⭐ Hiệu ứng khi gõ đúng câu ở chế độ Gõ tự do — giống Ghép từ */
+function showFullAnswerSuccess(inputEl, previewEl, statusEl) {
+    // 1. Text CHÍNH XÁC với emoji
+    statusEl.textContent = '🎉 CHÍNH XÁC!';
+    statusEl.className = 'practice-full-status correct';
+
+    // 2. Ẩn ô nhập
+    if (inputEl) {
+        inputEl.classList.add('celebrate');
+        inputEl.setAttribute('readonly', 'readonly');
+        inputEl.blur();
+    }
+
+    // 3. Thay thế preview bằng giao diện phrase word (dùng hàm có sẵn của Ghép từ)
+    if (previewEl) {
+        // Lưu nội dung preview cũ để khôi phục khi user gõ lại
+        previewEl.classList.add('answer-revealed');
+        previewEl.innerHTML = '';
+
+        // ⭐ Dùng hàm pfGetViDuWords + pfGetViDuPinyinMap có sẵn của Ghép từ
+        if (typeof pfGetViDuWords === 'function' && typeof pfGetViDuPinyinMap === 'function') {
+            var zhWords = pfGetViDuWords();
+            var pinyinMap = pfGetViDuPinyinMap();
+
+            var escHtml = (typeof escapeHtml === 'function') ? escapeHtml : function(s) {
+                return String(s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            };
+
+            var html = '';
+            for (var i = 0; i < zhWords.length; i++) {
+                var w = zhWords[i];
+                var py = pinyinMap[w] || '';
+                html += '<span class="pf-phrase-word" style="--phrase-idx:' + i + '" data-tts-text="' + escHtml(w) + '" title="Bấm để đọc">'
+                    + '<span class="pf-phrase-zh">' + escHtml(w) + '</span>'
+                    + (py ? '<span class="pf-phrase-pinyin">' + escHtml(py) + '</span>' : '')
+                    + '</span>';
+            }
+            previewEl.innerHTML = html;
+
+            // ⭐ Gắn sự kiện đọc tiếng Trung khi click
+            previewEl.querySelectorAll('.pf-phrase-word').forEach(function(el) {
+                el.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    var text = el.getAttribute('data-tts-text') || '';
+                    if (!text) return;
+                    if (typeof pfSpeakText === 'function') {
+                        pfSpeakText(text);
+                    } else if (typeof window.speakPhrase === 'function') {
+                        window.speakPhrase(text, el);
+                    }
+                    el.classList.add('playing');
+                    setTimeout(function() { el.classList.remove('playing'); }, 1200);
+                });
+            });
+        } else {
+            // Fallback nếu module Ghép từ chưa load
+            previewEl.innerHTML = '<span class="pf-assemble-hint" style="color:var(--success)">Chính xác!</span>';
+        }
+
+        // ⭐ Thêm class để CSS glow
+        previewEl.classList.add('pf-preview-correct');
+    }
+
+    // 4. Bắn confetti (dùng hàm có sẵn của Ghép từ)
+    setTimeout(function() {
+        if (typeof pfFireConfetti === 'function') {
+            // Tạm thời gán rect của preview để confetti bắn đúng chỗ
+            var origEl = document.getElementById('pfAssembleAnswer');
+            var tempEl = document.getElementById('pfPreview');
+            // pfFireConfetti dùng pfAssembleAnswer — tạm thời đổi id
+            if (origEl && tempEl) {
+                origEl.id = 'pfAssembleAnswer_temp';
+                tempEl.id = 'pfAssembleAnswer';
+                try {
+                    pfFireConfetti();
+                } finally {
+                    tempEl.id = 'pfPreview';
+                    origEl.id = 'pfAssembleAnswer';
+                }
+            } else {
+                pfFireConfetti();
+            }
+        }
+    }, 300);
+
+    // 5. Hiện nút "Câu tiếp theo" (dùng hàm có sẵn của Ghép từ)
+    setTimeout(function() {
+        if (typeof pfShowNextBtn === 'function') {
+            // Tạm thời chuyển pfAssembleMode sang true để pfShowNextBtn render đúng chỗ
+            var origAssembleMode = false;
+            try { origAssembleMode = (typeof pfAssembleMode !== 'undefined') ? pfAssembleMode : false; } catch(e) {}
+
+            // pfShowNextBtn append vào #pfAssembleMode
+            // Với chế độ Gõ tự do, ta tự tạo nút tương tự
+            showFullAnswerNextBtn();
+        }
+    }, 500);
+
+    // 6. Gỡ celebrate sau 1.2s
+    setTimeout(function() {
+        if (inputEl) inputEl.classList.remove('celebrate');
+    }, 1200);
+}
+
+/* ⭐ Tạo nút "Câu tiếp theo" cho chế độ Gõ tự do */
+function showFullAnswerNextBtn() {
+    // Xóa nút cũ nếu có
+    var oldBtn = document.getElementById('pfFullAnswerNextBtn');
+    if (oldBtn) oldBtn.remove();
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'pfFullAnswerNextBtn';
+    btn.className = 'pf-assemble-next-btn';   // Dùng lại style của Ghép từ
+    btn.innerHTML = '<i class="fas fa-arrow-right"></i> Câu tiếp theo';
+
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.disabled = true;
+        btn.style.pointerEvents = 'none';
+
+        // Reset trạng thái preview
+        resetFullAnswerState();
+
+        // Chuyển câu tiếp
+        if (typeof window.pfNext === 'function') {
+            window.pfNext();
+        }
+    });
+
+    // Chèn sau ô preview
+    var previewEl = document.getElementById('pfPreview');
+    if (previewEl && previewEl.parentNode) {
+        previewEl.parentNode.insertBefore(btn, previewEl.nextSibling);
+    } else {
+        // Fallback: chèn vào wrap input
+        var wrap = document.querySelector('.practice-full-input-wrap');
+        if (wrap) wrap.appendChild(btn);
+    }
+}
+
+/* ⭐ Reset trạng thái sau khi gõ đúng — để sẵn sàng cho câu mới */
+function resetFullAnswerState() {
+    var inputEl = document.getElementById('pfInput');
+    var previewEl = document.getElementById('pfPreview');
+    var statusEl = document.getElementById('pfStatus');
+
+    if (inputEl) {
+        inputEl.value = '';
+        inputEl.removeAttribute('readonly');
+        inputEl.classList.remove('celebrate', 'wrong-shake');
+        inputEl.style.height = 'auto';
+        inputEl.style.overflowY = 'hidden';
+    }
+
+    if (previewEl) {
+        previewEl.classList.remove('answer-revealed', 'pf-preview-correct');
+        previewEl.innerHTML = '';
+    }
+
+    if (statusEl) {
+        statusEl.textContent = '';
+        statusEl.className = 'practice-full-status';
+    }
+
+    var btn = document.getElementById('pfFullAnswerNextBtn');
+    if (btn) btn.remove();
 }
 
 var _activeTooltipWrap = null;
