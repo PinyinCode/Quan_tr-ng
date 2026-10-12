@@ -1045,7 +1045,7 @@ body.practice-full-open .pf-tiktok-float {
 }
 
 .practice-full-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:clamp(.85rem,2vh,1.5rem) clamp(.75rem,2vw,1.25rem) calc(80px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;justify-content:flex-start;scrollbar-width:thin}
-.practice-full-content{width:100%;max-width:var(--pf-content-max,clamp(320px,60vw,700px));display:flex;flex-direction:column;gap:clamp(.65rem,1.5vh,1.25rem);margin-top:auto;margin-bottom:auto;transition:max-width .3s cubic-bezier(.34,1.56,.64,1)}
+.practice-full-content{width:100%;max-width:var(--pf-content-max,clamp(320px,95vw,700px));display:flex;flex-direction:column;gap:clamp(.65rem,1.5vh,1.25rem);margin-top:auto;margin-bottom:auto;transition:max-width .3s cubic-bezier(.34,1.56,.64,1)}
 .practice-full-vi{font-size:clamp(1.15rem,2.2vw,1.65rem);font-weight:600;color:var(--text);text-align:center;line-height:1.45;padding:clamp(.7rem,1.5vh,1.1rem) clamp(.6rem,1.5vw,.9rem);background:linear-gradient(135deg,var(--surface-2),rgba(37,99,235,.06));border-radius:16px;border-left:4px solid var(--primary)}
 @media(min-width:769px){.practice-full-vi{font-size:clamp(1.4rem,2.5vw,2rem)}}
 .practice-full-input-wrap{display:flex;flex-direction:column;gap:clamp(.4rem,.8vh,.65rem)}
@@ -3564,7 +3564,7 @@ def build_ui_html():
     <button class="pf-width-btn" id="pfWidthPlus" type="button" title="Mở rộng khung">
         <i class="fas fa-plus"></i>
     </button>
-    <span class="pf-width-indicator" id="pfWidthIndicator">60%</span>
+    <span class="pf-width-indicator" id="pfWidthIndicator">95%</span>
     <button class="pf-width-btn" id="pfWidthMinus" type="button" title="Thu hẹp khung">
         <i class="fas fa-minus"></i>
     </button>
@@ -7950,7 +7950,7 @@ function initPracticeFull() {
         var MIN_WIDTH_VW = 40;
         var MAX_WIDTH_VW = 100;
         var STEP = 5;
-        var STORAGE_KEY = 'pfContentWidthVW';
+        var STORAGE_KEY = 'pfContentWidthVW_v2';
 
         var ctrl = document.getElementById('pfWidthCtrl');
         var btnPlus = document.getElementById('pfWidthPlus');
@@ -7963,7 +7963,7 @@ function initPracticeFull() {
                 var v = parseFloat(localStorage.getItem(STORAGE_KEY));
                 if (!isNaN(v) && v >= MIN_WIDTH_VW && v <= MAX_WIDTH_VW) return v;
             } catch(e) {}
-            return 60;
+            return 95;
         }
 
         function applyWidth(vw) {
