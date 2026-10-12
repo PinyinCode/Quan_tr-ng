@@ -1,26 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Auto-scale module — Tự động scale + căn chỉnh mọi thành phần UI theo kích thước màn hình.
+Auto-scale module — Tự động scale + căn chỉnh theo KÍCH THƯỚC MÀN HÌNH THỰC.
 
 Quy tắc:
-- Desktop (>768px): dùng --ui-scale + --pf-scale để nhân kích thước
-- Mobile (≤768px): reset scale = 1, giữ nguyên layout gốc
-- Font-size: dùng vmin (min của vw, vh) → tự scale cả 2 chiều
-- Padding/margin: dùng vmin làm base + nhân --scale
-- Căn giữa Practice Full: dùng flex + pseudo-element
-
-Cách dùng trong build.py:
-    from auto_scale import build_auto_scale_css, build_auto_scale_js
-
-    full_css = (
-        ...
-        + build_auto_scale_css()
-    )
-    full_js = (
-        build_config_js(CONFIG)
-        + build_auto_scale_js()
-        + ...
-    )
+- Desktop (>768px): 
+    scale = 60% inch_factor + 40% viewport_factor
+    → Màn 10" vs 16" vs 27" khác nhau rõ rệt
+- Mobile (≤768px): reset scale = 1
+- Font-size: dùng vmin (min của vw, vh) → tự scale
+- Practice Full: căn giữa lệch 30/70 (before 30% - content - after 70%)
 """
 
 
@@ -29,7 +17,9 @@ def build_auto_scale_css():
 :root{--ui-scale:1;--pf-scale:1}
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* CĂN GIỮA NỘI DUNG — Practice Full                            */
+/* CĂN GIỮA NỘI DUNG — Practice Full (lệch 30/70)               */
+/* before = 30% không gian thừa phía trên                        */
+/* after  = 70% không gian thừa phía dưới                        */
 /* ═══════════════════════════════════════════════════════════════ */
 html body .practice-full-body{
     flex:1 1 auto!important;
@@ -43,10 +33,16 @@ html body .practice-full-body{
     padding-bottom:calc(80px + env(safe-area-inset-bottom))!important;
     box-sizing:border-box!important
 }
-html body .practice-full-body::before,
+html body .practice-full-body::before{
+    content:''!important;
+    flex:3 1 0!important;
+    min-height:0!important;
+    display:block!important;
+    pointer-events:none!important
+}
 html body .practice-full-body::after{
     content:''!important;
-    flex:1 1 auto!important;
+    flex:7 1 0!important;
     min-height:0!important;
     display:block!important;
     pointer-events:none!important
@@ -313,8 +309,6 @@ html body .card-practice{
     padding-top:calc(clamp(.5rem,1vmin,.85rem) * var(--ui-scale,1))!important;
     gap:calc(clamp(.35rem,.7vmin,.55rem) * var(--ui-scale,1))!important
 }
-
-/* Card buttons */
 html body .audio-btn,
 html body .write-btn,
 html body .practice-full-btn,
@@ -529,7 +523,7 @@ html body .practice-full-nav .mini-group{
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* TIKTOK FLOAT                                                  */
+/* TIKTOK FLOAT + WIDTH CONTROL                                  */
 /* ═══════════════════════════════════════════════════════════════ */
 html body .pf-tiktok-float{
     padding:calc(clamp(.4rem,.8vmin,.65rem) * var(--pf-scale,1))
@@ -553,10 +547,6 @@ html body .pf-tiktok-name{
 html body .pf-tiktok-badge{
     font-size:calc(clamp(.85rem,1.7vmin,1.25rem) * var(--pf-scale,1))!important
 }
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* WIDTH CONTROL                                                 */
-/* ═══════════════════════════════════════════════════════════════ */
 html body .pf-width-btn{
     width:calc(clamp(36px,5.5vmin,62px) * var(--pf-scale,1))!important;
     height:calc(clamp(36px,5.5vmin,62px) * var(--pf-scale,1))!important;
@@ -792,7 +782,7 @@ html body .onboarding-active-banner .ob-cta-btn{
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* FAVORITES — Nút tim + Float + Filter                         */
+/* FAVORITES                                                     */
 /* ═══════════════════════════════════════════════════════════════ */
 html body .pf-fav-float{
     padding:calc(clamp(.55rem,1.1vmin,.85rem) * var(--ui-scale,1))
@@ -825,8 +815,6 @@ html body .pf-fav-only-count{
     font-size:calc(clamp(.65rem,1.25vmin,.9rem) * var(--ui-scale,1))!important;
     padding:0 calc(clamp(.4rem,.8vmin,.6rem) * var(--ui-scale,1))!important
 }
-
-/* Favorites — Empty state */
 html body .fav-empty{
     padding:calc(clamp(2.5rem,5vmin,4rem) * var(--ui-scale,1))
              calc(clamp(1.5rem,3vmin,2.5rem) * var(--ui-scale,1))!important
@@ -854,8 +842,6 @@ html body .fav-locked-empty .fav-empty-cta{
     font-size:calc(clamp(.82rem,1.55vmin,1.1rem) * var(--ui-scale,1))!important;
     gap:calc(clamp(.35rem,.7vmin,.55rem) * var(--ui-scale,1))!important
 }
-
-/* Favorites — Toast */
 html body .fav-toast{
     padding:calc(clamp(.65rem,1.3vmin,1rem) * var(--ui-scale,1))
              calc(clamp(1.1rem,2.2vmin,1.65rem) * var(--ui-scale,1))!important;
@@ -865,8 +851,6 @@ html body .fav-toast{
 html body .fav-toast i{
     font-size:calc(clamp(.95rem,1.8vmin,1.35rem) * var(--ui-scale,1))!important
 }
-
-/* Favorites — Filter button */
 html body .pf-fav-filter-btn{
     padding:calc(clamp(.28rem,.6vmin,.45rem) * var(--pf-scale,1))
              calc(clamp(.6rem,1.2vmin,.9rem) * var(--pf-scale,1))!important;
@@ -882,8 +866,6 @@ html body .pf-fav-filter-badge{
     font-size:calc(clamp(.58rem,1.1vmin,.82rem) * var(--pf-scale,1))!important;
     padding:0 calc(clamp(.3rem,.6vmin,.45rem) * var(--pf-scale,1))!important
 }
-
-/* Favorites — Summary bar */
 html body .pf-fav-filter-summary{
     padding:calc(clamp(.4rem,.8vmin,.6rem) * var(--pf-scale,1))
              calc(clamp(.75rem,1.5vmin,1.15rem) * var(--pf-scale,1))
@@ -909,8 +891,6 @@ html body .pf-fav-summary-clear{
              calc(clamp(.55rem,1.1vmin,.85rem) * var(--pf-scale,1))!important;
     font-size:calc(clamp(.6rem,1.15vmin,.85rem) * var(--pf-scale,1))!important
 }
-
-/* Favorites — Filter modal */
 html body .fav-filter-box{
     max-width:calc(clamp(500px,65vmin,760px) * var(--pf-scale,1))!important;
     max-height:min(85vh,calc(640px * var(--pf-scale,1)))!important;
@@ -1329,8 +1309,6 @@ html body .chat-limit-banner .clb-btn{
              calc(clamp(.65rem,1.3vmin,1rem) * var(--ui-scale,1))!important;
     font-size:calc(clamp(.7rem,1.35vmin,1rem) * var(--ui-scale,1))!important
 }
-
-/* Admin chat thread */
 html body .admin-chat-thread{
     padding:calc(clamp(.65rem,1.3vmin,1rem) * var(--ui-scale,1))
              calc(clamp(.75rem,1.5vmin,1.15rem) * var(--ui-scale,1))!important;
@@ -1357,8 +1335,6 @@ html body .admin-chat-thread .t-badge{
     height:calc(clamp(20px,3vmin,34px) * var(--ui-scale,1))!important;
     font-size:calc(clamp(.62rem,1.2vmin,.88rem) * var(--ui-scale,1))!important
 }
-
-/* Dropdown chat preview */
 html body .dropdown-chat-preview{
     padding:calc(clamp(.6rem,1.2vmin,.9rem) * var(--ui-scale,1))
              calc(clamp(.7rem,1.4vmin,1.1rem) * var(--ui-scale,1))!important;
@@ -1379,10 +1355,6 @@ html body .dropdown-chat-preview .dcp-badge{
     padding:calc(clamp(.08rem,.15vmin,.12rem) * var(--ui-scale,1))
              calc(clamp(.3rem,.6vmin,.45rem) * var(--ui-scale,1))!important
 }
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* QUOTA DASHBOARD                                               */
-/* ═══════════════════════════════════════════════════════════════ */
 html body .quota-grid{
     gap:calc(clamp(.65rem,1.3vmin,1rem) * var(--ui-scale,1))!important;
     margin-bottom:calc(clamp(.85rem,1.7vmin,1.3rem) * var(--ui-scale,1))!important
@@ -1429,8 +1401,6 @@ html body .quota-history-table td{
     padding:calc(clamp(.38rem,.75vmin,.6rem) * var(--ui-scale,1))
              calc(clamp(.55rem,1.1vmin,.85rem) * var(--ui-scale,1))!important
 }
-
-/* Online user row */
 html body .online-user-row{
     padding:calc(clamp(.55rem,1.1vmin,.85rem) * var(--ui-scale,1))
              calc(clamp(.7rem,1.4vmin,1.1rem) * var(--ui-scale,1))!important;
@@ -1451,8 +1421,6 @@ html body .ou-chat-btn{
     height:calc(clamp(30px,4.5vmin,52px) * var(--ui-scale,1))!important;
     font-size:calc(clamp(.78rem,1.5vmin,1.1rem) * var(--ui-scale,1))!important
 }
-
-/* Chat toast */
 html body .chat-toast{
     padding:calc(clamp(.75rem,1.5vmin,1.15rem) * var(--ui-scale,1))
              calc(clamp(1.2rem,2.4vmin,1.8rem) * var(--ui-scale,1))!important;
@@ -1460,7 +1428,7 @@ html body .chat-toast{
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* SOCIAL — Zalo + TikTok                                        */
+/* SOCIAL                                                        */
 /* ═══════════════════════════════════════════════════════════════ */
 html body .zalo-btn,
 html body .tiktok-float-btn{
@@ -1563,7 +1531,7 @@ html body .dropdown-tiktok{
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* ACCOUNTS — User Menu + Login + Admin + Renewal                */
+/* ACCOUNTS                                                      */
 /* ═══════════════════════════════════════════════════════════════ */
 html body .user-avatar{
     width:calc(clamp(38px,5vmin,58px) * var(--ui-scale,1))!important;
@@ -1805,7 +1773,7 @@ html body .renewal-btn{
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* ASSEMBLE — Ghép từ                                            */
+/* ASSEMBLE                                                      */
 /* ═══════════════════════════════════════════════════════════════ */
 html body .pf-assemble-info{
     padding:calc(clamp(.4rem,.85vmin,.65rem) * var(--pf-scale,1))
@@ -1920,7 +1888,7 @@ html body .pf-phrase-word .pf-phrase-pinyin{
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* MOBILE — Reset scale = 1, giữ nguyên layout gốc               */
+/* MOBILE — Reset scale = 1                                      */
 /* ═══════════════════════════════════════════════════════════════ */
 @media (max-width:768px){
     html body .practice-full-body{
@@ -1930,11 +1898,9 @@ html body .pf-phrase-word .pf-phrase-pinyin{
     html body .practice-full-content{
         max-width:100%!important
     }
-    /* Reset toàn bộ scale trên mobile để tránh vỡ layout */
     html{--ui-scale:1!important;--pf-scale:1!important}
 }
 """
-    return
 
 
 def build_auto_scale_js():
@@ -1942,84 +1908,132 @@ def build_auto_scale_js():
 (function setupAutoScale(){
 'use strict';
 
-var UI_BASE_HEIGHT=900;
-var UI_MIN_SCALE=0.9;
-var UI_MAX_SCALE=1.35;
-var PF_BASE_HEIGHT=850;
-var PF_MIN_SCALE=0.85;
-var PF_MAX_SCALE=1.5;
+/* ────────────────────────────────────────────────────────────── */
+/* CẤU HÌNH SCALE                                                */
+/* ────────────────────────────────────────────────────────────── */
+var UI_MIN_SCALE = 0.85;
+var UI_MAX_SCALE = 1.6;
+var PF_MIN_SCALE = 0.8;
+var PF_MAX_SCALE = 1.8;
 
-function clamp(val,min,max){
-    return Math.max(min,Math.min(max,val));
+var UI_BASE_HEIGHT = 900;
+var PF_BASE_HEIGHT = 850;
+
+/* Tỉ lệ kết hợp: 60% inch + 40% viewport */
+var INCH_WEIGHT = 0.6;
+var VH_WEIGHT = 0.4;
+
+/* Base inch: 15 inch = factor 1.0 */
+var INCH_BASE = 15;
+
+/* DPI ước lượng (CSS pixel ~ 96, nhưng laptop hiện đại ~ 110) */
+var DPI_ESTIMATE = 110;
+
+function clamp(val, min, max){
+    return Math.max(min, Math.min(max, val));
 }
 
+/* ────────────────────────────────────────────────────────────── */
+/* ƯỚC LƯỢNG KÍCH THƯỚC MÀN HÌNH THEO INCH                      */
+/* ────────────────────────────────────────────────────────────── */
+function estimateScreenInches(){
+    try {
+        var w = window.screen.width || 1920;
+        var h = window.screen.height || 1080;
+        var dpr = window.devicePixelRatio || 1;
+
+        /* Đường chéo pixel vật lý */
+        var diagPx = Math.sqrt(w * w + h * h) * dpr;
+
+        /* Chia cho DPI để ra inch */
+        var inches = diagPx / DPI_ESTIMATE;
+
+        /* Clamp để tránh giá trị vô lý */
+        return clamp(inches, 8, 40);
+    } catch(e) {
+        return 15; /* fallback */
+    }
+}
+
+/* ────────────────────────────────────────────────────────────── */
+/* TÍNH SCALE                                                    */
+/* ────────────────────────────────────────────────────────────── */
 function computeScales(){
-    if(window.innerWidth<769){
+    /* Mobile: reset về 1 */
+    if(window.innerWidth < 769){
         document.documentElement.style.removeProperty('--ui-scale');
         document.documentElement.style.removeProperty('--pf-scale');
         return;
     }
-    var vh=window.innerHeight;
-    var uiScale=clamp(vh/UI_BASE_HEIGHT,UI_MIN_SCALE,UI_MAX_SCALE);
-    var pfScale=clamp(vh/PF_BASE_HEIGHT,PF_MIN_SCALE,PF_MAX_SCALE);
-    document.documentElement.style.setProperty('--ui-scale',uiScale.toFixed(3));
-    document.documentElement.style.setProperty('--pf-scale',pfScale.toFixed(3));
+
+    var vh = window.innerHeight;
+    var inches = estimateScreenInches();
+
+    /* ⭐ Scale theo viewport height */
+    var uiVhScale = clamp(vh / UI_BASE_HEIGHT, UI_MIN_SCALE, UI_MAX_SCALE);
+    var pfVhScale = clamp(vh / PF_BASE_HEIGHT, PF_MIN_SCALE, PF_MAX_SCALE);
+
+    /* ⭐ Scale theo inch */
+    var inchFactor = clamp(inches / INCH_BASE, 0.85, 1.5);
+
+    /* ⭐ Kết hợp có trọng số: 60% inch + 40% viewport */
+    var uiScale = (inchFactor * INCH_WEIGHT) + (uiVhScale * VH_WEIGHT);
+    var pfScale = (inchFactor * INCH_WEIGHT) + (pfVhScale * VH_WEIGHT);
+
+    /* Clamp lần cuối */
+    uiScale = clamp(uiScale, UI_MIN_SCALE, UI_MAX_SCALE);
+    pfScale = clamp(pfScale, PF_MIN_SCALE, PF_MAX_SCALE);
+
+    document.documentElement.style.setProperty('--ui-scale', uiScale.toFixed(3));
+    document.documentElement.style.setProperty('--pf-scale', pfScale.toFixed(3));
+
+    console.log('[AutoScale] inches=' + inches.toFixed(1) +
+                ' vh=' + vh +
+                ' inchFactor=' + inchFactor.toFixed(3) +
+                ' → ui=' + uiScale.toFixed(3) +
+                ' pf=' + pfScale.toFixed(3));
 }
 
+/* Chạy ngay khi load */
 computeScales();
 
-var resizeTimer=null;
-window.addEventListener('resize',function(){
+/* Re-calc khi resize (throttled 150ms) */
+var resizeTimer = null;
+window.addEventListener('resize', function(){
     clearTimeout(resizeTimer);
-    resizeTimer=setTimeout(computeScales,150);
+    resizeTimer = setTimeout(computeScales, 150);
 });
 
-window.addEventListener('orientationchange',function(){
-    setTimeout(computeScales,300);
+/* Re-calc khi orientation change */
+window.addEventListener('orientationchange', function(){
+    setTimeout(computeScales, 300);
 });
 
-document.addEventListener('click',function(e){
-    if(!e.target||!e.target.closest) return;
+/* Re-calc khi mở Practice Full hoặc đổi câu (view height thay đổi) */
+document.addEventListener('click', function(e){
+    if(!e.target || !e.target.closest) return;
     if(e.target.closest('#pfNextBtn,#pfPrevBtn,.practice-full-btn,#pfQuickNav')){
-        setTimeout(computeScales,100);
+        setTimeout(computeScales, 100);
     }
 });
 
-console.log('[AutoScale] Base: vh='+window.innerHeight+
-            ' → ui-scale='+(window.innerHeight/UI_BASE_HEIGHT).toFixed(3)+
-            ', pf-scale='+(window.innerHeight/PF_BASE_HEIGHT).toFixed(3));
+console.log('[AutoScale] Module loaded — trọng số ' +
+            (INCH_WEIGHT * 100) + '% inch + ' +
+            (VH_WEIGHT * 100) + '% viewport');
 })();
 """
 
 
 if __name__ == "__main__":
     css = build_auto_scale_css()
-    js  = build_auto_scale_js()
+    js = build_auto_scale_js()
     print("="*60)
     print("AUTO-SCALE MODULE — Kiểm tra")
     print("="*60)
     print("CSS: {} ký tự ({} dòng)".format(len(css), len(css.splitlines())))
     print("JS:  {} ký tự ({} dòng)".format(len(js), len(js.splitlines())))
     print()
-    print("Modules đã tích hợp:")
-    print("  1. Căn giữa Practice Full (flex + pseudo)")
-    print("  2. Header chính")
-    print("  3. Dataset selector")
-    print("  4. Search + filter")
-    print("  5. FAB group")
-    print("  6. Card chính")
-    print("  7. Practice Full (header/filters/content/nav)")
-    print("  8. TikTok float + width control")
-    print("  9. Voice modal")
-    print(" 10. Writer modal")
-    print(" 11. Onboarding modal + banner")
-    print(" 12. Favorites (float + filter + modal)")
-    print(" 13. Admin Chat Manager")
-    print(" 14. Chat Support")
-    print(" 15. Quota dashboard")
-    print(" 16. Social (Zalo + TikTok)")
-    print(" 17. Accounts (User menu + Login + Admin + Renewal)")
-    print(" 18. Assemble (Ghép từ)")
-    print(" 19. Mobile reset scale = 1")
-    print()
+    print("Căn giữa: before 30% - content - after 70%")
+    print("Scale: 60% inch + 40% viewport")
+    print("Modules tích hợp: 19")
     print("✅ Module OK")
