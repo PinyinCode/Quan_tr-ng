@@ -9,13 +9,12 @@ Quy tắc:
 - Mobile (≤768px): reset scale = 1
 - Font-size: dùng vmin (min của vw, vh) → tự scale
 - Practice Full: căn giữa lệch 30/70 (before 30% - content - after 70%)
-- Nút +/- trong Practice Full điều khiển userScale (nhân với base scale)
 """
 
 
 def build_auto_scale_css():
     return r"""
-:root{--ui-scale:1;--pf-scale:1;--ui-scale-base:1;--pf-scale-base:1}
+:root{--ui-scale:1;--pf-scale:1}
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* CĂN GIỮA NỘI DUNG — Practice Full (lệch 30/70)               */
@@ -1901,6 +1900,113 @@ html body .pf-phrase-word .pf-phrase-pinyin{
     }
     html{--ui-scale:1!important;--pf-scale:1!important}
 }
+html body .practice-full-body{
+justify-content:flex-start!important;
+padding-top:1rem!important
+}
+html body .practice-full-body::before{
+flex:0 1 0!important;
+min-height:0!important
+}
+html body .practice-full-body::after{
+flex:0 1 0!important;
+min-height:0!important
+}
+html body .practice-full-content{
+flex:0 0 auto!important;
+margin:0!important;
+overflow:visible!important
+}
+html body .practice-full-input-wrap{
+width:100%!important;
+flex:0 0 auto!important;
+display:flex!important;
+flex-direction:column!important;
+gap:calc(clamp(.45rem,1vmin,.75rem) * var(--pf-scale,1))!important
+}
+html body .practice-input-row{
+width:100%!important;
+flex:0 0 auto!important;
+display:flex!important;
+align-items:stretch!important
+}
+html body .practice-full-input{
+width:100%!important;
+flex:1 1 auto!important;
+box-sizing:border-box!important;
+transition:none!important
+}
+html body .practice-speak-btn{
+flex:0 0 auto!important;
+align-self:stretch!important
+}
+html body .char-preview{
+width:100%!important;
+flex:0 0 auto!important;
+box-sizing:border-box!important
+}
+html body .practice-full-status{
+width:100%!important;
+flex:0 0 auto!important
+}
+html body .reveal-actions{
+width:100%!important;
+flex:0 0 auto!important;
+box-sizing:border-box!important
+}
+html body .answer-reveal{
+width:100%!important;
+flex:0 0 auto!important;
+box-sizing:border-box!important
+}
+html body .pf-assemble-mode{
+width:100%!important;
+flex:0 0 auto!important;
+box-sizing:border-box!important
+}
+html body .pf-assemble-info{
+width:100%!important;
+flex:0 0 auto!important;
+box-sizing:border-box!important
+}
+html body .pf-assemble-answer{
+width:100%!important;
+flex:0 0 auto!important;
+box-sizing:border-box!important
+}
+html body .pf-assemble-pool{
+width:100%!important;
+flex:0 0 auto!important;
+box-sizing:border-box!important
+}
+html body .pf-assemble-actions{
+width:100%!important;
+flex:0 0 auto!important;
+box-sizing:border-box!important
+}
+html body .pf-assemble-next-btn{
+flex:0 0 auto!important;
+align-self:center!important
+}
+@media (max-width:768px){
+html body .practice-full-body{
+padding-top:.75rem!important
+}
+}
+html body .practice-full-body::before{flex:0 1 0!important;min-height:0!important}
+html body .practice-full-body::after{flex:0 1 0!important;min-height:0!important}
+html body .practice-full-body{justify-content:flex-start!important;padding-top:clamp(.5rem,1vh,.85rem)!important;padding-bottom:calc(72px + env(safe-area-inset-bottom))!important}
+html body .practice-full-content{gap:calc(clamp(.4rem,.9vh,.7rem) * var(--pf-scale,1))!important}
+html body .practice-full-input-wrap{gap:calc(clamp(.3rem,.7vh,.5rem) * var(--pf-scale,1))!important}
+html body .reveal-actions{margin-top:calc(clamp(.15rem,.35vh,.25rem) * var(--pf-scale,1))!important;gap:calc(clamp(.35rem,.7vmin,.55rem) * var(--pf-scale,1))!important}
+html body .answer-reveal{padding:calc(clamp(.55rem,1.1vmin,.85rem) * var(--pf-scale,1))!important;gap:calc(clamp(.45rem,.9vmin,.7rem) * var(--pf-scale,1))!important}
+html body .practice-full-vi{padding:calc(clamp(.55rem,1.2vh,.9rem) * var(--pf-scale,1)) calc(clamp(.7rem,1.6vw,1.1rem) * var(--pf-scale,1))!important}
+html body .char-preview{min-height:calc(clamp(26px,4vmin,44px) * var(--pf-scale,1))!important;padding:calc(clamp(.28rem,.7vmin,.55rem) * var(--pf-scale,1))!important}
+html body .practice-full-status{min-height:calc(clamp(1rem,1.8vmin,1.4rem) * var(--pf-scale,1))!important;font-size:calc(clamp(.8rem,1.55vmin,1.15rem) * var(--pf-scale,1))!important}
+@media (max-width:768px){
+html body .practice-full-body{padding-top:.5rem!important;padding-bottom:calc(66px + env(safe-area-inset-bottom))!important}
+html body .practice-full-content{gap:.5rem!important}
+}
 """
 
 
@@ -1930,11 +2036,6 @@ var INCH_BASE = 15;
 /* DPI ước lượng (CSS pixel ~ 96, nhưng laptop hiện đại ~ 110) */
 var DPI_ESTIMATE = 110;
 
-/* User scale từ nút +/- (lưu localStorage) */
-var USER_SCALE_KEY = 'pfUserScale_v1';
-var USER_MIN = 0.7;
-var USER_MAX = 1.6;
-
 function clamp(val, min, max){
     return Math.max(min, Math.min(max, val));
 }
@@ -1962,17 +2063,6 @@ function estimateScreenInches(){
 }
 
 /* ────────────────────────────────────────────────────────────── */
-/* ĐỌC USER SCALE TỪ LOCALSTORAGE                                */
-/* ────────────────────────────────────────────────────────────── */
-function getUserScale(){
-    try {
-        var v = parseFloat(localStorage.getItem(USER_SCALE_KEY));
-        if (!isNaN(v) && v >= USER_MIN && v <= USER_MAX) return v;
-    } catch(e) {}
-    return 1.0;
-}
-
-/* ────────────────────────────────────────────────────────────── */
 /* TÍNH SCALE                                                    */
 /* ────────────────────────────────────────────────────────────── */
 function computeScales(){
@@ -1980,8 +2070,6 @@ function computeScales(){
     if(window.innerWidth < 769){
         document.documentElement.style.removeProperty('--ui-scale');
         document.documentElement.style.removeProperty('--pf-scale');
-        document.documentElement.style.removeProperty('--ui-scale-base');
-        document.documentElement.style.removeProperty('--pf-scale-base');
         return;
     }
 
@@ -1996,7 +2084,10 @@ function computeScales(){
     var inchFactor = clamp(inches / INCH_BASE, 0.85, 1.5);
 
     /* ⭐ Kết hợp có trọng số: 60% inch + 40% viewport */
-    var uiBase = clamp(
+    var uiScale = (inchFactor * INCH_WEIGHT) + (uiVhScale * VH_WEIGHT);
+    var pfScale = (inchFactor * INCH_WEIGHT) + (pfVhScale * VH_WEIGHT);
+
+   var uiBase = clamp(
         (inchFactor * INCH_WEIGHT) + (uiVhScale * VH_WEIGHT),
         UI_MIN_SCALE, UI_MAX_SCALE
     );
@@ -2011,18 +2102,20 @@ function computeScales(){
     rootStyle.setProperty('--pf-scale-base', pfBase.toFixed(3));
 
     /* ⭐ Đọc user-scale (từ nút +/-), mặc định 1.0 */
-    var userScale = getUserScale();
+    var userScale = 1.0;
+    try {
+        var saved = parseFloat(localStorage.getItem('pfUserScale_v1'));
+        if (!isNaN(saved) && saved >= 0.7 && saved <= 1.6) userScale = saved;
+    } catch(e) {}
 
     /* ⭐ ÁP DỤNG: base × user */
     rootStyle.setProperty('--ui-scale', (uiBase * userScale).toFixed(3));
     rootStyle.setProperty('--pf-scale', (pfBase * userScale).toFixed(3));
-
     console.log('[AutoScale] inches=' + inches.toFixed(1) +
                 ' vh=' + vh +
-                ' | base: ui=' + uiBase.toFixed(3) + ' pf=' + pfBase.toFixed(3) +
-                ' | user=' + userScale.toFixed(2) +
-                ' | final: ui=' + (uiBase * userScale).toFixed(3) +
-                ' pf=' + (pfBase * userScale).toFixed(3));
+                ' inchFactor=' + inchFactor.toFixed(3) +
+                ' → ui=' + uiScale.toFixed(3) +
+                ' pf=' + pfScale.toFixed(3));
 }
 
 /* Chạy ngay khi load */
@@ -2048,9 +2141,6 @@ document.addEventListener('click', function(e){
     }
 });
 
-/* ⭐ EXPOSE hàm re-apply scale để nút +/- gọi lại */
-window.__autoScaleRecompute = computeScales;
-
 console.log('[AutoScale] Module loaded — trọng số ' +
             (INCH_WEIGHT * 100) + '% inch + ' +
             (VH_WEIGHT * 100) + '% viewport');
@@ -2069,7 +2159,5 @@ if __name__ == "__main__":
     print()
     print("Căn giữa: before 30% - content - after 70%")
     print("Scale: 60% inch + 40% viewport")
-    print("Base scale lưu vào --ui-scale-base, --pf-scale-base")
-    print("User scale (nút +/-) lưu vào localStorage")
     print("Modules tích hợp: 19")
     print("✅ Module OK")
