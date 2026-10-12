@@ -1045,7 +1045,7 @@ body.practice-full-open .pf-tiktok-float {
 }
 
 .practice-full-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:clamp(.85rem,2vh,1.5rem) clamp(.75rem,2vw,1.25rem) calc(80px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;justify-content:flex-start;scrollbar-width:thin}
-.practice-full-content{width:100%;max-width:clamp(320px,60vw,700px);display:flex;flex-direction:column;gap:clamp(.65rem,1.5vh,1.25rem);margin-top:auto;margin-bottom:auto}
+.practice-full-content{width:100%;max-width:var(--pf-content-max,clamp(320px,60vw,700px));display:flex;flex-direction:column;gap:clamp(.65rem,1.5vh,1.25rem);margin-top:auto;margin-bottom:auto;transition:max-width .3s cubic-bezier(.34,1.56,.64,1)}
 .practice-full-vi{font-size:clamp(1.15rem,2.2vw,1.65rem);font-weight:600;color:var(--text);text-align:center;line-height:1.45;padding:clamp(.7rem,1.5vh,1.1rem) clamp(.6rem,1.5vw,.9rem);background:linear-gradient(135deg,var(--surface-2),rgba(37,99,235,.06));border-radius:16px;border-left:4px solid var(--primary)}
 @media(min-width:769px){.practice-full-vi{font-size:clamp(1.4rem,2.5vw,2rem)}}
 .practice-full-input-wrap{display:flex;flex-direction:column;gap:clamp(.4rem,.8vh,.65rem)}
@@ -3341,6 +3341,14 @@ body.practice-full-open .pf-tiktok-float {
     opacity: .5;
     animation: none;
 }
+.pf-width-ctrl{position:fixed;top:50%;right:clamp(8px,1.5vw,16px);transform:translateY(-50%);display:flex;flex-direction:column;gap:.5rem;z-index:2600;pointer-events:none;opacity:0;transition:opacity .25s ease}
+.practice-full-modal.show .pf-width-ctrl{opacity:1;pointer-events:auto}
+.pf-width-btn{width:clamp(36px,3.5vw,42px);height:clamp(36px,3.5vw,42px);border-radius:50%;border:1.5px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:clamp(.9rem,1.1vw,1rem);font-weight:900;transition:transform .2s cubic-bezier(.34,1.56,.64,1),background .15s,color .15s,border-color .15s;box-shadow:0 4px 14px rgba(15,23,42,.12);padding:0;font-family:inherit;user-select:none}
+.pf-width-btn:hover{background:var(--primary-light);color:var(--primary-dark);border-color:var(--primary);transform:scale(1.1)}
+.pf-width-btn:active{transform:scale(.95)}
+.pf-width-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.pf-width-indicator{font-size:.62rem;font-weight:800;color:var(--text-3);background:var(--surface-2);border:1px solid var(--border);border-radius:50px;padding:.15rem .4rem;text-align:center;min-width:34px;line-height:1;letter-spacing:.02em}
+@media (max-width:768px){.pf-width-ctrl{display:none!important}}
 """
 def build_ui_html():
     return r"""
@@ -3562,6 +3570,15 @@ def build_ui_html():
 </span>
 <i class="fab fa-tiktok pf-tiktok-badge"></i>
 </a>
+<div class="pf-width-ctrl" id="pfWidthCtrl">
+    <button class="pf-width-btn" id="pfWidthPlus" type="button" title="Mở rộng khung">
+        <i class="fas fa-plus"></i>
+    </button>
+    <span class="pf-width-indicator" id="pfWidthIndicator">60%</span>
+    <button class="pf-width-btn" id="pfWidthMinus" type="button" title="Thu hẹp khung">
+        <i class="fas fa-minus"></i>
+    </button>
+</div>
 </div>
 <div class="voice-modal" id="voiceModal">
     <div class="voice-box">
@@ -7939,6 +7956,55 @@ function initPracticeFull() {
             });
         }
     }
+    (function setupWidthControl() {
+        var MIN_WIDTH_VW = 40;
+        var MAX_WIDTH_VW = 100;
+        var STEP = 5;
+        var STORAGE_KEY = 'pfContentWidthVW';
+
+        var ctrl = document.getElementById('pfWidthCtrl');
+        var btnPlus = document.getElementById('pfWidthPlus');
+        var btnMinus = document.getElementById('pfWidthMinus');
+        var indicator = document.getElementById('pfWidthIndicator');
+        if (!ctrl || !btnPlus || !btnMinus || !indicator) return;
+
+        function getSaved() {
+            try {
+                var v = parseFloat(localStorage.getItem(STORAGE_KEY));
+                if (!isNaN(v) && v >= MIN_WIDTH_VW && v <= MAX_WIDTH_VW) return v;
+            } catch(e) {}
+            return 60;
+        }
+
+        function applyWidth(vw) {
+            document.documentElement.style.setProperty('--pf-content-max', vw + 'vw');
+            indicator.textContent = Math.round(vw) + '%';
+            btnPlus.disabled = (vw >= MAX_WIDTH_VW);
+            btnMinus.disabled = (vw <= MIN_WIDTH_VW);
+            try { localStorage.setItem(STORAGE_KEY, String(vw)); } catch(e) {}
+        }
+
+        var currentVW = getSaved();
+        applyWidth(currentVW);
+
+        btnPlus.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (currentVW >= MAX_WIDTH_VW) return;
+            currentVW = Math.min(MAX_WIDTH_VW, currentVW + STEP);
+            applyWidth(currentVW);
+        });
+
+        btnMinus.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (currentVW <= MIN_WIDTH_VW) return;
+            currentVW = Math.max(MIN_WIDTH_VW, currentVW - STEP);
+            applyWidth(currentVW);
+        });
+
+        console.log('[PF Width] Control setup OK — current: ' + currentVW + '%');
+    })();
 }
 function pfBuildDatasetSelect() {
     var sel = $('pfDatasetSelect');
