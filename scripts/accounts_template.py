@@ -3619,11 +3619,11 @@ async function refreshCurrentUser() {
 async function autoExpireOldRenewals() {
     if (!db) return;
     try {
-        var cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        var cutoffMs = Date.now() - 24 * 60 * 60 * 1000;
+
         var snap = await db.collection('renewal_requests')
             .where('status', 'in', ['pending', 'user_paid'])
-            .where('createdAt', '<', firebase.firestore.Timestamp.fromDate(cutoff))
-            .limit(50)
+            .limit(200)
             .get();
 
         if (snap.empty) return;
@@ -3631,6 +3631,18 @@ async function autoExpireOldRenewals() {
         var batch = db.batch();
         var count = 0;
         snap.forEach(function(doc) {
+            var data = doc.data();
+            if (!data.createdAt) return;
+            var createdMs = 0;
+            try {
+                if (typeof data.createdAt.toDate === 'function') {
+                    createdMs = data.createdAt.toDate().getTime();
+                } else if (data.createdAt.seconds) {
+                    createdMs = data.createdAt.seconds * 1000;
+                }
+            } catch(e) { return; }
+            if (!createdMs || createdMs >= cutoffMs) return;
+
             batch.update(doc.ref, {
                 status: 'expired',
                 expiredAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -3639,13 +3651,16 @@ async function autoExpireOldRenewals() {
             count++;
         });
 
-        await batch.commit();
-        console.log('[Auto-expire] Đã hủy ' + count + ' lệnh gia hạn quá 24h');
+        if (count > 0) {
+            await batch.commit();
+            console.log('[Auto-expire] Đã hủy ' + count + ' lệnh gia hạn quá 24h');
+        } else {
+            console.log('[Auto-expire] Không có lệnh nào quá hạn');
+        }
     } catch(e) {
-        console.error('[Auto-expire] Lỗi:', e);
+        console.warn('[Auto-expire] Lỗi (không quan trọng):', e.message);
     }
 }
-
 function scheduleAutoExpire() {
     setTimeout(autoExpireOldRenewals, 10000);
     setInterval(autoExpireOldRenewals, 60 * 60 * 1000);
