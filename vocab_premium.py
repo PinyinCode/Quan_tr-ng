@@ -603,27 +603,8 @@ def build_vocab_css(vocab_id="tu-vung"):
     position: relative;
     overflow: visible;
     font-weight: 800;
-    padding-left: 2.5rem;
     box-shadow: 0 0 0 1px rgba(245, 158, 11, .2), 0 2px 8px rgba(245, 158, 11, .15);
 }
-.ds-btn[data-dataset="__VOCAB_ID__"]::before {
-    content: '👑';
-    position: absolute;
-    left: .6rem;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 1.1rem;
-    line-height: 1;
-    z-index: 3;
-    filter: drop-shadow(0 2px 4px rgba(245, 158, 11, .8));
-    animation: crownTabFloat 3s ease-in-out infinite;
-    pointer-events: none;
-}
-@keyframes crownTabFloat {
-    0%, 100% { transform: translateY(-50%) rotate(0deg); }
-    50%      { transform: translateY(-50%) rotate(-10deg) scale(1.1); }
-}
-.ds-btn[data-dataset="__VOCAB_ID__"] > i:first-child { display: none; }
 .ds-btn[data-dataset="__VOCAB_ID__"]:hover {
     background: linear-gradient(135deg,
         rgba(251, 191, 36, .22) 0%,
@@ -640,9 +621,6 @@ def build_vocab_css(vocab_id="tu-vung"):
     border-color: transparent;
     box-shadow: 0 0 0 2px rgba(245, 158, 11, .7), 0 6px 22px rgba(245, 158, 11, .5);
     text-shadow: 0 1px 2px rgba(0, 0, 0, .2);
-}
-.ds-btn[data-dataset="__VOCAB_ID__"].active::before {
-    filter: drop-shadow(0 0 8px rgba(255, 255, 255, .9));
 }
 [data-theme="dark"] .ds-btn[data-dataset="__VOCAB_ID__"] {
     background: linear-gradient(135deg,
@@ -689,10 +667,6 @@ def build_vocab_css(vocab_id="tu-vung"):
     border-color: rgba(220, 38, 38, .4);
     color: #991b1b;
     opacity: .85;
-}
-.ds-btn[data-dataset="__VOCAB_ID__"].vocab-locked::before {
-    filter: drop-shadow(0 2px 4px rgba(220, 38, 38, .6)) grayscale(.5);
-    opacity: .7;
 }
 .ds-btn[data-dataset="__VOCAB_ID__"].vocab-locked:hover { opacity: 1; border-color: #dc2626; }
 .ds-btn[data-dataset="__VOCAB_ID__"].vocab-locked .ds-vocab-badge { display: none; }
@@ -812,8 +786,6 @@ def build_vocab_css(vocab_id="tu-vung"):
     color: #b45309; font-weight: 700;
 }
 [data-theme="dark"] .card-mnemonic-body .hint { color: #fcd34d; }
-/* ========== CỤM HÁN BẤM ĐƯỢC TRONG MẸO NHỚ ========== */
-/* Style y hệt .card-example-zh nhưng dùng cho câu KHÔNG nằm trong block 📎 Ví dụ */
 .card-mnemonic-body .card-char-speakable {
     font-family: var(--font-zh);
     font-weight: 600;
@@ -854,8 +826,6 @@ def build_vocab_css(vocab_id="tu-vung"):
     color: #fbbf24;
     border-bottom-color: #fbbf24;
 }
-
-/* Fix cho vocab-mode compact (câu trong mẹo nhớ nhỏ hơn) */
 body[data-vocab-mode="1"] .card-mnemonic-body .card-char-speakable {
     font-size: .9rem;
 }
@@ -1150,8 +1120,6 @@ body[data-vocab-mode="1"] .card-mnemonic-body .card-example-vi {
 }
 
 @media (max-width: 500px) {
-    .ds-btn[data-dataset="__VOCAB_ID__"] { padding-left: 2.2rem; }
-    .ds-btn[data-dataset="__VOCAB_ID__"]::before { font-size: 1rem; left: .5rem; }
     .card-radical, .card-mnemonic { padding: .6rem .7rem; margin-top: .6rem; }
     .card-radical-box { width: 46px; height: 46px; font-size: 1.45rem; }
     .card-mnemonic-body { font-size: .78rem; }
