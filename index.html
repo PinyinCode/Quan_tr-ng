@@ -24491,6 +24491,14 @@ function favNotifyChanged() {
         headerCountEl.textContent = count + ' câu';
     }
 
+    /* ⭐⭐⭐ Cập nhật label nút Lọc (số câu yêu thích hoặc số-khớp/tổng) */
+    if (typeof favUpdateFilterBtnVisibility === 'function') {
+        favUpdateFilterBtnVisibility();
+    }
+    if (typeof favUpdateFilterBtnBadge === 'function') {
+        favUpdateFilterBtnBadge();
+    }
+
     /* ⭐⭐⭐ Nếu đang ở tab Yêu thích → render lại NGAY */
     if (favState.currentView && favState.filteringOnly) {
         if (typeof window.render === 'function') {
@@ -26286,8 +26294,7 @@ function favInjectFilterUI() {
         btn.className = 'pf-fav-filter-btn';
         btn.title = 'Lọc câu yêu thích';
         btn.innerHTML = '<i class="fas fa-filter"></i>' +
-                       '<span class="pf-fav-filter-label">Lọc</span>' +
-                       '<span class="pf-fav-filter-badge" id="pfFavFilterBadge" style="display:none;">0</span>';
+               '<span class="pf-fav-filter-label"></span>';
         quickNav.appendChild(btn);
     }
 
@@ -26832,21 +26839,36 @@ function favUpdateFilterBtnVisibility() {
 function favUpdateFilterBtnBadge() {
     var btn = document.getElementById('pfFavFilterBtn');
     var badge = document.getElementById('pfFavFilterBadge');
-    if (!btn || !badge) return;
+    var label = btn ? btn.querySelector('.pf-fav-filter-label') : null;
+    if (!btn) return;
 
-    var count = favFilterCount();
-    if (count > 0) {
-        badge.textContent = count;
-        badge.style.display = 'inline-flex';
-        btn.classList.add('active');
-        btn.title = 'Đang lọc: ' + count + ' tiêu chí';
-    } else {
-        badge.style.display = 'none';
+    /* Ẩn badge cũ — không dùng nữa */
+    if (badge) badge.style.display = 'none';
+
+    /* Tắt toggle → ẩn nút (đã xử lý ở favUpdateFilterBtnVisibility) */
+    if (!favState.pfOnlyFav || !favCanUse()) {
         btn.classList.remove('active');
-        btn.title = 'Lọc câu yêu thích';
+        if (label) label.textContent = '';
+        return;
+    }
+
+    var hasFilter = !favFilterIsEmpty(favState.favFilters);
+    var totalFav = favCount();
+
+    if (hasFilter) {
+        /* Đang lọc → hiện "số-khớp/tổng" */
+        var matched = favFilterRecords(favGetRecords()).length;
+
+        if (label) label.textContent = matched + '/' + totalFav;
+        btn.classList.add('active');
+        btn.title = 'Đang lọc: ' + matched + '/' + totalFav + ' câu';
+    } else {
+        /* Không lọc → hiện tổng số câu yêu thích */
+        if (label) label.textContent = String(totalFav);
+        btn.classList.remove('active');
+        btn.title = totalFav + ' câu yêu thích — bấm để lọc';
     }
 }
-
 /* ═══════════════════════════════════════════════════════════════════════════
    HOOK vào favTogglePfOnlyFav
    ═══════════════════════════════════════════════════════════════════════════ */
