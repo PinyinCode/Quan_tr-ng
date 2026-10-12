@@ -15971,8 +15971,7 @@ function initSearchLockDemo() {
     }
 
     function lockInput(inp) {
-        if (!inp) return;
-        if (inp.__searchLocked) return;
+        if (!inp || inp.__searchLocked) return;
         inp.__searchLocked = true;
 
         inp.readOnly = true;
@@ -15983,27 +15982,25 @@ function initSearchLockDemo() {
         inp.style.fontWeight = '600';
         inp.placeholder = 'Đăng nhập để sử dụng tìm kiếm...';
 
-        inp.addEventListener('click', function(e) {
+        inp.__lockClickHandler = function(e) {
             e.preventDefault();
             e.stopPropagation();
             if (typeof showLoginModal === 'function') showLoginModal();
             return false;
-        }, true);
-        inp.addEventListener('keydown', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }, true);
-        inp.addEventListener('focus', function(e) {
+        };
+        inp.__lockFocusHandler = function(e) {
             e.preventDefault();
             inp.blur();
             if (typeof showLoginModal === 'function') showLoginModal();
-        }, true);
+        };
+
+        inp.addEventListener('click', inp.__lockClickHandler, true);
+        inp.addEventListener('keydown', inp.__lockClickHandler, true);
+        inp.addEventListener('focus', inp.__lockFocusHandler, true);
     }
 
     function unlockInput(inp) {
-        if (!inp) return;
-        if (!inp.__searchLocked) return;
+        if (!inp || !inp.__searchLocked) return;
         inp.__searchLocked = false;
 
         inp.readOnly = false;
@@ -16012,38 +16009,46 @@ function initSearchLockDemo() {
         inp.style.borderColor = '';
         inp.style.color = '';
         inp.style.fontWeight = '';
-        inp.placeholder = 'Tim kiem... (VD: hsk1 5)';
+        inp.placeholder = 'Tìm kiếm... (VD: hsk1 5)';
+
+        if (inp.__lockClickHandler) {
+            inp.removeEventListener('click', inp.__lockClickHandler, true);
+            inp.removeEventListener('keydown', inp.__lockClickHandler, true);
+            inp.__lockClickHandler = null;
+        }
+        if (inp.__lockFocusHandler) {
+            inp.removeEventListener('focus', inp.__lockFocusHandler, true);
+            inp.__lockFocusHandler = null;
+        }
     }
 
     function lockQuickSearchToggle() {
-    var root = document.getElementById('quickSearchRoot');
-    if (!root) return;
-    if (root.__searchLocked) return;
-    root.__searchLocked = true;
-    root.style.opacity = '0.6';
-    if (!root.__lockBound) {
-        root.__lockBound = true;
-        root.addEventListener('click', function(e) {
+        var root = document.getElementById('quickSearchRoot');
+        if (!root || root.__searchLocked) return;
+        root.__searchLocked = true;
+        root.style.opacity = '0.6';
+
+        root.__lockClickHandler = function(e) {
             e.preventDefault();
             e.stopPropagation();
             if (typeof showLoginModal === 'function') showLoginModal();
-        }, true);
+        };
+        root.addEventListener('click', root.__lockClickHandler, true);
     }
-}
-function unlockQuickSearchToggle() {
-    var root = document.getElementById('quickSearchRoot');
-    if (!root) return;
-    if (!root.__searchLocked) return;
-    root.__searchLocked = false;
-    root.style.opacity = '';
-}
 
     function unlockQuickSearchToggle() {
         var root = document.getElementById('quickSearchRoot');
-        if (!root) return;
-        if (!root.__searchLocked) return;
+        if (!root || !root.__searchLocked) return;
         root.__searchLocked = false;
+        root.style.opacity = '';
         root.style.display = '';
+
+        /* ⭐ GỠ listener cũ để không bắt login nữa */
+        if (root.__lockClickHandler) {
+            root.removeEventListener('click', root.__lockClickHandler, true);
+            root.__lockClickHandler = null;
+        }
+        root.__lockBound = false;
     }
 
     function applyLock() {
@@ -16063,7 +16068,9 @@ function unlockQuickSearchToggle() {
     }
 
     setTimeout(applyLock, 500);
-    setInterval(applyLock, 2000);
+    setInterval(applyLock, 1000);
+
+    window.addEventListener('tierChanged', applyLock);
 }
 /* ============================================================ */
 /* INIT APP                                                      */
