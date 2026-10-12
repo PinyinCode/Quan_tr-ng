@@ -855,7 +855,6 @@ body.practice-full-open {
 .practice-full-modal.show{display:flex}
 body.practice-full-open .search-bar,body.practice-full-open .filters,body.practice-full-open .result-count{display:none!important}
 body.practice-full-open .demo-banner,body.practice-full-open .expiry-banner{display:none!important}
-body.practice-full-open #quickSearchRoot,
 body.practice-full-open .tiktok-float,
 body.practice-full-open .tiktok-float-wrap,
 body.practice-full-open .zalo-btn,
@@ -16017,12 +16016,27 @@ function initSearchLockDemo() {
     }
 
     function lockQuickSearchToggle() {
-        var root = document.getElementById('quickSearchRoot');
-        if (!root) return;
-        if (root.__searchLocked) return;
-        root.__searchLocked = true;
-        root.style.display = 'none';
+    var root = document.getElementById('quickSearchRoot');
+    if (!root) return;
+    if (root.__searchLocked) return;
+    root.__searchLocked = true;
+    root.style.opacity = '0.6';
+    if (!root.__lockBound) {
+        root.__lockBound = true;
+        root.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof showLoginModal === 'function') showLoginModal();
+        }, true);
     }
+}
+function unlockQuickSearchToggle() {
+    var root = document.getElementById('quickSearchRoot');
+    if (!root) return;
+    if (!root.__searchLocked) return;
+    root.__searchLocked = false;
+    root.style.opacity = '';
+}
 
     function unlockQuickSearchToggle() {
         var root = document.getElementById('quickSearchRoot');
