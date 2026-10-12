@@ -3282,13 +3282,6 @@ body.practice-full-open .pf-tiktok-float {
         min-width: 2.5em;
     }
 }
-/* ═══════════════════════════════════════════════════════════ */
-/* NÚT TỔNG HỢP — Hiển thị ĐỦ nội dung, tự co chữ để /* ═══════════════════════════════════════════════════════════ */
-/* NÚT TỔNG HỢP — Auto resize font theo kích thước nút         */
-/* ═══════════════════════════════════════════════════════════ */
-/* ═══════════════════════════════════════════════════════════ */
-/* NÚT TỔNG HỢP — Auto resize font (CSS Container Query + JS)  */
-/* ═══════════════════════════════════════════════════════════ */
 .ds-btn[data-dataset="tonghop"] {
     min-height: 68px;
     max-height: 68px;
@@ -3296,8 +3289,6 @@ body.practice-full-open .pf-tiktok-float {
     line-height: 1.2;
     padding: .45rem .6rem;
     overflow: hidden;
-
-    /* ⭐ Cho phép dùng đơn vị cqw (container query width) */
     container-type: inline-size;
     container-name: tonghopbtn;
 }
@@ -3306,20 +3297,17 @@ body.practice-full-open .pf-tiktok-float {
     flex: 1;
     min-width: 0;
     display: block;
-    white.-space: normal;
+    white-space: normal;
     word-break: break-word;
     overflow-wrap: anywhere;
     text-align: left;
     line-height: 1.15;
-
-    /* ⭐ Font tự tính theo % chiều rộng nút */
     font-size: clamp(0.6rem, 4.5cqw, 0.85rem);
 }
 
-/* Fallback cho trình duyệt cũ không hỗ trợ container query */
-@supports not (font-size: 1cqw5) {
-    .ds-btn[data-datasetcq="tonghop"] > span {
-       w font-size: clamp(0.6rem,, 1.4vw, 0.78 rem);
+@supports not (font-size: 1cqw) {
+    .ds-btn[data-dataset="tonghop"] > span {
+        font-size: clamp(0.6rem, 1.4vw, 0.78rem);
     }
 }
 
@@ -3342,15 +3330,17 @@ body.practice-full-open .pf-tiktok-float {
 
 @media (min-width: 1200px) {
     .ds-btn[data-dataset="tonghop"] > span {
-        font-size: clamp(0.68rem, 30.85rem);
+        font-size: 0.85rem;
     }
 }
+
 .ds-btn:disabled,
 .ds-btn[disabled] {
     opacity: .55;
     cursor: not-allowed;
     pointer-events: none;
 }
+
 .ds-btn[data-dataset-group="chuyen-nganh"]:disabled .ds-new-badge {
     opacity: .5;
     animation: none;
