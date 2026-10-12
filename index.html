@@ -8488,6 +8488,7 @@ body.pf-assemble-active #pfHintBtn,body.pf-assemble-active #pfRevealBtn,body.pf-
 .dam-item.warn{border-color:rgba(245,158,11,.4);background:linear-gradient(135deg,rgba(245,158,11,.05),rgba(251,191,36,.02))}
 .dam-item.blocked{border-color:rgba(220,38,38,.4);background:linear-gradient(135deg,rgba(220,38,38,.06),rgba(185,28,28,.03))}
 .dam-item.whitelisted{border-color:rgba(22,163,74,.4);background:linear-gradient(135deg,rgba(22,163,74,.05),rgba(34,197,94,.02))}
+.dam-item.normal{border-color:var(--border);background:var(--surface-2)}
 .dam-item-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;flex-wrap:wrap}
 .dam-item-device{font-weight:800;font-size:.88rem;color:var(--text);display:flex;align-items:center;gap:.4rem}
 .dam-item-device i{color:#0891b2;font-size:1rem}
@@ -8498,6 +8499,8 @@ body.pf-assemble-active #pfHintBtn,body.pf-assemble-active #pfRevealBtn,body.pf-
 .dam-acc-row{display:flex;justify-content:space-between;gap:.5rem;font-size:.78rem;color:var(--text-2);padding:.3rem .55rem;border-radius:6px;background:var(--surface)}
 .dam-acc-email{font-weight:600;word-break:break-all}
 .dam-acc-time{color:var(--text-3);font-size:.7rem;white-space:nowrap}
+.dam-acc-row.highlight{background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(139,92,246,.1));color:#7c3aed;font-weight:700}
+[data-theme="dark"] .dam-acc-row.highlight{background:linear-gradient(135deg,rgba(124,58,237,.3),rgba(139,92,246,.2));color:#c4b5fd}
 .dam-item-actions{display:flex;gap:.35rem;margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--border);flex-wrap:wrap}
 .dam-action-btn{padding:.4rem .7rem;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);color:var(--text-2);font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:.3rem;transition:.15s}
 .dam-action-btn:hover{background:var(--surface-2);border-color:var(--primary);color:var(--primary)}
@@ -8509,6 +8512,7 @@ body.pf-assemble-active #pfHintBtn,body.pf-assemble-active #pfRevealBtn,body.pf-
 .dam-badge.warn{background:rgba(245,158,11,.15);color:#d97706}
 .dam-badge.blocked{background:rgba(220,38,38,.15);color:var(--danger)}
 .dam-badge.ok{background:rgba(22,163,74,.15);color:#16a34a}
+.dam-badge.normal{background:rgba(148,163,184,.15);color:var(--text-2)}
 .dam-badge.new{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;animation:damPulse 1.5s ease-in-out infinite}
 @keyframes damPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 .dam-empty{text-align:center;padding:2rem 1rem;color:var(--text-3);font-size:.85rem}
@@ -11874,8 +11878,8 @@ body.has-floating-group #quickSearchRoot{
     <div class="dam-box">
         <button class="dam-edit-close" id="damAdminCloseBtn"><i class="fas fa-times"></i></button>
         <div class="dam-icon"><i class="fas fa-user-secret"></i></div>
-        <div class="dam-title">Quản lý thiết bị nghi vấn</div>
-        <div class="dam-subtitle">
+        <div class="dam-title" id="damAdminTitle">Quản lý thiết bị nghi vấn</div>
+        <div class="dam-subtitle" id="damAdminSubtitle">
             Theo dõi thiết bị (theo vân tay fingerprint) đăng nhập nhiều tài khoản — kể cả khi đổi trình duyệt.
         </div>
         <div class="dam-tabs">
@@ -31885,6 +31889,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     var _cooldownInterval = null;
     var _cooldownStartTime = 0;
     var _fpPromise = null;
+    var _deviceViewFilterEmail = null;
 
     function $(id) { return document.getElementById(id); }
     function esc(s) {
@@ -31979,7 +31984,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             if (cached) return cached;
 
             if (typeof FingerprintJS === 'undefined') {
-                console.warn('[DAM] FingerprintJS chưa load, dùng fallback');
+                console.warn('[DAM] FingerprintJS chua load, dung fallback');
                 var fb = getFallbackFp();
                 saveCachedFp(fb);
                 return fb;
@@ -32145,15 +32150,15 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             var tgChat = (typeof TELEGRAM_CHAT_ID !== 'undefined') ? TELEGRAM_CHAT_ID : '';
 
             if (!tgToken || !tgChat || tgToken.indexOf('__') === 0 || tgToken.length < 20) {
-                console.warn('[DAM] Chưa cấu hình Telegram');
+                console.warn('[DAM] Chua cau hinh Telegram');
                 return;
             }
 
-            var browsers = (info.browsers && info.browsers.length > 0) ? info.browsers.join(', ') : 'Không rõ';
+            var browsers = (info.browsers && info.browsers.length > 0) ? info.browsers.join(', ') : 'Khong ro';
 
             var msg = '⚠️ <b>CẢNH BÁO THIẾT BỊ NGHI VẤN</b>\n';
             msg += '━━━━━━━━━━━━━━━━━━━━\n';
-            msg += '💻 OS: <b>' + esc(info.os || 'Không rõ') + '</b>\n';
+            msg += '💻 OS: <b>' + esc(info.os || 'Khong ro') + '</b>\n';
             msg += '🌐 Trình duyệt: <b>' + esc(browsers) + '</b>\n';
             msg += '🔑 FP: <code>' + esc((info.fp || '').substring(0, 16)) + '...</code>\n';
             msg += '👥 Tổng tài khoản: <b>' + (info.totalAccounts || 0) + '</b>\n';
@@ -32206,6 +32211,18 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
         allDevices.forEach(function(d) {
             var accounts = Array.isArray(d.accounts) ? d.accounts : [];
+
+            if (_deviceViewFilterEmail) {
+                var match = false;
+                for (var i = 0; i < accounts.length; i++) {
+                    if (accounts[i].email === _deviceViewFilterEmail) {
+                        match = true;
+                        break;
+                    }
+                }
+                if (!match) return;
+            }
+
             var accountCount = accounts.length;
 
             if (d.blocked === true) {
@@ -32213,6 +32230,8 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             } else if (d.whitelisted === true) {
                 whitelistDevices.push(d);
             } else if (accountCount > MAX_ACCOUNTS_PER_DEVICE || d.warned === true) {
+                warnDevices.push(d);
+            } else {
                 warnDevices.push(d);
             }
         });
@@ -32231,13 +32250,18 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         var icon = getDeviceIcon(d.os || '');
         var lastMs = d.lastSeen ? (d.lastSeen.toMillis ? d.lastSeen.toMillis() : d.lastSeen.seconds * 1000) : 0;
 
+        var isNormal = (accountCount <= MAX_ACCOUNTS_PER_DEVICE && d.blocked !== true && d.whitelisted !== true && d.warned !== true);
+        var effectiveStatus = isNormal ? 'normal' : status;
+
         var statusBadge = '';
-        if (status === 'warn') {
+        if (effectiveStatus === 'warn') {
             statusBadge = '<span class="dam-badge new"><i class="fas fa-exclamation-triangle"></i> CẢNH BÁO</span>';
-        } else if (status === 'blocked') {
+        } else if (effectiveStatus === 'blocked') {
             statusBadge = '<span class="dam-badge blocked"><i class="fas fa-ban"></i> ĐÃ BLOCK</span>';
-        } else {
+        } else if (effectiveStatus === 'whitelisted') {
             statusBadge = '<span class="dam-badge ok"><i class="fas fa-check-circle"></i> WHITELIST</span>';
+        } else {
+            statusBadge = '<span class="dam-badge normal"><i class="fas fa-info-circle"></i> BÌNH THƯỜNG</span>';
         }
 
         var browsersHtml = '';
@@ -32250,27 +32274,30 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         }
 
         var accRows = '';
-        accounts.slice(-6).forEach(function(a) {
-            accRows += '<div class="dam-acc-row">' +
+        accounts.slice(-8).forEach(function(a) {
+            var isHighlight = _deviceViewFilterEmail && (a.email === _deviceViewFilterEmail);
+            accRows += '<div class="dam-acc-row' + (isHighlight ? ' highlight' : '') + '">' +
                 '<span class="dam-acc-email">' + esc(a.email) + '</span>' +
                 '<span class="dam-acc-time">' + timeAgo(a.lastSeen || 0) + '</span>' +
             '</div>';
         });
-        if (accounts.length > 6) {
+        if (accounts.length > 8) {
             accRows += '<div class="dam-acc-row" style="opacity:.6;justify-content:center">' +
-                '... và ' + (accounts.length - 6) + ' tài khoản khác</div>';
+                '... và ' + (accounts.length - 8) + ' tài khoản khác</div>';
         }
 
         var actions = '';
-        if (status === 'warn') {
+        if (effectiveStatus === 'warn' || effectiveStatus === 'normal') {
             actions =
                 '<button class="dam-action-btn danger" onclick="damBlockDevice(\'' + esc(d._id) + '\')">' +
                     '<i class="fas fa-ban"></i> Block thiết bị</button>' +
                 '<button class="dam-action-btn ok" onclick="damWhitelistDevice(\'' + esc(d._id) + '\')">' +
-                    '<i class="fas fa-check"></i> Whitelist</button>' +
-                '<button class="dam-action-btn" onclick="damIgnoreWarning(\'' + esc(d._id) + '\')">' +
+                    '<i class="fas fa-check"></i> Whitelist</button>';
+            if (d.warned === true) {
+                actions += '<button class="dam-action-btn" onclick="damIgnoreWarning(\'' + esc(d._id) + '\')">' +
                     '<i class="fas fa-eye-slash"></i> Bỏ qua</button>';
-        } else if (status === 'blocked') {
+            }
+        } else if (effectiveStatus === 'blocked') {
             actions =
                 '<button class="dam-action-btn ok" onclick="damUnblockDevice(\'' + esc(d._id) + '\')">' +
                     '<i class="fas fa-unlock"></i> Mở block</button>' +
@@ -32282,7 +32309,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                     '<i class="fas fa-times"></i> Bỏ whitelist</button>';
         }
 
-        return '<div class="dam-item ' + status + '">' +
+        return '<div class="dam-item ' + effectiveStatus + '">' +
             '<div class="dam-item-head">' +
                 '<div>' +
                     '<div class="dam-item-device"><i class="fas ' + icon + '"></i> ' + esc(d.os || 'Thiết bị') + '</div>' +
@@ -32310,7 +32337,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
         if (!items.length) {
             var emptyMsg = '';
-            if (currentTab === 'warn') emptyMsg = 'Không có thiết bị nào bị cảnh báo';
+            if (currentTab === 'warn') emptyMsg = 'Không có thiết bị nào';
             else if (currentTab === 'blocked') emptyMsg = 'Chưa block thiết bị nào';
             else emptyMsg = 'Chưa whitelist thiết bị nào';
             listEl.innerHTML = '<div class="dam-empty"><i class="fas fa-inbox"></i>' + emptyMsg + '</div>';
@@ -32365,6 +32392,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             await db.collection('device_logins').doc(fp).update({
                 whitelisted: true,
                 blocked: false,
+                warned: false,
                 whitelistedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 whitelistedBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.email : 'unknown'
             });
@@ -32482,6 +32510,16 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         if (!modal) return;
         modal.classList.add('show');
 
+        if (!_deviceViewFilterEmail) {
+            var titleEl = $('damAdminTitle');
+            if (titleEl) titleEl.textContent = 'Quản lý thiết bị nghi vấn';
+
+            var subtitleEl = $('damAdminSubtitle');
+            if (subtitleEl) {
+                subtitleEl.textContent = 'Theo dõi thiết bị (theo vân tay fingerprint) đăng nhập nhiều tài khoản — kể cả khi đổi trình duyệt.';
+            }
+        }
+
         var listEl = $('damList');
         if (listEl) {
             listEl.innerHTML = '<div class="dam-empty"><i class="fas fa-spinner fa-pulse"></i>Đang tải...</div>';
@@ -32528,22 +32566,65 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     window.__damShowCooldown = showCooldownModal;
     window.__damShowBlocked = showBlockedModal;
     window.__damOpenAdmin = openDamAdminModal;
-    window.openDamAdminModal = openDamAdminModal;
-    window.openAdminDeviceView = function(email) {
+
+    window.openDamAdminModal = function() {
+        _deviceViewFilterEmail = null;
         openDamAdminModal();
     };
+
+    window.openAdminDeviceView = function(email) {
+        if (!email) {
+            _deviceViewFilterEmail = null;
+            openDamAdminModal();
+            return;
+        }
+
+        if (typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'admin') {
+            alert('Chỉ admin mới có quyền này.');
+            return;
+        }
+
+        _deviceViewFilterEmail = email.toLowerCase().trim();
+
+        var modal = $('damAdminModal');
+        if (!modal) return;
+        modal.classList.add('show');
+
+        var titleEl = $('damAdminTitle');
+        if (titleEl) {
+            titleEl.innerHTML = 'Thiết bị của: <span style="color:#7c3aed">' + esc(email) + '</span>';
+        }
+
+        var subtitleEl = $('damAdminSubtitle');
+        if (subtitleEl) {
+            subtitleEl.textContent = 'Chỉ hiện các thiết bị mà tài khoản này đã đăng nhập.';
+        }
+
+        var listEl = $('damList');
+        if (listEl) {
+            listEl.innerHTML = '<div class="dam-empty"><i class="fas fa-spinner fa-pulse"></i>Đang tải...</div>';
+        }
+
+        loadAllDevices().then(function() {
+            categorizeDevices();
+            renderList();
+        });
+    };
+
     window.__damDebug = {
         register: registerAccountOnDevice,
         load: loadAllDevices,
         categorize: categorizeDevices,
         openAdmin: openDamAdminModal,
+        openDeviceView: window.openAdminDeviceView,
         getFingerprint: getFingerprint,
         resetFp: function() {
             try { localStorage.removeItem(FP_CACHE_KEY); } catch(e) {}
             _fpPromise = null;
         },
         maxAccounts: MAX_ACCOUNTS_PER_DEVICE,
-        cooldownMin: COOLDOWN_MINUTES
+        cooldownMin: COOLDOWN_MINUTES,
+        getFilterEmail: function() { return _deviceViewFilterEmail; }
     };
 
     console.log('[DAM] Module loaded OK — max ' + MAX_ACCOUNTS_PER_DEVICE + ' accounts/device (fingerprint), cooldown ' + COOLDOWN_MINUTES + 'min');
