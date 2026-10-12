@@ -26760,16 +26760,11 @@ function favRenderFilterSummary() {
     /* ═══ 3. BUILD HTML ═══ */
     var html = '';
 
-    /* Chip đếm */
+    /* Chip đếm — CHỈ hiện khi có filter */
     if (hasFilter) {
         html += '<span class="pf-fav-summary-count">' +
             '<i class="fas fa-filter"></i>' +
             '<b>' + filteredCount + '</b>/' + totalFav +
-        '</span>';
-    } else {
-        html += '<span class="pf-fav-summary-count">' +
-            '<i class="fas fa-heart"></i>' +
-            '<b>' + totalFav + '</b> câu' +
         '</span>';
     }
 
