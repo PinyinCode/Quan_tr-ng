@@ -1841,6 +1841,11 @@ function stopRTDBPresence() {
 
 /* ============ AUTH STATE ============ */
 async function handleAuthChange(user) {
+    if (user && appInitialized && isDemo && currentUser === null) {
+        console.log('[Auth] Login sau timeout → re-init UI');
+        appInitialized = false;
+        isDemo = false;
+    }
     if (!user) {
         resetAppState();
 
@@ -2351,17 +2356,33 @@ async function grantTrialIfNew(user, userData) {
 
 function enterDemoMode() {
     isDemo = true;
-    currentUser = null;
+
+    /* ⭐ Chỉ reset currentUser nếu Firebase cũng null */
+    var hasFirebaseUser = false;
+    try {
+        hasFirebaseUser = !!(auth && auth.currentUser);
+    } catch(e) {}
+
+    if (!hasFirebaseUser) {
+        currentUser = null;
+    }
+
     publishTierState();
-    applyUserUI();
-    if (!appInitialized) { initApp(); appInitialized = true; }
-    else { if (typeof refreshApp === 'function') refreshApp(); }
+
+    try { applyUserUI(); } catch(e) { console.warn('applyUserUI error:', e); }
+
+    if (!appInitialized) {
+        initApp();
+        appInitialized = true;
+    } else {
+        if (typeof refreshApp === 'function') refreshApp();
+    }
+
     if ($('loadingScreen')) $('loadingScreen').classList.add('hidden');
     if ($('stickyTop')) $('stickyTop').style.display = 'block';
     if ($('fabGroup')) $('fabGroup').style.display = 'flex';
     if ($('mainContent')) $('mainContent').style.display = 'block';
 }
-
 /* ═══════════════════════════════════════════════════════════════
    ⏰ RENDER BANNER CẢNH BÁO GIA HẠN
    ═══════════════════════════════════════════════════════════════ */
