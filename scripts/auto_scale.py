@@ -1993,6 +1993,20 @@ html body .practice-full-body{
 padding-top:.75rem!important
 }
 }
+html body .practice-full-body::before{flex:0 1 0!important;min-height:0!important}
+html body .practice-full-body::after{flex:0 1 0!important;min-height:0!important}
+html body .practice-full-body{justify-content:flex-start!important;padding-top:clamp(.5rem,1vh,.85rem)!important;padding-bottom:calc(72px + env(safe-area-inset-bottom))!important}
+html body .practice-full-content{gap:calc(clamp(.4rem,.9vh,.7rem) * var(--pf-scale,1))!important}
+html body .practice-full-input-wrap{gap:calc(clamp(.3rem,.7vh,.5rem) * var(--pf-scale,1))!important}
+html body .reveal-actions{margin-top:calc(clamp(.15rem,.35vh,.25rem) * var(--pf-scale,1))!important;gap:calc(clamp(.35rem,.7vmin,.55rem) * var(--pf-scale,1))!important}
+html body .answer-reveal{padding:calc(clamp(.55rem,1.1vmin,.85rem) * var(--pf-scale,1))!important;gap:calc(clamp(.45rem,.9vmin,.7rem) * var(--pf-scale,1))!important}
+html body .practice-full-vi{padding:calc(clamp(.55rem,1.2vh,.9rem) * var(--pf-scale,1)) calc(clamp(.7rem,1.6vw,1.1rem) * var(--pf-scale,1))!important}
+html body .char-preview{min-height:calc(clamp(26px,4vmin,44px) * var(--pf-scale,1))!important;padding:calc(clamp(.28rem,.7vmin,.55rem) * var(--pf-scale,1))!important}
+html body .practice-full-status{min-height:calc(clamp(1rem,1.8vmin,1.4rem) * var(--pf-scale,1))!important;font-size:calc(clamp(.8rem,1.55vmin,1.15rem) * var(--pf-scale,1))!important}
+@media (max-width:768px){
+html body .practice-full-body{padding-top:.5rem!important;padding-bottom:calc(66px + env(safe-area-inset-bottom))!important}
+html body .practice-full-content{gap:.5rem!important}
+}
 """
 
 
