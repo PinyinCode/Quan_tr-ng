@@ -1394,39 +1394,6 @@ def build_accounts_html():
                 <button class="admin-filter-btn" data-filter="expired"><i class="fas fa-exclamation-circle"></i> Hết hạn <span class="count" id="filterCountExpired">0</span></button>
                 <button class="admin-filter-btn" data-filter="permanent"><i class="fas fa-crown"></i> Vĩnh viễn <span class="count" id="filterCountPermanent">0</span></button>
             </div>
-            <div class="admin-section" id="adminRenewalsSection">
-                <div class="admin-section-head">
-                    <div class="ash-left">
-                        <div class="ash-icon amber"><i class="fas fa-clock"></i></div>
-                        <div class="ash-text">
-                            <div class="ash-title"><span>Yêu cầu gia hạn</span></div>
-                            <div class="ash-subtitle">
-                                <span class="chip warn"><i class="fas fa-hourglass-half"></i> <span id="pendingRenewalsBadge">0</span> chờ</span>
-                                <span class="chip ok"><i class="fas fa-check-circle"></i> <span id="confirmedRenewalsBadge">0</span> đã xác nhận</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="ash-actions">
-                        <button class="btn" id="refreshRenewalsBtn" style="padding:.4rem .7rem;font-size:.75rem" title="Làm mới"><i class="fas fa-sync-alt"></i></button>
-                        <button class="admin-toggle-btn active" id="toggleRenewalsBtn" title="Ẩn khung yêu cầu gia hạn"><i class="fas fa-eye"></i></button>
-                    </div>
-                </div>
-                <div class="admin-section-body">
-                    <div class="admin-section-inner">
-                        <div class="admin-renewals-tabs">
-                            <button class="admin-filter-btn active" data-renewal-tab="pending" onclick="setRenewalTab('pending')">
-                                <i class="fas fa-hourglass-half"></i> Đang chờ <span class="count" id="pendingCountTab">0</span>
-                            </button>
-                            <button class="admin-filter-btn" data-renewal-tab="confirmed" onclick="setRenewalTab('confirmed')">
-                                <i class="fas fa-check-circle"></i> Đã xác nhận <span class="count" id="confirmedCountTab">0</span>
-                            </button>
-                        </div>
-                        <div class="renewals-list" id="renewalsList">
-                            <div class="no-data"><i class="fas fa-spinner fa-pulse"></i><span>Đang tải...</span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <div class="admin-section" id="adminUsersSection">
                 <div class="admin-section-head">
