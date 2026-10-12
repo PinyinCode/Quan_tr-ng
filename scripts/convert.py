@@ -63,6 +63,7 @@ from device_account_monitor import (
     build_dam_html,
     build_dam_js,
 )
+from auto_scale import build_auto_scale_css, build_auto_scale_js
 def _js_str(s):
     if s is None:
         return ""
@@ -358,6 +359,7 @@ full_css = (
     + "\n/* LOGIN FALLBACK */\n" + build_login_fallback_css()
     + "\n/* DEVICE LIMITER */\n" + build_device_css()
     + "\n/* DEVICE ACCOUNT MONITOR */\n" + build_dam_css()
+    + "\n/* AUTO SCALE */\n" + build_auto_scale_css()
 )
 ui_html = build_ui_html()
 ui_html = patch_html(ui_html)
@@ -1079,6 +1081,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
 full_js = (
     build_config_js(CONFIG)
+    + "\n/* AUTO SCALE */\n" + build_auto_scale_js()
     + "\n/* TELEGRAM */\n" + build_telegram_notify_js()
     + "\n/* UI */\n" + patch_js(build_ui_js())
     + "\n/* SOCIAL */\n" + build_social_js()
