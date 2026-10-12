@@ -3373,6 +3373,7 @@ body.practice-full-open .pf-tiktok-float {
 .ds-btn[data-dataset-group="chuyen-nganh"]:disabled .ds-new-badge {
     opacity: .5;
     animation: none;
+
 }
 .pf-width-ctrl{position:fixed;top:50%;right:clamp(8px,1.5vw,16px);transform:translateY(-50%);display:flex;flex-direction:column;gap:.5rem;z-index:2600;pointer-events:none;opacity:0;transition:opacity .25s ease}
 .practice-full-modal.show .pf-width-ctrl{opacity:1;pointer-events:auto}
@@ -3382,6 +3383,89 @@ body.practice-full-open .pf-tiktok-float {
 .pf-width-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
 .pf-width-indicator{font-size:.62rem;font-weight:800;color:var(--text-3);background:var(--surface-2);border:1px solid var(--border);border-radius:50px;padding:.15rem .4rem;text-align:center;min-width:34px;line-height:1;letter-spacing:.02em}
 @media (max-width:768px){.pf-width-ctrl{display:none!important}}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* PRACTICE FULL — GỘP 2 HÀNG TRÊN DESKTOP RỘNG               */
+/* Hàng 1: HSK + Chủ đề + Bộ dữ liệu                          */
+/* Hàng 2: Tìm kiếm + Câu                                     */
+/* ═══════════════════════════════════════════════════════════ */
+@media (min-width: 900px) {
+    .pf-filters {
+        padding: .5rem clamp(1rem, 2.2vw, 1.6rem) !important;
+    }
+
+    .pf-filters > .pf-filter-row {
+        display: grid !important;
+        grid-template-columns: minmax(130px, 1fr) minmax(180px, 1.5fr) minmax(200px, 1.8fr);
+        grid-template-areas: "hsk subject dataset";
+        gap: .5rem;
+        align-items: stretch;
+        margin-bottom: .5rem;
+    }
+
+    .pf-filters > .pf-filter-row .pf-chip:nth-child(1) {
+        grid-area: hsk;
+    }
+
+    .pf-filters > .pf-filter-row .pf-chip:nth-child(2) {
+        grid-area: subject;
+    }
+
+    .pf-filters > .pf-dataset-row {
+        display: grid !important;
+        grid-template-columns: minmax(200px, 2fr) minmax(180px, 1.5fr);
+        grid-template-areas:
+            "dataset dataset"
+            "search  nav";
+        gap: .5rem .6rem;
+        padding: .5rem .65rem !important;
+        align-items: stretch;
+    }
+
+    /* Hàng 1: Bộ dữ liệu — chiếm full width */
+    .pf-filters > .pf-dataset-row .pf-dataset-label {
+        display: none;
+    }
+    .pf-filters > .pf-dataset-row .pf-dataset-select {
+        grid-area: dataset;
+        width: 100%;
+        flex: none;
+        min-width: 0;
+    }
+
+    /* Hàng 2: Tìm kiếm + Câu */
+    .pf-filters > .pf-dataset-row .pf-dataset-search {
+        grid-area: search;
+        flex: none;
+        max-width: none;
+        width: 100%;
+    }
+
+    .pf-filters > .pf-dataset-row .pf-quick-nav {
+        grid-area: nav;
+        flex: none;
+        width: 100%;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        border-top: none !important;
+        display: flex !important;
+        align-items: center;
+        gap: .4rem;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* MÀN HÌNH RẤT RỘNG (≥1400px) — TINH CHỈNH THÊM               */
+/* ═══════════════════════════════════════════════════════════ */
+@media (min-width: 1400px) {
+    .pf-filters > .pf-filter-row {
+        grid-template-columns: minmax(160px, 1fr) minmax(220px, 1.4fr) minmax(280px, 1.8fr);
+    }
+
+    .pf-filters > .pf-dataset-row {
+        grid-template-columns: minmax(320px, 2fr) minmax(260px, 1.4fr);
+    }
+}
 """
 def build_ui_html():
     return r"""
