@@ -814,10 +814,54 @@ body.show-practice .card-body{background:linear-gradient(135deg,var(--surface-2)
 .end-note i{color:var(--success);margin-right:.35rem}
 .no-data{grid-column:1 / -1;text-align:center;padding:3rem 1rem;color:var(--text-3);background:var(--surface);border-radius:var(--radius);border:1px solid var(--border)}
 .no-data i{font-size:2.5rem;margin-bottom:.75rem;color:var(--border-strong);display:block}
-.practice-full-modal{position:fixed;inset:0;background:var(--bg);z-index:2500;display:none;flex-direction:column;animation:fadeIn .2s;overflow:hidden;height:100vh;height:100dvh}
+/* ⭐ FIX SCROLL BLEED — Khóa cứng html + body khi modal mở */
+html.practice-full-open,
+body.practice-full-open {
+    overflow: hidden !important;
+    height: 100% !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    padding-bottom: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* ⭐ Modal che hết viewport, kể cả safe-area iOS */
+.practice-full-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg);
+    z-index: 2500;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-sizing: border-box;
+    animation: fadeIn .2s;
+}
+
+.practice-full-modal.show {
+    display: flex;
+}
 .practice-full-modal.show{display:flex}
 body.practice-full-open .search-bar,body.practice-full-open .filters,body.practice-full-open .result-count{display:none!important}
 body.practice-full-open .demo-banner,body.practice-full-open .expiry-banner{display:none!important}
+body.practice-full-open #quickSearchRoot,
+body.practice-full-open .tiktok-float,
+body.practice-full-open .tiktok-float-wrap,
+body.practice-full-open .zalo-btn,
+body.practice-full-open .fab-group {
+    display: none !important;
+}
 .practice-full-header{display:flex;align-items:center;gap:clamp(.4rem,.8vw,.75rem);padding:clamp(.45rem,1vh,.7rem) clamp(.85rem,2vw,1.25rem);background:var(--surface);border-bottom:1px solid var(--border);flex:0 0 auto;min-height:clamp(48px,7vh,60px);box-shadow:0 2px 8px rgba(15,23,42,.04);overflow:visible;flex-wrap:nowrap;width:100%}
 .practice-full-header .pf-counter{font-size:clamp(.68rem,.88vw,.8rem);font-weight:800;color:#fff;background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:.35rem .75rem;border-radius:50px;white-space:nowrap;flex-shrink:0}
 .practice-full-header .pf-tags{display:flex;gap:.3rem;flex:1 1 auto;min-width:0;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;padding:2px 0;max-width:100%}
@@ -15236,21 +15280,35 @@ window.openPracticeFull = function(stt, evt) {
         if (String(filtered[i].stt) === String(stt)) { idx = i; break; }
     }
     if (idx === -1) { alert('Không tìm thấy câu!'); return; }
+
     pfCurrentStt = stt;
+
+    // ⭐ Khóa scroll ở cả <html> lẫn <body> để fix scroll bleed trên mobile
     document.body.classList.add('practice-full-open');
+    document.documentElement.classList.add('practice-full-open');
+
     if (typeof updateFloatingLeftVisibility === 'function') updateFloatingLeftVisibility();
-    document.body.style.overflow = 'hidden';
+
     $('practiceFullModal').classList.add('show');
     loadPracticeFull(stt);
+
+    // ⭐ Đảm bảo modal bắt đầu ở đầu (không kế thừa scroll từ trang chính)
+    var bodyEl = document.querySelector('.practice-full-body');
+    if (bodyEl) bodyEl.scrollTop = 0;
 };
 
 window.closePracticeFull = function() {
     if (window._isSpeakingFull) stopSpeakFull();
     if (window._isQuickSpeaking) stopQuickSpeak();
+
     $('practiceFullModal').classList.remove('show');
-    document.body.style.overflow = '';
+
+    // ⭐ Gỡ khóa scroll ở cả <html> lẫn <body>
     document.body.classList.remove('practice-full-open');
+    document.documentElement.classList.remove('practice-full-open');
+
     if (typeof updateFloatingLeftVisibility === 'function') updateFloatingLeftVisibility();
+
     pfCurrentStt = null;
     if ('speechSynthesis' in window) speechSynthesis.cancel();
 };
