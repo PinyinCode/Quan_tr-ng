@@ -1980,13 +1980,30 @@ function computeScales(){
     var uiScale = (inchFactor * INCH_WEIGHT) + (uiVhScale * VH_WEIGHT);
     var pfScale = (inchFactor * INCH_WEIGHT) + (pfVhScale * VH_WEIGHT);
 
-    /* Clamp lần cuối */
-    uiScale = clamp(uiScale, UI_MIN_SCALE, UI_MAX_SCALE);
-    pfScale = clamp(pfScale, PF_MIN_SCALE, PF_MAX_SCALE);
+   var uiBase = clamp(
+        (inchFactor * INCH_WEIGHT) + (uiVhScale * VH_WEIGHT),
+        UI_MIN_SCALE, UI_MAX_SCALE
+    );
+    var pfBase = clamp(
+        (inchFactor * INCH_WEIGHT) + (pfVhScale * VH_WEIGHT),
+        PF_MIN_SCALE, PF_MAX_SCALE
+    );
 
-    document.documentElement.style.setProperty('--ui-scale', uiScale.toFixed(3));
-    document.documentElement.style.setProperty('--pf-scale', pfScale.toFixed(3));
+    /* ⭐ LƯU BASE SCALE vào 2 biến riêng */
+    var rootStyle = document.documentElement.style;
+    rootStyle.setProperty('--ui-scale-base', uiBase.toFixed(3));
+    rootStyle.setProperty('--pf-scale-base', pfBase.toFixed(3));
 
+    /* ⭐ Đọc user-scale (từ nút +/-), mặc định 1.0 */
+    var userScale = 1.0;
+    try {
+        var saved = parseFloat(localStorage.getItem('pfUserScale_v1'));
+        if (!isNaN(saved) && saved >= 0.7 && saved <= 1.6) userScale = saved;
+    } catch(e) {}
+
+    /* ⭐ ÁP DỤNG: base × user */
+    rootStyle.setProperty('--ui-scale', (uiBase * userScale).toFixed(3));
+    rootStyle.setProperty('--pf-scale', (pfBase * userScale).toFixed(3));
     console.log('[AutoScale] inches=' + inches.toFixed(1) +
                 ' vh=' + vh +
                 ' inchFactor=' + inchFactor.toFixed(3) +
