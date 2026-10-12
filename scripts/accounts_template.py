@@ -2498,6 +2498,23 @@ function applyUserUI() {
 
     renderExpiryBanner();
 
+    /* ⭐ GUARD: currentUser null → coi như guest */
+    if (!currentUser) {
+        if (demoBadge) demoBadge.style.display = 'flex';
+        if (headerLoginBtn) headerLoginBtn.style.display = 'flex';
+        if (userMenu) userMenu.style.display = 'none';
+        if ($('demoBanner')) $('demoBanner').style.display = 'none';
+        if ($('userDetails')) $('userDetails').style.display = 'none';
+        if ($('renewalPendingBtn')) $('renewalPendingBtn').style.display = 'none';
+
+        var toggleFocusBtn0 = $('toggleFocusBtn');
+        if (toggleFocusBtn0) toggleFocusBtn0.style.display = 'none';
+
+        if (typeof window.favUpdateLockState === 'function') window.favUpdateLockState();
+        if (typeof updateDemoBannerByTier === 'function') updateDemoBannerByTier();
+        return;
+    }
+
     /* ⭐ Update nút gia hạn trong dropdown */
     var renewBtn = $('dropdownRenewBtn');
     if (renewBtn) {
@@ -2551,12 +2568,12 @@ function applyUserUI() {
     } else if (isExpiredUser) {
         /* ═══════════════════════════════════════════════════════════
            ⭐ EXPIRED — Đã login nhưng hết hạn
-           ⭐ FIX: ẨN #demoBanner — chỉ hiện #expiryBanner (đỏ full-width)
+           ⭐ ẨN #demoBanner — chỉ hiện #expiryBanner
            ═══════════════════════════════════════════════════════════ */
         if (demoBadge) demoBadge.style.display = 'none';
         if (headerLoginBtn) headerLoginBtn.style.display = 'none';
         if (userMenu) userMenu.style.display = 'block';
-        if ($('demoBanner')) $('demoBanner').style.display = 'none';   // ⬅️ ĐÃ SỬA: flex → none
+        if ($('demoBanner')) $('demoBanner').style.display = 'none';
 
         /* ⭐ User info */
         if ($('userName')) $('userName').textContent = currentUser.name;
@@ -2573,7 +2590,7 @@ function applyUserUI() {
             $('userRole').className = roleCls;
         }
 
-        /* ⭐ Avatar với màu đỏ (báo hiệu expired) */
+        /* ⭐ Avatar với màu đỏ */
         var avatar = $('userAvatar');
         if (avatar) {
             if (currentUser.photo) {
@@ -2703,7 +2720,7 @@ function applyUserUI() {
 
     if (typeof window.favUpdateLockState === 'function') window.favUpdateLockState();
 
-/* ⭐ Update banner theo tier (demo / expired) */
+    /* ⭐ Update banner theo tier (demo / expired) */
     if (typeof updateDemoBannerByTier === 'function') {
         updateDemoBannerByTier();
     }
@@ -2720,6 +2737,7 @@ function applyUserUI() {
     if (typeof markCurrentDatasetActive === 'function') {
         try { markCurrentDatasetActive(); } catch(e) {}
     }
+
     /* ⭐ Check lệnh gia hạn đang chờ */
     setTimeout(checkPendingRenewalBadge, 500);
 }
