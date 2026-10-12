@@ -122,6 +122,9 @@ body.show-practice .card-body{background:linear-gradient(135deg,var(--surface-2)
 @media(max-width:500px){
     .ds-main-row{grid-template-columns:1fr;}
 }
+@media(max-width:500px){
+    .ds-main-row{grid-template-columns:1fr}
+}
 .ds-btn{
     display:flex;align-items:center;gap:.5rem;
     padding:.65rem .85rem;
@@ -228,7 +231,9 @@ body.show-practice .card-body{background:linear-gradient(135deg,var(--surface-2)
 }
 .ds-sub-label i{color:var(--amber);font-size:.8rem}
 
-/* SUB-BUTTONS CHUYÊN NGÀNH */
+/* ═══════════════════════════════════════════════════════════ */
+/* SUB-BUTTONS CHUYÊN NGÀNH - FIX HIỂN THỊ ĐẦY ĐỦ DẤU TIẾNG VIỆT */
+/* ═══════════════════════════════════════════════════════════ */
 .ds-sub-grid{
     display:flex;
     flex-wrap:wrap;
@@ -255,8 +260,15 @@ body.show-practice .card-body{background:linear-gradient(135deg,var(--surface-2)
     position:relative;
     white-space:nowrap;
     box-shadow:0 2px 6px color-mix(in srgb, var(--ds-color, #2563eb) 18%, transparent);
+    letter-spacing:0;
     line-height:1.5;
     overflow:visible;
+    text-rendering:optimizeLegibility;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    font-feature-settings:"kern" 1,"liga" 1;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
 }
 .ds-sub-btn i:first-child{
     font-size:.95rem;
@@ -271,6 +283,7 @@ body.show-practice .card-body{background:linear-gradient(135deg,var(--surface-2)
     display:inline-block;
     line-height:1.5;
     padding:.06em 0 .1em;
+    text-rendering:optimizeLegibility;
     overflow-wrap:break-word;
     word-break:normal;
     white-space:nowrap;
@@ -308,7 +321,7 @@ body.show-practice .card-body{background:linear-gradient(135deg,var(--surface-2)
     }
 }
 
-/* KHOA CHUYEN NGANH */
+/* KHOA CHUYEN NGANH - Demo/Trial chua gia han */
 .ds-sub-btn.locked {
     opacity: 0.6;
     cursor: not-allowed;
@@ -369,8 +382,15 @@ body.show-practice .card-body{background:linear-gradient(135deg,var(--surface-2)
     background: linear-gradient(135deg, #4f46e5, #7c3aed);
     border-color: transparent;
 }
+.ds-btn[data-dataset-group="chuyen-nganh"].has-lock.active {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-color: transparent;
+}
 
-/* FAVORITES TAB ROW */
+/* ═══════════════════════════════════════════════════════════ */
+/* FAVORITES TAB ROW — nằm dưới ds-sub-wrap                     */
+/* Tự động bị đẩy xuống khi mở dropdown Chuyên ngành            */
+/* ═══════════════════════════════════════════════════════════ */
 .ds-fav-row {
     display: grid;
     grid-template-columns: 1fr;
@@ -491,6 +511,8 @@ body.show-practice .card-body{background:linear-gradient(135deg,var(--surface-2)
     color: #fff;
 }
 
+/* ============================================================ */
+/* FLASHCARD UI */
 /* ============================================================ */
 /* FLASHCARD UI */
 /* ============================================================ */
@@ -817,294 +839,208 @@ body.practice-full-open .demo-banner,body.practice-full-open .expiry-banner{disp
 @media (max-height:550px) and (orientation:landscape){.pf-tiktok-float{bottom:calc(64px + env(safe-area-inset-bottom))}}
 @media (max-height:420px) and (orientation:landscape){.pf-tiktok-float{bottom:calc(56px + env(safe-area-inset-bottom));transform:scale(.85);transform-origin:left bottom}}
 .practice-full-modal:not(.show) .pf-tiktok-float{display:none!important}
-body.practice-full-open .pf-tiktok-float{display:none!important}
+body.practice-full-open .pf-tiktok-float {
+    display: none !important;}
 
-/* ═══════════════════════════════════════════════════════════ */
-/* TOOLBAR GỘP — HSK + Chủ đề + Bộ dữ liệu + Search + Câu     */
-/* Tất cả trên 1 hàng flex, tự wrap khi thiếu chỗ              */
-/* ═══════════════════════════════════════════════════════════ */
-.pf-filters{
-    padding:clamp(.4rem,.8vh,.55rem) clamp(.85rem,1.5vw,1.25rem);
-    background:var(--surface);
-    border-bottom:1px solid var(--border);
-    flex:0 0 auto;
-    overflow:visible;
-    width:100%;
-}
-.pf-toolbar{
-    display:flex;
-    align-items:center;
-    flex-wrap:wrap;
-    gap:.5rem;
-    width:100%;
-    padding:.5rem .65rem;
-    background:linear-gradient(135deg,
-        rgba(99,102,241,.08),
-        rgba(139,92,246,.06));
-    border:1.5px solid rgba(139,92,246,.25);
-    border-radius:12px;
-    box-sizing:border-box;
-}
-[data-theme="dark"] .pf-toolbar{
-    background:linear-gradient(135deg,
-        rgba(99,102,241,.15),
-        rgba(139,92,246,.12));
-    border-color:rgba(165,180,252,.3);
-}
+/* ============================================================ */
+/* FILTERS trong Practice Full                                    */
+/* ============================================================ */
+.pf-filters{padding:clamp(.4rem,1vh,.55rem) clamp(.85rem,2vw,1.25rem) clamp(.35rem,.8vh,.45rem);background:var(--surface);border-bottom:1px solid var(--border);flex:0 0 auto;overflow:visible}
+.pf-filter-row{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.pf-chip{display:flex;align-items:center;gap:.4rem;padding:clamp(.25rem,.5vh,.4rem) clamp(.5rem,.8vw,.75rem);border-radius:var(--radius-full);border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:clamp(.68rem,.85vw,.78rem);cursor:pointer;min-width:0;position:relative;overflow:hidden}
+.pf-chip.has-value{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pf-chip-label{font-size:clamp(.55rem,.7vw,.62rem);color:var(--text-3);text-transform:uppercase;font-weight:700;flex-shrink:0}
+.pf-chip.has-value .pf-chip-label{color:#fff;opacity:.85}
+.pf-chip-value{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.pf-chip-arrow{opacity:.5;font-size:.62rem;flex-shrink:0}
+.pf-chip select{position:absolute;inset:0;opacity:0;cursor:pointer;appearance:none;width:100%;height:100%;z-index:5}
 
-.pf-chip{
-    display:flex;
-    align-items:center;
-    gap:.4rem;
-    padding:clamp(.3rem,.55vh,.42rem) clamp(.55rem,.9vw,.8rem);
-    border-radius:var(--radius-full);
-    border:1.5px solid var(--border);
-    background:var(--surface);
-    color:var(--text);
-    font-size:clamp(.68rem,.82vw,.78rem);
-    cursor:pointer;
-    min-width:0;
-    position:relative;
-    overflow:hidden;
-    flex:0 1 auto;
-    transition:.15s;
+/* ============================================================ */
+/* KHOI GOP: BO DU LIEU + TIM KIEM + CHON CAU                    */
+/* ============================================================ */
+.pf-dataset-row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-top: .45rem;
+    padding: .5rem .65rem;
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.08),
+        rgba(139, 92, 246, 0.06));
+    border: 1.5px solid rgba(139, 92, 246, 0.25);
+    border-radius: 12px;
+    position: relative;
+    transition: .2s;
+    flex-wrap: wrap;
 }
-.pf-chip.has-value{
-    background:var(--primary);
-    color:#fff;
-    border-color:var(--primary);
+[data-theme="dark"] .pf-dataset-row {
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.15),
+        rgba(139, 92, 246, 0.12));
+    border-color: rgba(165, 180, 252, 0.3);
 }
-.pf-chip-label{
-    font-size:clamp(.55rem,.7vw,.62rem);
-    color:var(--text-3);
-    text-transform:uppercase;
-    font-weight:700;
-    flex-shrink:0;
+.pf-dataset-row.has-locked-options {
+    border-color: rgba(139, 92, 246, 0.25);
 }
-.pf-chip.has-value .pf-chip-label{
-    color:#fff;
-    opacity:.85;
+.pf-dataset-label {
+    font-size: clamp(.6rem, .72vw, .68rem);
+    font-weight: 800;
+    color: #5b21b6;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    flex-shrink: 0;
 }
-.pf-chip-value{
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-    flex:1 1 auto;
-    min-width:0;
-    max-width:10ch;
+[data-theme="dark"] .pf-dataset-label {
+    color: #c4b5fd;
 }
-.pf-chip-arrow{
-    opacity:.5;
-    font-size:.62rem;
-    flex-shrink:0;
+.pf-dataset-label i {
+    color: #d946ef;
+    font-size: .9em;
 }
-.pf-chip select{
-    position:absolute;
-    inset:0;
-    opacity:0;
-    cursor:pointer;
-    appearance:none;
-    width:100%;
-    height:100%;
-    z-index:5;
+.pf-dataset-select {
+    flex: 1 1 160px;
+    min-width: 0;
+    padding: clamp(.32rem, .55vh, .45rem) 2rem clamp(.32rem, .55vh, .45rem) .75rem;
+    border-radius: 999px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: clamp(.72rem, .85vw, .82rem);
+    font-weight: 700;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path fill='%2394a3b8' d='M6 9L1 4h10z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 10px;
+    transition: .15s;
+}
+.pf-dataset-select:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+.pf-dataset-select option.locked-opt {
+    color: #94a3b8;
 }
 
-.pf-toolbar-group{
-    display:flex;
-    align-items:center;
-    gap:.35rem;
-    flex:1 1 160px;
-    min-width:0;
-    max-width:280px;
+.pf-dataset-search {
+    flex: 1 1 100%;
+    min-width: 0;
+    position: relative;
 }
-.pf-dataset-label{
-    font-size:clamp(.55rem,.7vw,.68rem);
-    font-weight:800;
-    color:#5b21b6;
-    text-transform:uppercase;
-    letter-spacing:.4px;
-    white-space:nowrap;
-    flex-shrink:0;
-    display:inline-flex;
-    align-items:center;
-    gap:.3rem;
+.pf-dataset-search i.fa-search {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-3);
+    font-size: .78rem;
+    pointer-events: none;
 }
-[data-theme="dark"] .pf-dataset-label{
-    color:#c4b5fd;
+.pf-dataset-search input {
+    width: 100%;
+    padding: clamp(.32rem, .55vh, .45rem) 2rem clamp(.32rem, .55vh, .45rem) 2rem;
+    border-radius: 999px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: clamp(.72rem, .85vw, .82rem);
+    font-family: inherit;
+    outline: none;
+    transition: .15s;
 }
-.pf-dataset-label i{
-    color:#d946ef;
-    font-size:.95em;
+.pf-dataset-search input:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
 }
-.pf-dataset-select{
-    flex:1 1 auto;
-    min-width:0;
-    padding:clamp(.3rem,.55vh,.42rem) 1.8rem clamp(.3rem,.55vh,.42rem) .7rem;
-    border-radius:999px;
-    border:1.5px solid var(--border);
-    background:var(--surface);
-    color:var(--text);
-    font-size:clamp(.7rem,.82vw,.8rem);
-    font-weight:700;
-    font-family:inherit;
-    outline:none;
-    cursor:pointer;
-    appearance:none;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path fill='%2394a3b8' d='M6 9L1 4h10z'/></svg>");
-    background-repeat:no-repeat;
-    background-position:right 10px center;
-    background-size:10px;
-    transition:.15s;
-    box-sizing:border-box;
+.pf-dataset-search .pf-search-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: var(--surface-2);
+    color: var(--text-2);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: .7rem;
 }
-.pf-dataset-select:focus{
-    border-color:#8b5cf6;
-    box-shadow:0 0 0 3px rgba(139,92,246,.15);
-}
-.pf-dataset-select option.locked-opt{
-    color:#94a3b8;
+.pf-dataset-search .pf-search-clear.show { display: flex; }
+
+@media (min-width: 600px) {
+    .pf-dataset-search {
+        flex: 1 1 auto;
+        max-width: 45%;
+    }
 }
 
-.pf-dataset-search{
-    flex:2 1 200px;
-    min-width:0;
-    position:relative;
+.pf-dataset-row .pf-quick-nav {
+    flex: 1 1 100%;
+    width: 100%;
+    margin-top: .25rem;
+    padding-top: .5rem;
+    border-top: 1px dashed rgba(139, 92, 246, 0.25);
+    display: flex !important;
+    align-items: center;
+    gap: .5rem;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
-.pf-dataset-search i.fa-search{
-    position:absolute;
-    left:11px;
-    top:50%;
-    transform:translateY(-50%);
-    color:var(--text-3);
-    font-size:.75rem;
-    pointer-events:none;
+[data-theme="dark"] .pf-dataset-row .pf-quick-nav {
+    border-top-color: rgba(165, 180, 252, 0.25);
 }
-.pf-dataset-search input{
-    width:100%;
-    padding:clamp(.3rem,.55vh,.42rem) 1.9rem clamp(.3rem,.55vh,.42rem) 1.9rem;
-    border-radius:999px;
-    border:1.5px solid var(--border);
-    background:var(--surface);
-    color:var(--text);
-    font-size:clamp(.7rem,.82vw,.8rem);
-    font-family:inherit;
-    outline:none;
-    transition:.15s;
-    box-sizing:border-box;
+.pf-quick-nav-label {
+    font-size: clamp(.55rem, .72vw, .68rem);
+    font-weight: 700;
+    color: var(--text-3);
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
-.pf-dataset-search input:focus{
-    border-color:#8b5cf6;
-    box-shadow:0 0 0 3px rgba(139,92,246,.15);
+.pf-quick-nav-select {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: clamp(.25rem, .5vh, .45rem) 2rem;
+    border-radius: var(--radius-full);
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: clamp(.68rem, .85vw, .78rem);
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path fill='%2394a3b8' d='M6 9L1 4h10z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 10px;
+    transition: .15s;
 }
-.pf-dataset-search .pf-search-clear{
-    position:absolute;
-    right:5px;
-    top:50%;
-    transform:translateY(-50%);
-    width:22px;
-    height:22px;
-    border-radius:50%;
-    border:none;
-    background:var(--surface-2);
-    color:var(--text-2);
-    cursor:pointer;
-    display:none;
-    align-items:center;
-    justify-content:center;
-    font-size:.65rem;
-}
-.pf-dataset-search .pf-search-clear.show{
-    display:flex;
+.pf-quick-nav-select:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
 }
 
-.pf-toolbar .pf-quick-nav{
-    display:flex !important;
-    align-items:center;
-    gap:.35rem;
-    flex:2 1 200px;
-    min-width:0;
-    margin:0;
-    padding:0;
-    border:none;
-    visibility:visible !important;
-    opacity:1 !important;
-}
-.pf-quick-nav-label{
-    font-size:clamp(.55rem,.7vw,.65rem);
-    font-weight:700;
-    color:var(--text-3);
-    text-transform:uppercase;
-    white-space:nowrap;
-    flex-shrink:0;
-}
-.pf-quick-nav-select{
-    flex:1 1 auto;
-    min-width:0;
-    padding:clamp(.28rem,.55vh,.42rem) 1.8rem;
-    border-radius:var(--radius-full);
-    border:1.5px solid var(--border);
-    background:var(--surface);
-    color:var(--text);
-    font-size:clamp(.68rem,.82vw,.78rem);
-    font-family:inherit;
-    outline:none;
-    cursor:pointer;
-    appearance:none;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path fill='%2394a3b8' d='M6 9L1 4h10z'/></svg>");
-    background-repeat:no-repeat;
-    background-position:right 10px center;
-    background-size:10px;
-    transition:.15s;
-    box-sizing:border-box;
-}
-.pf-quick-nav-select:focus{
-    border-color:#8b5cf6;
-    box-shadow:0 0 0 3px rgba(139,92,246,.15);
-}
-
-/* ── RESPONSIVE ── */
-@media (max-width:900px){
-    .pf-toolbar-group{
-        flex:1 1 calc(50% - .25rem);
-        max-width:none;
+@media (max-width: 500px) {
+    .pf-dataset-label {
+        font-size: .58rem;
+        gap: .2rem;
     }
-    .pf-dataset-search{
-        flex:1 1 calc(50% - .25rem);
-    }
-    .pf-toolbar .pf-quick-nav{
-        flex:1 1 100%;
-    }
-}
-@media (max-width:600px){
-    .pf-toolbar{
-        gap:.4rem;
-        padding:.45rem .55rem;
-    }
-    .pf-chip{
-        flex:1 1 calc(50% - .2rem);
-        font-size:.7rem;
-    }
-    .pf-toolbar-group{
-        flex:1 1 100%;
-        max-width:none;
-    }
-    .pf-dataset-search{
-        flex:1 1 100%;
-    }
-    .pf-toolbar .pf-quick-nav{
-        flex:1 1 100%;
-    }
-    .pf-dataset-label i{
-        display:none;
-    }
-}
-@media (max-width:400px){
-    .pf-chip{
-        flex:1 1 100%;
-        font-size:.68rem;
-    }
-    .pf-chip-value{
-        max-width:none;
+    .pf-dataset-label i { display: none; }
+    .pf-dataset-select {
+        font-size: .7rem;
+        padding-left: .6rem;
     }
 }
 
@@ -1265,7 +1201,9 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     }
 }
 
-/* NAV */
+/* ============================================================ */
+/* NAV - 3 NUT TO DEU NHAU + MINI GROUP                          */
+/* ============================================================ */
 .practice-full-nav{
     display:flex;
     gap:.65rem;
@@ -1277,6 +1215,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     align-items:center;
     min-height:72px;
 }
+
 .pf-nav-icon{
     width:clamp(42px,5vw,50px);
     height:clamp(42px,5vw,50px);
@@ -1300,6 +1239,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     opacity:.3;
     cursor:not-allowed;
 }
+
 .pf-nav-icon.main-nav{
     width:clamp(56px,7vw,68px);
     height:clamp(56px,7vw,68px);
@@ -1364,6 +1304,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
 .pf-nav-icon.main-nav.speak i.fa-stop{
     animation:stopPulse .8s ease-in-out infinite;
 }
+
 .pf-nav-icon.mini-nav{
     width:clamp(44px,5vw,52px);
     height:clamp(44px,5vw,52px);
@@ -1386,6 +1327,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     border-color:#0891b2;
     box-shadow:0 6px 16px rgba(6,182,212,.4);
 }
+
 .pf-nav-icon.mini-nav.random{
     background:var(--surface);
     color:var(--text-2);
@@ -1431,6 +1373,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     background:linear-gradient(135deg, #fbbf24, #f59e0b);
     color:#1e1b4b;
 }
+
 .practice-full-nav .mini-group{
     display:flex;
     gap:.35rem;
@@ -1438,6 +1381,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     padding-left:.75rem;
     border-left:1.5px solid var(--border);
 }
+
 [data-theme="dark"] .pf-nav-icon.main-nav:not(.primary):not(.speak){
     background:var(--surface-2);
     color:var(--text);
@@ -1448,6 +1392,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     border-color:var(--primary);
     color:#93c5fd;
 }
+
 @media(max-width:768px){
     .practice-full-nav{
         gap:.5rem;
@@ -1665,6 +1610,16 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     .pf-brand-sub{display:none}
     .pf-brand-title{font-size:.72rem}
     .pf-filters{padding:.3rem .75rem .25rem}
+    .pf-dataset-row{padding:.3rem .5rem;gap:.4rem;margin-top:.3rem}
+    .pf-dataset-search input{padding:.28rem 2rem;font-size:.72rem}
+    .pf-dataset-select{padding:.28rem 1.8rem .28rem .6rem;font-size:.72rem}
+    .pf-dataset-row .pf-quick-nav{
+        padding-top:.3rem;
+        margin-top:.15rem;
+    }
+    .pf-quick-nav-select{padding:.22rem 1.8rem .22rem .5rem;font-size:.68rem}
+    .pf-filter-row{gap:.4rem}
+    .pf-chip{padding:.2rem .5rem;font-size:.68rem}
     .practice-full-body{padding:.5rem .7rem calc(70px + env(safe-area-inset-bottom))}
     .practice-full-content{gap:.5rem}
     .practice-full-vi{font-size:1.05rem;padding:.55rem .55rem;line-height:1.35}
@@ -1675,6 +1630,68 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     .practice-full-nav{padding:.4rem .7rem;min-height:44px}
     .pf-nav-icon{width:38px;height:38px;font-size:.9rem}
     .pf-tiktok-float{transform:scale(.85);transform-origin:left bottom;left:8px;bottom:calc(4px + env(safe-area-inset-bottom))}
+}
+
+@media (max-width:1024px) and (max-height:420px) and (orientation:landscape){
+    .pf-dataset-row{
+        padding:.25rem .45rem;
+        gap:.3rem;
+        margin-top:.2rem;
+    }
+    .pf-dataset-row .pf-quick-nav{
+        display:flex !important;
+        padding-top:.25rem;
+        margin-top:.1rem;
+        gap:.35rem;
+    }
+    .pf-quick-nav-label{
+        font-size:.55rem;
+    }
+    .pf-quick-nav-select{
+        padding:.18rem 1.6rem .18rem .45rem;
+        font-size:.62rem;
+    }
+    .pf-dataset-label{
+        font-size:.55rem;
+    }
+    .pf-dataset-label i{display:none}
+    .pf-dataset-select{
+        padding:.2rem 1.6rem .2rem .5rem;
+        font-size:.65rem;
+    }
+    .pf-dataset-search input{
+        padding:.2rem 1.8rem .2rem 1.8rem;
+        font-size:.65rem;
+    }
+    .practice-full-header .pf-tags{overflow-x:auto}
+    .practice-full-vi{font-size:.95rem;padding:.45rem .5rem}
+    .practice-full-input{font-size:1rem;padding:.5rem .7rem}
+}
+
+@media (max-width:768px) and (max-height:700px){
+    .pf-dataset-row{
+        padding:.4rem .55rem;
+        gap:.4rem;
+    }
+    .pf-dataset-row .pf-quick-nav{
+        display:flex !important;
+        padding-top:.35rem;
+        margin-top:.15rem;
+    }
+    .pf-quick-nav-select{
+        padding:.22rem 1.8rem .22rem .5rem;
+        font-size:.7rem;
+    }
+    .pf-dataset-select{
+        font-size:.72rem;
+        padding-top:.25rem;
+        padding-bottom:.25rem;
+    }
+    .pf-dataset-search input{
+        font-size:.72rem;
+        padding-top:.25rem;
+        padding-bottom:.25rem;
+    }
 }
 
 .voice-modal{position:fixed;inset:0;background:rgba(15,23,42,.8);backdrop-filter:blur(6px);z-index:4000;display:none;align-items:center;justify-content:center;padding:1rem;animation:fadeIn .2s}
@@ -1713,7 +1730,10 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
 .voice-reset:hover{background:var(--danger-light);color:var(--danger);border-color:var(--danger)}
 [data-theme="dark"] .voice-slider{background:var(--surface-2)}
 
-/* ONBOARDING MODAL */
+/* ═══════════════════════════════════════════════════════════ */
+/* ONBOARDING MODAL - CHỌN CHỦ ĐỀ QUAN TÂM                     */
+/* ĐÃ SỬA: gọn gàng, không tràn màn hình, header/footer cố định */
+/* ═══════════════════════════════════════════════════════════ */
 .onboarding-modal {
     position: fixed;
     inset: 0;
@@ -1732,6 +1752,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     from { opacity: 0; }
     to   { opacity: 1; }
 }
+
 .onboarding-box {
     background: var(--surface);
     border-radius: 24px;
@@ -1750,6 +1771,8 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     from { transform: translateY(40px) scale(.95); opacity: 0; }
     to   { transform: translateY(0) scale(1);      opacity: 1; }
 }
+
+/* Nút X đóng góc trên phải */
 .onboarding-close {
     position: absolute;
     top: 14px;
@@ -1774,7 +1797,10 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     color: var(--danger);
     transform: scale(1.08);
 }
-.onboarding-close:active { transform: scale(.95); }
+.onboarding-close:active {
+    transform: scale(.95);
+}
+
 .onboarding-header {
     padding: 1.5rem 1.5rem 1rem;
     background: linear-gradient(135deg,
@@ -1817,6 +1843,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     max-width: 440px;
     margin: 0 auto;
 }
+
 .onboarding-counter {
     display: inline-flex;
     align-items: center;
@@ -1843,6 +1870,8 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
 }
 [data-theme="dark"] .onboarding-counter.ok { color: #4ade80; }
 [data-theme="dark"] .onboarding-counter.full { color: #fcd34d; }
+
+/* Body: CHỈ phần này scroll */
 .onboarding-body {
     padding: 1.15rem 1.5rem;
     overflow-y: auto;
@@ -1852,13 +1881,20 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     scrollbar-width: thin;
     overscroll-behavior: contain;
 }
-.onboarding-body::-webkit-scrollbar { width: 6px; }
-.onboarding-body::-webkit-scrollbar-track { background: transparent; }
+.onboarding-body::-webkit-scrollbar {
+    width: 6px;
+}
+.onboarding-body::-webkit-scrollbar-track {
+    background: transparent;
+}
 .onboarding-body::-webkit-scrollbar-thumb {
     background: var(--border-strong);
     border-radius: 3px;
 }
-.onboarding-body::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+.onboarding-body::-webkit-scrollbar-thumb:hover {
+    background: var(--text-3);
+}
+
 .onboarding-section-label {
     font-size: .7rem;
     font-weight: 800;
@@ -1871,6 +1907,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     gap: .4rem;
 }
 .onboarding-section-label i { color: var(--primary); }
+
 .onboarding-topics {
     display: flex;
     flex-wrap: wrap;
@@ -1943,6 +1980,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     color: var(--text-3);
     font-size: .85rem;
 }
+
 .onboarding-footer {
     padding: 1rem 1.5rem 1.15rem;
     border-top: 1px solid var(--border);
@@ -2007,6 +2045,8 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     color: var(--text-2);
     background: var(--surface-2);
 }
+
+/* Icon fallback — đảm bảo icon luôn hiện dù FA chưa load */
 .onboarding-btn.primary i.fa-check::before {
     content: '\2713';
     font-family: inherit;
@@ -2026,7 +2066,9 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     font-style: normal;
 }
 
-/* BANNER "CHỦ ĐỀ GỢI Ý" */
+/* ══════════════════════════════════════════════════════════════ */
+/* BANNER "CHỦ ĐỀ GỢI Ý" - REDESIGN                              */
+/* ══════════════════════════════════════════════════════════════ */
 .onboarding-active-banner {
     display: flex;
     align-items: center;
@@ -2049,6 +2091,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     from { opacity: 0; transform: translateY(-6px); }
     to   { opacity: 1; transform: translateY(0); }
 }
+
 .onboarding-active-banner .ob-icon {
     font-size: 1.1rem;
     color: #d946ef;
@@ -2067,6 +2110,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     0%, 100% { transform: rotate(0deg) scale(1); }
     50%      { transform: rotate(8deg) scale(1.08); }
 }
+
 .onboarding-active-banner .ob-label {
     font-weight: 800;
     font-size: .84rem;
@@ -2074,6 +2118,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     white-space: nowrap;
     flex-shrink: 0;
 }
+
 .onboarding-active-banner .ob-chips {
     display: flex;
     flex-wrap: wrap;
@@ -2083,6 +2128,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     min-width: 0;
     overflow: visible;
 }
+
 .onboarding-active-banner .ob-chip {
     padding: .3rem .75rem;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -2103,6 +2149,10 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     transform: translateY(-1px) scale(1.03);
     box-shadow: 0 4px 12px rgba(139,92,246,.5);
 }
+
+/* ═══════════════════════════════════════════════════════════ */
+/* CHIP "+N CHỦ ĐỀ KHÁC" - Giới hạn hiển thị khi chọn nhiều    */
+/* ═══════════════════════════════════════════════════════════ */
 .onboarding-active-banner .ob-chip-more {
     background: linear-gradient(135deg, #94a3b8, #64748b) !important;
     position: relative;
@@ -2115,6 +2165,8 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     transform: translateY(-1px) scale(1.05);
     box-shadow: 0 4px 12px rgba(100, 116, 139, .5);
 }
+
+/* Tooltip cho chip "+N" khi hover */
 .onboarding-active-banner .ob-chip-more::after {
     content: attr(data-tooltip);
     position: absolute;
@@ -2146,6 +2198,8 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     visibility: visible;
     transform: translateX(-50%) translateY(0);
 }
+
+/* Mũi tên nhỏ cho tooltip */
 .onboarding-active-banner .ob-chip-more::before {
     content: '';
     position: absolute;
@@ -2165,6 +2219,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     visibility: visible;
     transform: translateX(-50%) translateY(0);
 }
+
 [data-theme="dark"] .onboarding-active-banner .ob-chip-more::after {
     background: #1e293b;
     border: 1px solid #334155;
@@ -2172,6 +2227,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
 [data-theme="dark"] .onboarding-active-banner .ob-chip-more::before {
     border-top-color: #1e293b;
 }
+
 .onboarding-active-banner .ob-count {
     color: var(--text-3);
     font-size: .75rem;
@@ -2179,6 +2235,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     white-space: nowrap;
     flex-shrink: 0;
 }
+
 .onboarding-active-banner .ob-change-btn {
     padding: .38rem .85rem;
     border-radius: 50px;
@@ -2212,6 +2269,10 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
 .onboarding-active-banner .ob-change-btn:active {
     transform: translateY(0) scale(.97);
 }
+
+/* ═══════════════════════════════════════════════════════════ */
+/* THỐNG KÊ KHOÁ - DÒNG 2 CỦA BANNER CHỦ ĐỀ                     */
+/* ═══════════════════════════════════════════════════════════ */
 .onboarding-active-banner .ob-stats-bar {
     display: flex;
     align-items: center;
@@ -2222,6 +2283,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     margin-top: .35rem;
     border-top: 1px dashed rgba(139,92,246,.35);
 }
+
 .onboarding-active-banner .ob-stat-item {
     display: inline-flex;
     align-items: center;
@@ -2240,6 +2302,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     background: rgba(30,41,59,.7);
     border-color: rgba(245,158,11,.5);
 }
+
 .onboarding-active-banner .ob-stat-icon {
     display: inline-flex;
     align-items: center;
@@ -2256,6 +2319,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     background: linear-gradient(135deg, rgba(245,158,11,.25), rgba(217,119,6,.2));
     color: #fcd34d;
 }
+
 .onboarding-active-banner .ob-stat-industry .ob-stat-icon {
     background: linear-gradient(135deg, #dbeafe, #bfdbfe);
     color: #1d4ed8;
@@ -2270,6 +2334,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
 [data-theme="dark"] .onboarding-active-banner .ob-stat-industry {
     border-color: rgba(59,130,246,.5);
 }
+
 .onboarding-active-banner .ob-stat-text {
     white-space: nowrap;
     font-weight: 600;
@@ -2284,6 +2349,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
 [data-theme="dark"] .onboarding-active-banner .ob-stat-text b {
     color: #fca5a5;
 }
+
 .onboarding-active-banner .ob-cta-btn {
     margin-left: auto;
     padding: .5rem 1rem;
@@ -2316,6 +2382,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     0%, 100% { box-shadow: 0 4px 14px rgba(124,58,237,.4); }
     50%      { box-shadow: 0 4px 20px rgba(124,58,237,.7); }
 }
+
 [data-theme="dark"] .onboarding-active-banner {
     background: linear-gradient(135deg,
         rgba(99,102,241,.15),
@@ -2328,6 +2395,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
 [data-theme="dark"] .onboarding-active-banner .ob-change-btn {
     background: var(--surface-2);
 }
+
 @media (max-width: 500px) {
     .onboarding-active-banner {
         padding: .7rem .8rem;
@@ -2382,6 +2450,10 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
         font-size: .75rem;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════ */
+/* ONBOARDING MODAL - MOBILE (bottom sheet)                    */
+/* ═══════════════════════════════════════════════════════════ */
 @media (max-width: 500px) {
     .onboarding-modal {
         padding: .5rem;
@@ -2450,7 +2522,9 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     }
 }
 
-/* ICON KHOÁ + SỐ CÂU BỊ KHOÁ */
+/* ═══════════════════════════════════════════════════════════ */
+/* ICON KHOÁ + SỐ CÂU BỊ KHOÁ TRÊN CHIP CHỦ ĐỀ                 */
+/* ═══════════════════════════════════════════════════════════ */
 .onboarding-topic .topic-lock {
     display: inline-flex;
     align-items: center;
@@ -2496,7 +2570,60 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     }
 }
 
-/* STATS INLINE */
+/* STAT: Giới hạn mỗi chủ đề (XANH LÁ) */
+.onboarding-active-banner .ob-stat-pertopic {
+    border-color: rgba(22,163,74,.4);
+}
+.onboarding-active-banner .ob-stat-pertopic .ob-stat-icon {
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+    color: #15803d;
+}
+[data-theme="dark"] .onboarding-active-banner .ob-stat-pertopic {
+    border-color: rgba(34,197,94,.5);
+}
+[data-theme="dark"] .onboarding-active-banner .ob-stat-pertopic .ob-stat-icon {
+    background: linear-gradient(135deg, rgba(22,163,74,.3), rgba(21,128,61,.2));
+    color: #4ade80;
+}
+
+/* STAT: Câu khoá trong chủ đề đang chọn (ĐỎ) */
+.onboarding-active-banner .ob-stat-selected {
+    border-color: rgba(220,38,38,.4);
+    background: linear-gradient(135deg, rgba(254,226,226,.5), rgba(254,202,202,.3));
+}
+.onboarding-active-banner .ob-stat-selected .ob-stat-icon {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #b91c1c;
+}
+[data-theme="dark"] .onboarding-active-banner .ob-stat-selected {
+    border-color: rgba(248,113,113,.5);
+    background: linear-gradient(135deg, rgba(220,38,38,.15), rgba(185,28,28,.1));
+}
+[data-theme="dark"] .onboarding-active-banner .ob-stat-selected .ob-stat-icon {
+    background: linear-gradient(135deg, rgba(220,38,38,.3), rgba(185,28,28,.2));
+    color: #fca5a5;
+}
+
+/* STAT: Chủ đề khác chưa mở khoá (TÍM) */
+.onboarding-active-banner .ob-stat-topics {
+    border-color: rgba(139,92,246,.4);
+    background: linear-gradient(135deg, rgba(237,233,254,.5), rgba(221,214,254,.3));
+}
+.onboarding-active-banner .ob-stat-topics .ob-stat-icon {
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+    color: #6d28d9;
+}
+[data-theme="dark"] .onboarding-active-banner .ob-stat-topics {
+    border-color: rgba(167,139,250,.5);
+    background: linear-gradient(135deg, rgba(139,92,246,.15), rgba(109,40,217,.1));
+}
+[data-theme="dark"] .onboarding-active-banner .ob-stat-topics .ob-stat-icon {
+    background: linear-gradient(135deg, rgba(139,92,246,.3), rgba(109,40,217,.2));
+    color: #c4b5fd;
+}
+/* ═══════════════════════════════════════════════════════════ */
+/* STATS INLINE — 3 thông tin gộp trên 1 dòng ngang            */
+/* ═══════════════════════════════════════════════════════════ */
 .onboarding-active-banner .ob-stats-bar.ob-stats-inline {
     display: flex;
     flex-direction: row;
@@ -2508,6 +2635,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     margin-top: .35rem;
     border-top: 1px dashed rgba(139,92,246,.35);
 }
+
 .onboarding-active-banner .ob-stat-inline {
     display: inline-flex;
     align-items: center;
@@ -2534,6 +2662,8 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     font-size: 1.05em;
     margin: 0 .1em;
 }
+
+/* Chip chủ đề khoá — màu TÍM */
 .onboarding-active-banner .ob-stat-inline-topics {
     background: linear-gradient(135deg, rgba(139,92,246,.12), rgba(109,40,217,.06));
     border-color: rgba(139,92,246,.35);
@@ -2541,6 +2671,8 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
 .onboarding-active-banner .ob-stat-inline-topics i {
     color: #7c3aed;
 }
+
+/* Chip chuyên ngành khoá — màu XANH DƯƠNG */
 .onboarding-active-banner .ob-stat-inline-industry {
     background: linear-gradient(135deg, rgba(6,182,212,.12), rgba(8,145,178,.06));
     border-color: rgba(6,182,212,.35);
@@ -2548,6 +2680,8 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
 .onboarding-active-banner .ob-stat-inline-industry i {
     color: #0891b2;
 }
+
+/* Dark mode */
 [data-theme="dark"] .onboarding-active-banner .ob-stat-inline {
     background: linear-gradient(135deg, rgba(59,130,246,.2), rgba(37,99,235,.1));
     border-color: rgba(96,165,250,.4);
@@ -2563,6 +2697,8 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
 [data-theme="dark"] .onboarding-active-banner .ob-stat-inline b {
     color: #fca5a5;
 }
+
+/* Mobile: cho phép xuống dòng nếu chật */
 @media (max-width: 500px) {
     .onboarding-active-banner .ob-stats-bar.ob-stats-inline {
         gap: .35rem;
@@ -2577,8 +2713,9 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
         font-size: .68rem;
     }
 }
-
-/* FAVORITES — Nút tim trên card */
+/* ═══════════════════════════════════════════════════════════════
+   ❤️ FAVORITES — Nút tim trên card
+   ═══════════════════════════════════════════════════════════════ */
 .fav-btn{
     width:clamp(28px,2.8vw,32px);
     height:clamp(28px,2.8vw,32px);
@@ -2627,6 +2764,8 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     0%{opacity:1;transform:scale(.8);}
     100%{opacity:0;transform:scale(1.4);}
 }
+
+/* Trạng thái KHOÁ */
 .fav-btn.locked{
     color:#dc2626;
     background:rgba(220,38,38,.1);
@@ -2646,7 +2785,9 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     color:#fecaca;
 }
 
-/* Nút tim trong Practice Full header */
+/* ═══════════════════════════════════════════════════════════════
+   ❤️ FAVORITES — Nút tim trong Practice Full header
+   ═══════════════════════════════════════════════════════════════ */
 .pf-fav-btn{
     width:clamp(30px,3vw,36px);
     height:clamp(30px,3vw,36px);
@@ -2688,7 +2829,9 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     background:rgba(220,38,38,.28);
 }
 
-/* Tab favorites trong dataset selector */
+/* ═══════════════════════════════════════════════════════════════
+   ❤️ FAVORITES — Tab trong dataset selector
+   ═══════════════════════════════════════════════════════════════ */
 .ds-btn[data-dataset-group="favorites"]{
     position:relative;
     overflow:visible;
@@ -2749,7 +2892,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
 .ds-btn[data-dataset-group="favorites"].fav-locked:hover{
     opacity:.85;
     border-color:#dc2626;
-    background:rgba(220 background,38,38,.06);
+    background:rgba(220,38,38,.06);
 }
 .ds-btn[data-dataset-group="favorites"].fav-locked i:first-child{
     color:#dc2626;
@@ -2758,13 +2901,15 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     color:#fca5a5;
 }
 
-/* Header của tab favorites */
+/* ═══════════════════════════════════════════════════════════════
+   ❤️ FAVORITES — Header của tab (sort + clear all)
+   ═══════════════════════════════════════════════════════════════ */
 .fav-header{
     display:flex;
     align-items:center;
     gap:.5rem;
     padding:.65rem .85rem;
-   :linear-gradient(135deg,rgba(239,68,68,.08),rgba(220,38,38,.04));
+    background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(220,38,38,.04));
     border:1.5px solid rgba(239,68,68,.25);
     border-radius:12px;
     margin-bottom:.75rem;
@@ -2857,7 +3002,9 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     border-color:rgba(248,113,113,.5);
 }
 
-/* Empty states cho favorites */
+/* ═══════════════════════════════════════════════════════════════
+   ❤️ FAVORITES — Empty state
+   ═══════════════════════════════════════════════════════════════ */
 .fav-empty{
     grid-column:1 / -1;
     padding:3rem 1.5rem;
@@ -2921,6 +3068,8 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     color:#ef4444;
     font-size:.85rem;
 }
+
+/* Empty state cho tier bị khoá */
 .fav-locked-empty{
     grid-column:1 / -1;
     padding:3rem 1.5rem;
@@ -2962,6 +3111,10 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     0%,100%{box-shadow:0 6px 18px rgba(220,38,38,.4);}
     50%{box-shadow:0 6px 24px rgba(220,38,38,.7);}
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ❤️ FAVORITES — Toast
+   ═══════════════════════════════════════════════════════════════ */
 .fav-toast{
     position:fixed;
     top:80px;
@@ -3003,6 +3156,10 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     box-shadow:0 8px 24px rgba(245,158,11,.5);
 }
 .fav-toast i{font-size:1rem;}
+
+/* ═══════════════════════════════════════════════════════════════
+   ❤️ FAVORITES — Responsive
+   ═══════════════════════════════════════════════════════════════ */
 @media (max-width:500px){
     .fav-btn{width:30px;height:30px;font-size:.75rem;}
     .fav-header{padding:.55rem .7rem;gap:.4rem;}
@@ -3017,8 +3174,16 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     .fav-empty .fav-empty-desc{font-size:.78rem;}
     .pf-fav-btn{width:32px;height:32px;}
 }
+/* ═══════════════════════════════════════════════════════════ */
+/* HEADER LOGO - HỌC TIẾNG TRUNG HSK (FIX BADGE HIỂN THỊ)      */
+/* ═══════════════════════════════════════════════════════════ */
+.logo-text {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    overflow: visible;
+}
 
-/* HEADER LOGO */
 .logo-text .title {
     font-size: clamp(1.2rem, 2.2vw, 1.75rem);
     font-weight: 900;
@@ -3029,6 +3194,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     gap: 0.55rem;
     min-width: 0;
 }
+
 .logo-text .title .title-text {
     background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%);
     -webkit-background-clip: text;
@@ -3039,6 +3205,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     overflow: hidden;
     text-overflow: ellipsis;
 }
+/* Fallback cho trình duyệt không hỗ trợ background-clip */
 @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
     .logo-text .title .title-text {
         color: #7c3aed;
@@ -3051,6 +3218,8 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     background-clip: text;
     -webkit-text-fill-color: transparent;
 }
+
+/* ⭐ BADGE HSK — Đảm bảo chữ "HSK" luôn hiển thị rõ */
 .logo-text .title .hsk-badge {
     display: inline-flex;
     align-items: center;
@@ -3073,7 +3242,10 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     transform: translateY(-2px);
     white-space: nowrap;
     min-width: 2.8em;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
+
 @keyframes hskBadgePulse {
     0%, 100% {
         box-shadow: 0 3px 10px rgba(239, 68, 68, 0.45);
@@ -3084,6 +3256,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
         transform: translateY(-2px) scale(1.06);
     }
 }
+
 @media (max-width: 500px) {
     .logo-text .title {
         font-size: 1.1rem;
@@ -3095,8 +3268,6 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
         min-width: 2.5em;
     }
 }
-
-/* NÚT TỔNG HỢP — Auto resize font */
 .ds-btn[data-dataset="tonghop"] {
     min-height: 68px;
     max-height: 68px;
@@ -3107,6 +3278,7 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     container-type: inline-size;
     container-name: tonghopbtn;
 }
+
 .ds-btn[data-dataset="tonghop"] > span {
     flex: 1;
     min-width: 0;
@@ -3118,11 +3290,13 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
     line-height: 1.15;
     font-size: clamp(0.6rem, 4.5cqw, 0.85rem);
 }
+
 @supports not (font-size: 1cqw) {
     .ds-btn[data-dataset="tonghop"] > span {
         font-size: clamp(0.6rem, 1.4vw, 0.78rem);
     }
 }
+
 @media (max-width: 500px) {
     .ds-btn[data-dataset="tonghop"] {
         min-height: 62px;
@@ -3133,28 +3307,30 @@ body.practice-full-open .pf-tiktok-float{display:none!important}
         font-size: clamp(0.58rem, 4.2cqw, 0.72rem);
     }
 }
+
 @media (min-width: 501px) and (max-width: 768px) {
     .ds-btn[data-dataset="tonghop"] > span {
         font-size: clamp(0.6rem, 4cqw, 0.75rem);
     }
 }
+
 @media (min-width: 1200px) {
     .ds-btn[data-dataset="tonghop"] > span {
         font-size: 0.85rem;
     }
 }
+
 .ds-btn:disabled,
 .ds-btn[disabled] {
     opacity: .55;
     cursor: not-allowed;
     pointer-events: none;
 }
+
 .ds-btn[data-dataset-group="chuyen-nganh"]:disabled .ds-new-badge {
     opacity: .5;
     animation: none;
 }
-
-/* PF Width Control */
 .pf-width-ctrl{position:fixed;top:50%;right:clamp(8px,1.5vw,16px);transform:translateY(-50%);display:flex;flex-direction:column;gap:.5rem;z-index:2600;pointer-events:none;opacity:0;transition:opacity .25s ease}
 .practice-full-modal.show .pf-width-ctrl{opacity:1;pointer-events:auto}
 .pf-width-btn{width:clamp(36px,3.5vw,42px);height:clamp(36px,3.5vw,42px);border-radius:50%;border:1.5px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:clamp(.9rem,1.1vw,1rem);font-weight:900;transition:transform .2s cubic-bezier(.34,1.56,.64,1),background .15s,color .15s,border-color .15s;box-shadow:0 4px 14px rgba(15,23,42,.12);padding:0;font-family:inherit;user-select:none}
