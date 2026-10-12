@@ -3401,22 +3401,23 @@ body.practice-full-open .pf-tiktok-float {
 @media (max-width:768px){.pf-width-ctrl{display:none!important}}
 
 /* ═══════════════════════════════════════════════════════════ */
-/* PRACTICE FULL — GỘP 2 HÀNG TRÊN DESKTOP RỘNG               */
+/* PRACTICE FULL — GỘP 2 HÀNG KHI XOAY NGANG (LANDSCAPE)      */
+/* Áp dụng cho MỌI màn hình landscape: desktop + điện thoại   */
 /* Hàng 1: HSK + Chủ đề + Bộ dữ liệu                          */
 /* Hàng 2: Tìm kiếm + Câu                                     */
 /* ═══════════════════════════════════════════════════════════ */
-@media (min-width: 900px) {
+@media (orientation: landscape) and (min-height: 300px) {
     .pf-filters {
-        padding: .5rem clamp(1rem, 2.2vw, 1.6rem) !important;
+        padding: .4rem clamp(.6rem, 1.4vw, 1.2rem) !important;
     }
 
     .pf-filters > .pf-filter-row {
         display: grid !important;
-        grid-template-columns: minmax(130px, 1fr) minmax(180px, 1.5fr) minmax(200px, 1.8fr);
+        grid-template-columns: minmax(90px, 1fr) minmax(120px, 1.3fr) minmax(150px, 1.6fr);
         grid-template-areas: "hsk subject dataset";
-        gap: .5rem;
+        gap: .35rem;
         align-items: stretch;
-        margin-bottom: .5rem;
+        margin-bottom: .35rem;
     }
 
     .pf-filters > .pf-filter-row .pf-chip:nth-child(1) {
@@ -3429,19 +3430,19 @@ body.practice-full-open .pf-tiktok-float {
 
     .pf-filters > .pf-dataset-row {
         display: grid !important;
-        grid-template-columns: minmax(200px, 2fr) minmax(180px, 1.5fr);
+        grid-template-columns: minmax(140px, 2fr) minmax(120px, 1.4fr);
         grid-template-areas:
             "dataset dataset"
             "search  nav";
-        gap: .5rem .6rem;
-        padding: .5rem .65rem !important;
+        gap: .35rem .4rem;
+        padding: .35rem .5rem !important;
         align-items: stretch;
     }
 
-    /* Hàng 1: Bộ dữ liệu — chiếm full width */
     .pf-filters > .pf-dataset-row .pf-dataset-label {
         display: none;
     }
+
     .pf-filters > .pf-dataset-row .pf-dataset-select {
         grid-area: dataset;
         width: 100%;
@@ -3449,7 +3450,6 @@ body.practice-full-open .pf-tiktok-float {
         min-width: 0;
     }
 
-    /* Hàng 2: Tìm kiếm + Câu */
     .pf-filters > .pf-dataset-row .pf-dataset-search {
         grid-area: search;
         flex: none;
@@ -3466,20 +3466,28 @@ body.practice-full-open .pf-tiktok-float {
         border-top: none !important;
         display: flex !important;
         align-items: center;
-        gap: .4rem;
-    }
-}
-
-/* ═══════════════════════════════════════════════════════════ */
-/* MÀN HÌNH RẤT RỘNG (≥1400px) — TINH CHỈNH THÊM               */
-/* ═══════════════════════════════════════════════════════════ */
-@media (min-width: 1400px) {
-    .pf-filters > .pf-filter-row {
-        grid-template-columns: minmax(160px, 1fr) minmax(220px, 1.4fr) minmax(280px, 1.8fr);
+        gap: .3rem;
     }
 
-    .pf-filters > .pf-dataset-row {
-        grid-template-columns: minmax(320px, 2fr) minmax(260px, 1.4fr);
+    /* Chip nhỏ gọn hơn khi landscape (điện thoại ngang chật) */
+    .pf-filters > .pf-filter-row .pf-chip {
+        padding: .2rem .5rem !important;
+        font-size: .7rem !important;
+    }
+    .pf-filters > .pf-filter-row .pf-chip .pf-chip-label {
+        font-size: .58rem !important;
+    }
+    .pf-filters > .pf-filter-row .pf-chip .pf-chip-value {
+        font-size: .72rem !important;
+    }
+    .pf-filters > .pf-dataset-row .pf-dataset-select,
+    .pf-filters > .pf-dataset-row .pf-dataset-search input,
+    .pf-filters > .pf-dataset-row .pf-quick-nav-select {
+        padding: .3rem 1.6rem .3rem .6rem !important;
+        font-size: .72rem !important;
+    }
+    .pf-filters > .pf-dataset-row .pf-quick-nav-label {
+        font-size: .58rem !important;
     }
 }
 
