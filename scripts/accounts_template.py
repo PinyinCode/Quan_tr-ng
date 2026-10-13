@@ -2615,7 +2615,6 @@ function applyUserUI() {
     } else if (isExpiredUser) {
         /* ═══════════════════════════════════════════════════════════
            ⭐ EXPIRED — Đã login nhưng hết hạn
-           ⭐ ẨN #demoBanner — chỉ hiện #expiryBanner
            ═══════════════════════════════════════════════════════════ */
         if (demoBadge) demoBadge.style.display = 'none';
         if (headerLoginBtn) headerLoginBtn.style.display = 'none';
@@ -2719,13 +2718,13 @@ function applyUserUI() {
             $('openAdminBtn').style.display = currentUser.role === 'admin' ? 'flex' : 'none';
         }
 
-        /* ⭐ Avatar bình thường (màu tím) */
+        /* ⭐ Avatar bình thường (màu tím) — Đã sửa lỗi chính tả 'ỉ else {' và 'forcedata:' */
         var avatar2 = $('userAvatar');
         if (avatar2) {
             if (currentUser.photo) {
                 avatar2.src = currentUser.photo;
-            }ỉ else {
-                avatar2.src = ' forcedata:image/svg+xml;utf8,' + encodeURIComponent(
+            } else {
+                avatar2.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
                     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
                     '<rect fill="#7c3aed" width="100" height="100"/>' +
                     '<text x="50" y="65" font-size="45" fill="#fff" text-anchor="middle" ' +
@@ -2788,17 +2787,14 @@ function applyUserUI() {
     /* ⭐ Check lệnh gia hạn đang chờ */
     setTimeout(checkPendingRenewalBadge, 500);
 
-    /* ⭐ FIX: Ch CSS + set icon — KHÔNG bind onclick
-       (theme + avatar dùng onclick attribute HTML — tránh double bind) */
+    /* ⭐ FIX: Ch CSS + set icon — KHÔNG bind onclick */
     setTimeout(function() {
-        /* ===== THEME ===== */
         var t = document.getElementById('themeToggle');
         if (t) {
             t.style.pointerEvents = 'auto';
             t.style.position = 'relative';
             t.style.zIndex = '1001';
 
-            /* Chỉ set icon đúng trạng thái hiện tại */
             var curIcon = t.querySelector('i');
             if (curIcon) {
                 curIcon.className = document.documentElement.getAttribute('data-theme') === 'dark'
@@ -2806,14 +2802,11 @@ function applyUserUI() {
             }
         }
 
-        /* ===== AVATAR ===== */
         var av = document.getElementById('userAvatar');
         if (av) {
             av.style.pointerEvents = 'auto';
-            /* KHÔNG bind onclick — dùng onclick attribute HTML */
         }
 
-        /* ===== HEADER ACTIONS ===== */
         var ha = document.querySelector('.header-actions');
         if (ha) {
             ha.style.pointerEvents = 'auto';
@@ -2823,6 +2816,7 @@ function applyUserUI() {
         console.log('[Auth] applyUserUI: force CSS theme + avatar OK');
     }, 150);
 }
+
 async function checkPendingRenewalBadge() {
     if (!currentUser || currentUser.role === 'admin' || currentUser.isPermanent) {
         var b = $('renewalPendingBtn');
@@ -2854,6 +2848,7 @@ async function checkPendingRenewalBadge() {
         console.warn('checkPendingRenewalBadge error:', e);
     }
 }
+
 
 function updateDemoBannerByTier() {
     var banner = $('demoBanner');
