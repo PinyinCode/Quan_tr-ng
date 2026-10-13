@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Module giới hạn 2 thiết bị — OTP qua server + admin duyệt tay.
+"""Module giới hạn 3 thiết bị — OTP qua server + admin duyệt tay.
 
 ✅ Đặc điểm:
    - registerCurrentDevice LUÔN trả allowed:true → app chính luôn tải câu hỏi
@@ -84,10 +84,10 @@ def build_device_html():
         <button class="dvl-close" id="dvlCloseBtn" type="button"><i class="fas fa-times"></i></button>
         <div class="dvl-icon" id="dvlIcon"><i class="fas fa-mobile-screen-button"></i></div>
         <div class="dvl-title" id="dvlTitle">Quản lý thiết bị</div>
-        <div class="dvl-subtitle" id="dvlSubtitle">Tài khoản của bạn chỉ được đăng nhập trên tối đa <b>2 thiết bị</b>.</div>
+        <div class="dvl-subtitle" id="dvlSubtitle">Tài khoản của bạn chỉ được đăng nhập trên tối đa <b>3 thiết bị</b>.</div>
         <div class="dvl-count-box" id="dvlCountBox">
             <div class="dvl-count-num" id="dvlCountNum">0</div>
-            <div class="dvl-count-label" id="dvlCountLabel">/ 2 thiết bị đang hoạt động</div>
+            <div class="dvl-count-label" id="dvlCountLabel">/ 3 thiết bị đang hoạt động</div>
         </div>
         <div class="dvl-list" id="dvlList"><div style="text-align:center;padding:2rem;color:var(--text-3)"><i class="fas fa-spinner fa-pulse"></i> Đang tải...</div></div>
         <div class="dvl-actions">
@@ -102,7 +102,7 @@ def build_device_html():
         <div class="dvl-icon mail"><i class="fas fa-envelope-circle-check"></i></div>
         <div class="dvl-title">Xác nhận đăng nhập thiết bị mới</div>
         <div class="dvl-subtitle">
-            Tài khoản của bạn đã đăng nhập trên <b>2 thiết bị</b> khác.
+            Tài khoản của bạn đã đăng nhập trên <b>3 thiết bị</b> khác.
             Bấm nút bên dưới để nhận <b>mã OTP 6 số</b> qua email.
         </div>
         <div style="text-align:center;margin-bottom:1rem">
@@ -151,7 +151,7 @@ def build_device_js():
 (function() {
     'use strict';
 
-    var MAX_DEVICES = 2;
+    var MAX_DEVICES = 3;
     var VERIFY_TIMEOUT = 10 * 60 * 1000;
     var SERVER_URL = '__SERVER_URL__';
     var DEVICE_ID_KEY = 'dvl_device_id';
