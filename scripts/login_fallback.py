@@ -480,7 +480,7 @@ def build_login_fallback_js():
             '<form id="elfInlineLoginForm" class="elf-inline-form-body" autocomplete="on" novalidate>' +
                 '<div class="elf-field">' +
                     '<label>Email</label>' +
-                    '<input type="text" id="elfLoginEmail" placeholder="Nhập tên email (tự thêm @gmail.com)" autocomplete="email" required inputmode="email">' +
+                    '<input type="text" id="elfLoginEmail" placeholder="Nhập Gmail ( @gmail.com)" autocomplete="email" required inputmode="email">' +
                     '<div class="elf-email-preview" id="elfLoginEmailPreview"></div>' +
                 '</div>' +
                 '<div class="elf-field">' +
