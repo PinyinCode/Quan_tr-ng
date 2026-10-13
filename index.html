@@ -33703,7 +33703,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     }
 
     /* ═══════════════════════════════════════════════════════════
-       ⭐ SUPER ADMIN — BYPASS HOÀN TOÀN
+       ⭐ SUPER ADMIN — BYPASS device limit (nhưng vẫn được duyệt)
        ═══════════════════════════════════════════════════════════ */
     function __dvlIsSuperAdmin(email) {
         if (!email) return false;
@@ -33715,6 +33715,14 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         } catch(e) {}
         if (!sa) return false;
         return String(email).toLowerCase().trim() === sa;
+    }
+
+    /* ⭐ Có quyền admin? (bao gồm cả super admin) */
+    function __dvlHasAdminRights() {
+        if (typeof currentUser === 'undefined' || !currentUser) return false;
+        if (currentUser.role === 'admin') return true;
+        if (__dvlIsSuperAdmin(currentUser.email)) return true;
+        return false;
     }
 
     function timeAgo(ms) {
@@ -33839,7 +33847,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     }
 
     /* ═══════════════════════════════════════════════════════════
-       Tạo yêu cầu xác nhận (sinh vé 1 lần)
+       Tạo yêu cầu xác nhận
        ═══════════════════════════════════════════════════════════ */
     async function createVerificationRequest(email) {
         if (!email || !db) return null;
@@ -33874,9 +33882,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Tab cũ — poll theo deviceId
-       ═══════════════════════════════════════════════════════════ */
     async function checkVerification(email) {
         if (!email || !db) return { confirmed: false };
         if (__dvlIsSuperAdmin(email)) return { confirmed: false };
@@ -33913,9 +33918,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Tab cũ — xác nhận thành công → đá máy cũ + thêm máy mới
-       ═══════════════════════════════════════════════════════════ */
     async function completeVerification(email) {
         if (!email || !db) return false;
         if (__dvlIsSuperAdmin(email)) return false;
@@ -33950,7 +33952,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
         await saveDevices(email, devices);
 
-        /* Xóa pending của deviceId này */
         try {
             var snap = await db.collection('allowed_users').doc(email.toLowerCase())
                 .collection('pending_devices')
@@ -33966,9 +33967,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         return true;
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Kiểm tra máy có bị đá
-       ═══════════════════════════════════════════════════════════ */
     async function checkIfKicked(email) {
         if (!email || !db) return false;
         if (__dvlIsSuperAdmin(email)) return false;
@@ -34015,7 +34013,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         var now = Date.now();
         var devices = await loadDevices(email);
 
-        /* Đã có → update lastSeen */
         var found = -1;
         for (var i = 0; i < devices.length; i++) {
             if (devices[i].id === deviceId) { found = i; break; }
@@ -34029,7 +34026,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             return { allowed: true };
         }
 
-        /* Đã có pending? */
         try {
             var pendingSnap = await db.collection('allowed_users').doc(email.toLowerCase())
                 .collection('pending_devices')
@@ -34051,7 +34047,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                     if (Date.now() > expMs) {
                         try { await pdoc.ref.delete(); } catch(e) {}
                     } else {
-                        /* Trả về pending có sẵn (giữ emailSent cũ) */
                         return {
                             allowed: false,
                             needsVerify: true,
@@ -34066,7 +34061,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             }
         } catch(e) {}
 
-        /* Chưa đủ giới hạn → thêm thẳng */
         if (devices.length < MAX_DEVICES) {
             devices.push({
                 id: deviceId, name: getDeviceName(), type: detectDeviceType(),
@@ -34077,14 +34071,12 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             return { allowed: true, isNew: true };
         }
 
-        /* ⭐ Đã đủ → tạo pending + gửi email (song song, không block) */
         var token = await createVerificationRequest(email);
 
         var emailResult = { ok: false, reason: 'not_sent' };
         try {
             emailResult = await sendVerifyEmail(email, token);
 
-            /* Cập nhật trạng thái gửi mail vào pending doc */
             try {
                 await db.collection('allowed_users').doc(email.toLowerCase())
                     .collection('pending_devices').doc(deviceId)
@@ -34109,9 +34101,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         };
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Gửi email xác nhận (Firebase Email Link)
-       ═══════════════════════════════════════════════════════════ */
     async function sendVerifyEmail(email, token) {
         if (!email || !auth) return { ok: false, reason: 'no_auth' };
 
@@ -34134,9 +34123,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Tab MỚI (bấm link mail) — CHỈ CONFIRM, KHÔNG LOGIN
-       ═══════════════════════════════════════════════════════════ */
     async function checkVerifyLink() {
         try {
             var params = new URLSearchParams(window.location.search);
@@ -34151,14 +34137,12 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
             if (!email) return false;
 
-            /* ⭐ SUPER ADMIN — bỏ qua */
             if (__dvlIsSuperAdmin(email)) {
                 var url0 = window.location.pathname;
                 window.history.replaceState({}, document.title, url0);
                 return false;
             }
 
-            /* Firebase email-link sign-in */
             if (auth && auth.isSignInWithEmailLink && auth.isSignInWithEmailLink(email, window.location.href)) {
                 try {
                     await auth.signInWithEmailLink(email, window.location.href);
@@ -34167,7 +34151,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                 }
             }
 
-            /* Tìm pending theo token → update status='confirmed' */
             if (db) {
                 try {
                     var snap = await db.collection('allowed_users').doc(email.toLowerCase())
@@ -34186,7 +34169,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                     var pdoc = snap.docs[0];
                     var pdata = pdoc.data();
 
-                    /* Check hết hạn */
                     var expMs = pdata.expireAt
                         ? (pdata.expireAt.toMillis ? pdata.expireAt.toMillis() : pdata.expireAt.seconds * 1000)
                         : 0;
@@ -34197,7 +34179,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                         return { verified: false, reason: 'expired' };
                     }
 
-                    /* Đánh dấu confirmed */
                     if (pdata.status !== 'confirmed') {
                         await pdoc.ref.update({
                             status: 'confirmed',
@@ -34331,13 +34312,11 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             return;
         }
 
-        /* ⭐ SUPER ADMIN — không mở modal */
         if (__dvlIsSuperAdmin(currentUser.email)) return;
 
         var modal = $('dvlModal');
         if (!modal) return;
 
-        /* Reset UI về mặc định */
         $('dvlTitle').textContent = 'Quản lý thiết bị';
         $('dvlSubtitle').innerHTML = 'Tài khoản của bạn chỉ được đăng nhập trên tối đa <b>2 thiết bị</b>.';
         $('dvlCountBox').style.display = 'flex';
@@ -34358,9 +34337,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         if (m) m.classList.remove('show');
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Modal verify (tab cũ) — nhận emailSent + emailError
-       ═══════════════════════════════════════════════════════════ */
     function showVerifyModal(email, expireAt, token, emailSent, emailError) {
         var modal = $('dvlVerifyModal');
         if (!modal) return;
@@ -34370,7 +34346,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         var emailInline = $('dvlEmailInline');
         if (emailInline) emailInline.textContent = email;
 
-        /* Hiện cảnh báo nếu mail không gửi được */
         var errBox = $('dvlEmailErrorBox');
         var errMsg = $('dvlEmailErrorMsg');
         var stepEmail = $('dvlStepEmail');
@@ -34403,7 +34378,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         _verifyExpireAt = expireAt || (Date.now() + VERIFY_TIMEOUT);
         startTimer();
 
-        /* Poll 5s — chờ email HOẶC admin duyệt */
         if (_verifyPoller) clearInterval(_verifyPoller);
         _verifyPoller = setInterval(async function() {
             if (!modal.classList.contains('show')) {
@@ -34422,7 +34396,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             }
         }, 5000);
 
-        /* Cancel */
         var cancelBtn = $('dvlVerifyCancelBtn');
         if (cancelBtn) {
             cancelBtn.onclick = function() {
@@ -34433,7 +34406,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             };
         }
 
-        /* Gửi lại email */
         var resendBtn = $('dvlVerifyResendBtn');
         if (resendBtn) {
             resendBtn.onclick = async function() {
@@ -34448,7 +34420,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                     if (errBox) errBox.style.display = 'none';
                     if (stepEmail) stepEmail.style.opacity = '1';
 
-                    /* Update Firestore */
                     try {
                         await db.collection('allowed_users').doc(email.toLowerCase())
                             .collection('pending_devices').doc(getDeviceId())
@@ -34472,7 +34443,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             };
         }
 
-        /* Check thủ công */
         var checkBtn = $('dvlVerifyCheckBtn');
         if (checkBtn) {
             checkBtn.onclick = async function() {
@@ -34539,9 +34509,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Đăng xuất các thiết bị khác
-       ═══════════════════════════════════════════════════════════ */
     async function logoutOtherDevices() {
         if (typeof currentUser === 'undefined' || !currentUser || !currentUser.email) return;
         if (__dvlIsSuperAdmin(currentUser.email)) return;
@@ -34567,13 +34534,12 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     }
 
     /* ═══════════════════════════════════════════════════════════
-       Dropdown — nút "Quản lý thiết bị" + "Yêu cầu chờ duyệt"
+       Dropdown — nút "Quản lý thiết bị"
        ═══════════════════════════════════════════════════════════ */
     function injectDropdownButton() {
         var dropdown = document.getElementById('userDropdown');
         if (!dropdown) return false;
 
-        /* SUPER ADMIN — không hiện */
         var curEmail = '';
         try {
             if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
@@ -34582,13 +34548,15 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                 curEmail = auth.currentUser.email || '';
             }
         } catch(e) {}
+
+        /* Super admin — vẫn hiện nút "Quản lý thiết bị" nếu muốn (nhưng không cần)
+           Hiện tại: ẩn nút "Quản lý thiết bị" cho super admin để giữ dropdown gọn */
         if (__dvlIsSuperAdmin(curEmail)) {
             var oldBtn = dropdown.querySelector('#dvlManageBtn');
             if (oldBtn) oldBtn.remove();
             return true;
         }
 
-        /* Nút "Quản lý thiết bị" */
         if (!dropdown.querySelector('#dvlManageBtn')) {
             var logoutBtn = dropdown.querySelector('#logoutBtn');
             if (logoutBtn) {
@@ -34634,11 +34602,11 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     }
 
     /* ═══════════════════════════════════════════════════════════
-       ⭐ ADMIN — Tab "Yêu cầu chờ duyệt"
+       ⭐ ADMIN — Tab "Yêu cầu chờ duyệt" (bao gồm cả super admin)
        ═══════════════════════════════════════════════════════════ */
     async function updatePendingBadge() {
         if (!db) return;
-        if (typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'admin') return;
+        if (!__dvlHasAdminRights()) return;
 
         try {
             var snap = await db.collectionGroup('pending_devices')
@@ -34659,7 +34627,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     }
 
     function injectAdminPendingButton() {
-        if (typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'admin') return;
+        if (!__dvlHasAdminRights()) return;
 
         var dropdown = document.getElementById('userDropdown');
         if (!dropdown) return;
@@ -34687,7 +34655,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     }
 
     async function openPendingList() {
-        if (typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'admin') {
+        if (!__dvlHasAdminRights()) {
             alert('Chỉ admin mới có quyền này.');
             return;
         }
@@ -34718,7 +34686,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                 return;
             }
 
-            /* Sắp xếp mới nhất lên đầu */
             var items = [];
             snap.forEach(function(doc) {
                 var d = doc.data();
@@ -34770,7 +34737,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
             list.innerHTML = html;
 
-            /* Bind nút duyệt */
             list.querySelectorAll('.dvl-approve-btn').forEach(function(btn) {
                 btn.onclick = async function(e) {
                     e.stopPropagation();
@@ -34854,7 +34820,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     }
 
     async function openAdminDeviceView(email) {
-        if (typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'admin') {
+        if (!__dvlHasAdminRights()) {
             alert('Chỉ admin mới có quyền này.');
             return;
         }
@@ -34980,7 +34946,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             }
         });
 
-        /* Inject buttons */
         var tries = 0;
         var injectTimer = setInterval(function() {
             tries++;
@@ -34992,14 +34957,13 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             if (tries > 120) clearInterval(injectTimer);
         }, 500);
 
-        /* Auth hook */
         if (typeof auth !== 'undefined' && auth && !auth.__dvlHooked) {
             auth.__dvlHooked = true;
             auth.onAuthStateChanged(function(user) {
                 if (user && user.email) {
                     setTimeout(function() { updateDropdownBadge(); }, 1500);
                     setTimeout(function() {
-                        if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin') {
+                        if (__dvlHasAdminRights()) {
                             updatePendingBadge();
                         }
                     }, 2000);
@@ -35007,7 +34971,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             });
         }
 
-        /* MutationObserver cho #userList */
         var userList = document.getElementById('userList');
         if (userList && !userList.__dvlObserved) {
             userList.__dvlObserved = true;
@@ -35017,21 +34980,18 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             mo.observe(userList, { childList: true, subtree: true });
         }
 
-        /* Check kicked định kỳ */
         setInterval(function() {
             if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
                 checkIfKicked(currentUser.email);
             }
         }, 30000);
 
-        /* Cập nhật badge pending định kỳ (chỉ admin) */
         setInterval(function() {
-            if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin') {
+            if (__dvlHasAdminRights()) {
                 updatePendingBadge();
             }
         }, 30000);
 
-        /* Kiểm tra URL có link xác nhận (tab mới từ mail) */
         setTimeout(async function() {
             var res = await checkVerifyLink();
             if (!res) return;
@@ -35055,6 +35015,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     window.__dvlOpenPending = openPendingList;
     window.__dvlMaxDevices = MAX_DEVICES;
     window.__dvlIsSuperAdmin = __dvlIsSuperAdmin;
+    window.__dvlHasAdminRights = __dvlHasAdminRights;
 
     window.__dvlDebug = {
         openManage: openManageModal,
@@ -35063,6 +35024,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         getDeviceId: getDeviceId,
         getDeviceName: getDeviceName,
         isSuperAdmin: __dvlIsSuperAdmin,
+        hasAdminRights: __dvlHasAdminRights,
         resetDeviceId: function() {
             try { localStorage.removeItem(DEVICE_ID_KEY); } catch(e) {}
             currentDeviceId = null;
@@ -35084,8 +35046,8 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         initDvl();
     }
 
-    console.log('[Device Limiter] Module loaded — email + admin dual-channel, max ' + MAX_DEVICES);
-})();
+    console.log('[Device Limiter] Module loaded — super admin vẫn duyệt được, max ' + MAX_DEVICES);
+})()
 
 /* DEVICE ACCOUNT MONITOR */
 
