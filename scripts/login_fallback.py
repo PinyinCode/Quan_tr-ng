@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Module đặt mật khẩu lần đầu + form Email/Password nhúng thẳng vào #loginModal."""
+"""Module đặt mật khẩu lần đầu + form Email/Password nhúng thẳng vào #loginModal.
+Tự động thêm @gmail.com nếu user chỉ nhập username, cảnh báo nếu domain khác."""
 
 
 def build_login_fallback_css():
@@ -25,6 +26,16 @@ def build_login_fallback_css():
 .elf-field input:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.15)}
 [data-theme="dark"] .elf-field input{background:#0f172a;border-color:#475569;color:#f1f5f9}
 [data-theme="dark"] .elf-field input:focus{border-color:#818cf8;box-shadow:0 0 0 3px rgba(129,140,248,.2)}
+
+/* Email preview + trạng thái lỗi */
+.elf-email-preview{font-size:.72rem;margin-top:.35rem;line-height:1.4;display:none}
+.elf-email-preview.ok{color:#16a34a}
+.elf-email-preview.error{color:#dc2626}
+.elf-email-preview b{font-weight:700}
+[data-theme="dark"] .elf-email-preview.ok{color:#4ade80}
+[data-theme="dark"] .elf-email-preview.error{color:#fca5a5}
+.elf-field input.elf-input-error{border-color:#dc2626 !important;box-shadow:0 0 0 3px rgba(220,38,38,.15) !important}
+[data-theme="dark"] .elf-field input.elf-input-error{border-color:#f87171 !important}
 
 .elf-pwd-wrap{position:relative}
 .elf-pwd-wrap input{padding-right:2.6rem}
@@ -57,7 +68,7 @@ def build_login_fallback_css():
 .elf-spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:elfSpin .7s linear infinite}
 @keyframes elfSpin{to{transform:rotate(360deg)}}
 
-/* ============ MODAL ĐẶT MẬT KHẨU (giữ nguyên) ============ */
+/* ============ MODAL ĐẶT MẬT KHẨU ============ */
 .elf-modal{position:fixed;inset:0;background:rgba(15,23,42,.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:3100;display:none;align-items:center;justify-content:center;padding:1.25rem;overflow-y:auto;animation:elfFadeIn .2s ease}
 .elf-modal.show{display:flex}
 @keyframes elfFadeIn{from{opacity:0}to{opacity:1}}
@@ -112,7 +123,7 @@ def build_login_fallback_css():
 
 
 def build_login_fallback_html():
-    """Chỉ còn modal đặt mật khẩu. Form email sẽ được JS inject vào #loginModal."""
+    """Chỉ còn modal đặt mật khẩu. Form email được JS inject vào #loginModal."""
     return r"""
 <div class="elf-modal" id="elfSetPwdModal">
     <div class="elf-box">
@@ -174,6 +185,7 @@ def build_login_fallback_js():
     'use strict';
 
     var PWD_ASKED_KEY = 'elf_pwd_asked_';
+    var ALLOWED_DOMAINS = ['gmail.com', 'googlemail.com'];
 
     function waitAuth(cb) {
         var tries = 0;
@@ -204,7 +216,97 @@ def build_login_fallback_js():
         el.innerHTML = '';
     }
 
-    /* ============ SET PASSWORD MODAL ============ */
+    /* ============ XỬ LÝ EMAIL GMAIL ============ */
+    function normalizeGmailEmail(rawInput) {
+        /* Trả về: { email: 'xxx@gmail.com' | null, error: 'msg' | null } */
+        var v = (rawInput || '').trim().toLowerCase().replace(/\s+/g, '');
+        if (!v) return { email: null, error: 'Vui lòng nhập email.' };
+
+        if (v.indexOf('@') !== -1) {
+            var parts = v.split('@');
+            if (parts.length > 2) {
+                return { email: null, error: 'Email không được có nhiều hơn 1 ký tự @.' };
+            }
+
+            var localPart = parts[0];
+            var domain = parts[1];
+
+            if (!localPart) {
+                return { email: null, error: 'Thiếu phần tên email (trước dấu @).' };
+            }
+
+            var normDomain = domain;
+            if (normDomain === 'gmail' || normDomain === 'googlemail') {
+                normDomain = normDomain + '.com';
+            }
+
+            if (ALLOWED_DOMAINS.indexOf(normDomain) === -1) {
+                return {
+                    email: null,
+                    error: 'Vui lòng dùng địa chỉ <b>@gmail.com</b>. Bạn đã nhập <b>@' + domain + '</b>.'
+                };
+            }
+
+            if (!/^[a-z0-9.]+$/.test(localPart)) {
+                return { email: null, error: 'Tên email chỉ được chứa chữ, số và dấu chấm.' };
+            }
+            if (localPart.indexOf('..') !== -1) {
+                return { email: null, error: 'Email không được có 2 dấu chấm liền nhau.' };
+            }
+            if (localPart[0] === '.' || localPart[localPart.length - 1] === '.') {
+                return { email: null, error: 'Email không được bắt đầu/kết thúc bằng dấu chấm.' };
+            }
+
+            return { email: localPart + '@' + normDomain, error: null };
+        }
+
+        /* Không có @ → tự thêm @gmail.com */
+        if (!/^[a-z0-9.]+$/.test(v)) {
+            return { email: null, error: 'Tên email chỉ được chứa chữ, số và dấu chấm.' };
+        }
+        if (v.indexOf('..') !== -1) {
+            return { email: null, error: 'Email không được có 2 dấu chấm liền nhau.' };
+        }
+        if (v[0] === '.' || v[v.length - 1] === '.') {
+            return { email: null, error: 'Email không được bắt đầu/kết thúc bằng dấu chấm.' };
+        }
+
+        return { email: v + '@gmail.com', error: null };
+    }
+
+    function updateEmailPreview(inputId, previewId) {
+        var inp = document.getElementById(inputId);
+        var prev = document.getElementById(previewId);
+        if (!inp || !prev) return;
+
+        var raw = inp.value;
+        if (!raw.trim()) {
+            prev.style.display = 'none';
+            prev.innerHTML = '';
+            inp.classList.remove('elf-input-error');
+            return;
+        }
+
+        var res = normalizeGmailEmail(raw);
+
+        if (res.error) {
+            prev.style.display = 'block';
+            prev.className = 'elf-email-preview error';
+            prev.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + res.error;
+            inp.classList.add('elf-input-error');
+        } else {
+            prev.style.display = 'block';
+            prev.className = 'elf-email-preview ok';
+            if (res.email !== raw.trim().toLowerCase()) {
+                prev.innerHTML = '<i class="fas fa-check-circle"></i> Sẽ dùng: <b>' + res.email + '</b>';
+            } else {
+                prev.innerHTML = '<i class="fas fa-check-circle"></i> Email hợp lệ';
+            }
+            inp.classList.remove('elf-input-error');
+        }
+    }
+
+    /* ============ MODAL ĐẶT MẬT KHẨU ============ */
     function openSetPwdModal() {
         var m = document.getElementById('elfSetPwdModal');
         if (!m) return;
@@ -300,12 +402,12 @@ def build_login_fallback_js():
         var p2 = document.getElementById('elfSetPwd2').value || '';
         var btn = document.getElementById('elfSetPwdSubmit');
 
-        if (p1.length < 6) { showMsg('elfSetMsg', 'Mật khẩu phải từ 6 ký tự trở lên.', 'error'); return; }
-        if (p1 !== p2) { showMsg('elfSetMsg', 'Mật khẩu nhập lại không khớp.', 'error'); return; }
+        if (p1.length < 6) { showSetPwdMsg('Mật khẩu phải từ 6 ký tự trở lên.', 'error'); return; }
+        if (p1 !== p2) { showSetPwdMsg('Mật khẩu nhập lại không khớp.', 'error'); return; }
 
         var user = auth.currentUser;
         if (!user || !user.email) {
-            showMsg('elfSetMsg', 'Không tìm thấy thông tin tài khoản. Vui lòng thử lại.', 'error');
+            showSetPwdMsg('Không tìm thấy thông tin tài khoản. Vui lòng thử lại.', 'error');
             return;
         }
 
@@ -318,7 +420,7 @@ def build_login_fallback_js():
             await user.linkWithCredential(credential);
             try { sessionStorage.removeItem(PWD_ASKED_KEY + user.email.toLowerCase()); } catch(e) {}
 
-            showMsg('elfSetMsg', '✅ Đặt mật khẩu thành công!<br>Lần sau bạn có thể đăng nhập bằng Email.', 'success');
+            showSetPwdMsg('✅ Đặt mật khẩu thành công!<br>Lần sau bạn có thể đăng nhập bằng Email.', 'success');
             setTimeout(function() { closeSetPwdModal(); }, 1500);
         } catch (err) {
             console.error('[ELF SetPwd]', err);
@@ -329,11 +431,20 @@ def build_login_fallback_js():
             else if (err.code === 'auth/requires-recent-login') msg = 'Phiên đăng nhập đã cũ. Đăng xuất rồi đăng nhập lại Google.';
             else if (err.code === 'auth/credential-already-in-use') msg = 'Email đã liên kết tài khoản khác.';
             else if (err.code === 'auth/operation-not-allowed') msg = '⚠️ Chưa bật <b>Email/Password</b> trên Firebase Console.';
-            showMsg('elfSetMsg', msg, 'error');
+            showSetPwdMsg(msg, 'error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = orig;
         }
+    }
+
+    function showSetPwdMsg(msg, type) {
+        var el = document.getElementById('elfSetMsg');
+        if (!el) return;
+        el.style.display = 'block';
+        el.style.background = type === 'error' ? '#fee2e2' : '#dcfce7';
+        el.style.color = type === 'error' ? '#dc2626' : '#15803d';
+        el.innerHTML = msg;
     }
 
     function updateStrength(pwd) {
@@ -369,7 +480,8 @@ def build_login_fallback_js():
             '<form id="elfInlineLoginForm" class="elf-inline-form-body" autocomplete="on" novalidate>' +
                 '<div class="elf-field">' +
                     '<label>Email</label>' +
-                    '<input type="email" id="elfLoginEmail" placeholder="user@gmail.com" autocomplete="email" required>' +
+                    '<input type="text" id="elfLoginEmail" placeholder="Nhập tên email (tự thêm @gmail.com)" autocomplete="email" required inputmode="email">' +
+                    '<div class="elf-email-preview" id="elfLoginEmailPreview"></div>' +
                 '</div>' +
                 '<div class="elf-field">' +
                     '<label>Mật khẩu</label>' +
@@ -390,7 +502,8 @@ def build_login_fallback_js():
             '<form id="elfInlineRegisterForm" class="elf-inline-form-body elf-form-hidden" autocomplete="on" novalidate>' +
                 '<div class="elf-field">' +
                     '<label>Email</label>' +
-                    '<input type="email" id="elfRegEmail" placeholder="user@gmail.com" autocomplete="email" required>' +
+                    '<input type="text" id="elfRegEmail" placeholder="Nhập tên email (tự thêm @gmail.com)" autocomplete="email" required inputmode="email">' +
+                    '<div class="elf-email-preview" id="elfRegEmailPreview"></div>' +
                 '</div>' +
                 '<div class="elf-field">' +
                     '<label>Họ tên (tùy chọn)</label>' +
@@ -466,6 +579,26 @@ def build_login_fallback_js():
             });
         });
 
+        /* Email realtime preview + auto-fill khi blur */
+        ['elfLoginEmail', 'elfRegEmail'].forEach(function(id) {
+            var inp = document.getElementById(id);
+            if (!inp || inp.__elfEmailBound) return;
+            inp.__elfEmailBound = true;
+
+            inp.addEventListener('input', function() {
+                updateEmailPreview(id, id + 'Preview');
+                clearMsg('elfMsg');
+            });
+
+            inp.addEventListener('blur', function() {
+                var res = normalizeGmailEmail(this.value);
+                if (!res.error && res.email !== this.value.trim().toLowerCase()) {
+                    this.value = res.email;
+                    updateEmailPreview(id, id + 'Preview');
+                }
+            });
+        });
+
         /* Pwd toggles */
         document.querySelectorAll('.elf-pwd-toggle').forEach(function(btn) {
             if (btn.__elfBound) return;
@@ -505,11 +638,21 @@ def build_login_fallback_js():
 
     async function doEmailLogin(e) {
         if (e) e.preventDefault();
-        var email = (document.getElementById('elfLoginEmail').value || '').trim().toLowerCase();
+        var rawEmail = document.getElementById('elfLoginEmail').value || '';
         var pwd = document.getElementById('elfLoginPwd').value || '';
         var btn = document.getElementById('elfLoginSubmit');
 
-        if (!email || !email.includes('@')) { showMsg('elfMsg', 'Email không hợp lệ.', 'error'); return; }
+        var res = normalizeGmailEmail(rawEmail);
+        if (res.error) {
+            showMsg('elfMsg', res.error, 'error');
+            return;
+        }
+        var email = res.email;
+
+        /* Cập nhật lại input cho user thấy email chuẩn hoá */
+        document.getElementById('elfLoginEmail').value = email;
+        updateEmailPreview('elfLoginEmail', 'elfLoginEmailPreview');
+
         if (!pwd) { showMsg('elfMsg', 'Vui lòng nhập mật khẩu.', 'error'); return; }
 
         var orig = btn.innerHTML;
@@ -546,13 +689,22 @@ def build_login_fallback_js():
 
     async function doEmailRegister(e) {
         if (e) e.preventDefault();
-        var email = (document.getElementById('elfRegEmail').value || '').trim().toLowerCase();
+        var rawEmail = document.getElementById('elfRegEmail').value || '';
         var name = (document.getElementById('elfRegName').value || '').trim();
         var pwd = document.getElementById('elfRegPwd').value || '';
         var pwd2 = document.getElementById('elfRegPwd2').value || '';
         var btn = document.getElementById('elfRegisterSubmit');
 
-        if (!email || !email.includes('@')) { showMsg('elfMsg', 'Email không hợp lệ.', 'error'); return; }
+        var res = normalizeGmailEmail(rawEmail);
+        if (res.error) {
+            showMsg('elfMsg', res.error, 'error');
+            return;
+        }
+        var email = res.email;
+
+        document.getElementById('elfRegEmail').value = email;
+        updateEmailPreview('elfRegEmail', 'elfRegEmailPreview');
+
         if (pwd.length < 6) { showMsg('elfMsg', 'Mật khẩu phải từ 6 ký tự trở lên.', 'error'); return; }
         if (pwd !== pwd2) { showMsg('elfMsg', 'Mật khẩu nhập lại không khớp.', 'error'); return; }
 
@@ -590,11 +742,16 @@ def build_login_fallback_js():
     }
 
     async function doForgot() {
-        var email = (document.getElementById('elfLoginEmail').value || '').trim().toLowerCase();
-        if (!email || !email.includes('@')) {
-            showMsg('elfMsg', 'Vui lòng nhập email vào ô <b>Email</b> phía trên, rồi bấm lại "Quên mật khẩu".', 'error');
+        var rawEmail = document.getElementById('elfLoginEmail').value || '';
+        var res = normalizeGmailEmail(rawEmail);
+        if (res.error) {
+            showMsg('elfMsg', 'Vui lòng nhập email Gmail hợp lệ vào ô <b>Email</b> trước.', 'error');
             return;
         }
+        var email = res.email;
+        document.getElementById('elfLoginEmail').value = email;
+        updateEmailPreview('elfLoginEmail', 'elfLoginEmailPreview');
+
         if (!confirm('Gửi email khôi phục mật khẩu đến:\n\n' + email + ' ?')) return;
         try {
             await auth.sendPasswordResetEmail(email);
@@ -680,6 +837,7 @@ def build_login_fallback_js():
             document.getElementById('elfRegPwd2').value = p || '';
             doEmailRegister();
         },
+        normalize: function(v) { return normalizeGmailEmail(v); },
         hasPassword: function() { return auth && auth.currentUser ? userHasPassword(auth.currentUser) : false; },
         resetAskedFlag: function() {
             try {
@@ -689,7 +847,7 @@ def build_login_fallback_js():
         }
     };
 
-    console.log('[Login Fallback] Inline module loaded OK');
+    console.log('[Login Fallback] Inline module + Gmail auto-fill loaded OK');
 })();
 """
 
@@ -703,6 +861,7 @@ if __name__ == "__main__":
     print("JS:   %d ký tự" % len(js))
     assert 'elfSetPwdModal' in html
     assert 'elfInlineForm' in js
+    assert 'normalizeGmailEmail' in js
     assert 'signInWithEmailAndPassword' in js
     assert 'createUserWithEmailAndPassword' in js
     print("✅ Module sẵn sàng dùng")
