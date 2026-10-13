@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Module giới hạn 2 thiết bị — xác nhận qua EMAIL hoặc ADMIN duyệt.
+"""Module giới hạn 2 thiết bị — xác nhận email khi có máy thứ 3.
 
-✅ FIX 2026-10:
-   - Super admin BYPASS device limit (không bị chặn login máy 3)
-   - Super admin VẪN THẤY nút "Yêu cầu chờ duyệt" + duyệt được
-   - Super admin VẪN xem được thiết bị của user khác
-   - Máy thứ 3 login → tạo pending + gửi email + báo admin
-   - User có 2 cách xác nhận: bấm link mail HOẶC nhờ admin duyệt
-   - Tab cũ poll 5s → tự vào khi có confirm
+✅ FIX (2026-10):
+   - Super admin BYPASS hoàn toàn (không check gì cả)
+   - Token = "vé 1 lần": tab mới bấm link chỉ CONFIRM pending, KHÔNG login
+   - Tab cũ poll tự động 5s → thấy confirmed → completeVerification() → vào app
+   - checkVerification() query theo deviceId (không phải doc ID)
+   - saveDevices() dùng set(merge:true) tránh lỗi khi doc chưa tồn tại
 """
 
 
@@ -16,7 +15,7 @@ def build_device_css():
 .dvl-modal{position:fixed;inset:0;background:rgba(15,23,42,.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:4300;display:none;align-items:center;justify-content:center;padding:1.25rem;overflow-y:auto;animation:dvlFadeIn .2s ease}
 .dvl-modal.show{display:flex}
 @keyframes dvlFadeIn{from{opacity:0}to{opacity:1}}
-.dvl-box{background:var(--surface);border-radius:20px;padding:1.75rem 1.5rem;max-width:560px;width:100%;max-height:calc(100vh - 2.5rem);overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.35);text-align:left;position:relative;animation:dvlSlideUp .32s cubic-bezier(.34,1.56,.64,1);color:var(--text)}
+.dvl-box{background:var(--surface);border-radius:20px;padding:1.75rem 1.5rem;max-width:520px;width:100%;max-height:calc(100vh - 2.5rem);overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.35);text-align:left;position:relative;animation:dvlSlideUp .32s cubic-bezier(.34,1.56,.64,1);color:var(--text)}
 @keyframes dvlSlideUp{from{transform:translateY(30px) scale(.95);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
 .dvl-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:none;background:var(--surface-2);color:var(--text-2);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:.15s}
 .dvl-close:hover{background:var(--danger-light);color:var(--danger)}
@@ -34,7 +33,7 @@ def build_device_css():
 .dvl-count-box.warn .dvl-count-num{color:#d97706}
 .dvl-count-label{font-size:.82rem;color:var(--text-2);font-weight:600;line-height:1.4}
 .dvl-count-label b{color:var(--text);font-weight:800}
-.dvl-list{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1rem;max-height:380px;overflow-y:auto;padding-right:.25rem}
+.dvl-list{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1rem;max-height:340px;overflow-y:auto;padding-right:.25rem}
 .dvl-list::-webkit-scrollbar{width:6px}
 .dvl-list::-webkit-scrollbar-track{background:transparent}
 .dvl-list::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px}
@@ -58,9 +57,6 @@ def build_device_css():
 .dvl-warning i{color:#f59e0b;margin-top:.15rem;flex-shrink:0;font-size:1rem}
 .dvl-warning b{color:#dc2626}
 [data-theme="dark"] .dvl-warning b{color:#fca5a5}
-.dvl-warning.error{background:linear-gradient(135deg,rgba(220,38,38,.1),rgba(185,28,28,.05));border-color:rgba(220,38,38,.35);color:#991b1b}
-[data-theme="dark"] .dvl-warning.error{color:#fca5a5}
-.dvl-warning.error i{color:#dc2626}
 .dvl-actions{display:flex;gap:.6rem;justify-content:flex-end;padding-top:1rem;border-top:1px solid var(--border);flex-wrap:wrap}
 .dvl-btn{padding:.7rem 1.15rem;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;transition:.15s}
 .dvl-btn:hover:not(:disabled){background:var(--surface-2);border-color:var(--primary);color:var(--primary)}
@@ -71,20 +67,19 @@ def build_device_css():
 .dvl-btn.violet:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 18px rgba(124,58,237,.5);color:#fff}
 .dvl-btn.danger{background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(220,38,38,.3)}
 .dvl-btn.danger:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 18px rgba(220,38,38,.5);color:#fff}
-.dvl-btn.green{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(22,163,74,.3)}
-.dvl-btn.green:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 18px rgba(22,163,74,.5);color:#fff}
-.dvl-btn.small{padding:.45rem .9rem;font-size:.78rem;border-radius:8px}
+.dvl-kick-target{display:flex;align-items:center;gap:.75rem;padding:.85rem 1rem;background:linear-gradient(135deg,rgba(220,38,38,.08),rgba(185,28,28,.04));border:1.5px solid rgba(220,38,38,.35);border-radius:12px;position:relative}
+.dvl-kick-target::before{content:'SẼ BỊ ĐĂNG XUẤT';position:absolute;top:-8px;left:12px;font-size:.58rem;font-weight:900;padding:.15rem .5rem;border-radius:50px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;letter-spacing:.5px;box-shadow:0 2px 6px rgba(220,38,38,.5)}
+.dvl-kick-target .dvl-item-icon{background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border-color:transparent}
+.dvl-kick-target .dvl-item-name{color:#dc2626}
+[data-theme="dark"] .dvl-kick-target .dvl-item-name{color:#fca5a5}
 .dvl-timer{display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .75rem;background:rgba(220,38,38,.1);border:1.5px solid rgba(220,38,38,.3);border-radius:50px;font-size:.85rem;font-weight:800;color:#dc2626;font-variant-numeric:tabular-nums;margin-top:.5rem}
 [data-theme="dark"] .dvl-timer{color:#fca5a5;background:rgba(220,38,38,.2)}
 .dvl-timer i{animation:dvlPulse 1s infinite}
 @keyframes dvlPulse{0%,100%{opacity:1}50%{opacity:.4}}
 .dvl-steps{margin:1rem 0;padding:1rem;background:linear-gradient(135deg,rgba(79,70,229,.06),rgba(124,58,237,.03));border:1px solid rgba(124,58,237,.2);border-radius:12px;display:flex;flex-direction:column;gap:.6rem}
-.dvl-steps.admin{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(217,119,6,.04));border-color:rgba(245,158,11,.3)}
 .dvl-step{display:flex;align-items:flex-start;gap:.6rem;font-size:.8rem;color:var(--text-2);line-height:1.5}
 .dvl-step .num{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:900;flex-shrink:0;line-height:1}
-.dvl-step .num.warn{background:linear-gradient(135deg,#f59e0b,#d97706)}
 .dvl-step b{color:var(--text)}
-.dvl-steps-header{font-weight:800;font-size:.85rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem}
 .dvl-dropdown-btn{display:flex;align-items:center;gap:.5rem;width:100%;padding:.65rem .75rem;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit;text-align:left}
 .dvl-dropdown-btn:hover{background:var(--surface-2)}
 .dvl-dropdown-btn i{color:#06b6d4;width:16px}
@@ -110,7 +105,6 @@ def build_device_css():
 
 def build_device_html():
     return r"""
-<!-- ═══════════ MODAL QUẢN LÝ THIẾT BỊ (dùng chung user + admin) ═══════════ -->
 <div class="dvl-modal" id="dvlModal">
     <div class="dvl-box">
         <button class="dvl-close" id="dvlCloseBtn" type="button" aria-label="Đóng">
@@ -143,28 +137,23 @@ def build_device_html():
     </div>
 </div>
 
-<!-- ═══════════ MODAL XÁC NHẬN ĐĂNG NHẬP THIẾT BỊ MỚI ═══════════ -->
 <div class="dvl-modal" id="dvlVerifyModal">
     <div class="dvl-box">
         <div class="dvl-icon mail"><i class="fas fa-envelope-circle-check"></i></div>
         <div class="dvl-title">Xác nhận đăng nhập thiết bị mới</div>
         <div class="dvl-subtitle">
             Tài khoản của bạn đã đăng nhập trên <b>2 thiết bị</b> khác.
-            Để bảo mật, bạn cần xác nhận bằng <b>1 trong 2 cách</b> sau:
+            Để bảo mật, chúng tôi đã gửi <b>link xác nhận</b> đến email của bạn.
         </div>
 
         <div style="text-align:center;margin-bottom:1rem">
             <span class="dvl-email-highlight" id="dvlVerifyEmail">user@example.com</span>
         </div>
 
-        <!-- Cách 1: Email -->
-        <div class="dvl-steps" id="dvlStepEmail">
-            <div class="dvl-steps-header" style="color:#4f46e5">
-                <i class="fas fa-envelope"></i> Cách 1: Xác nhận qua email
-            </div>
+        <div class="dvl-steps">
             <div class="dvl-step">
                 <span class="num">1</span>
-                <div>Mở email <b id="dvlEmailInline">user@example.com</b> (kiểm tra cả <b>Spam</b>)</div>
+                <div>Mở email của bạn và tìm thư từ <b>Firebase</b> (kiểm tra cả <b>Spam</b>)</div>
             </div>
             <div class="dvl-step">
                 <span class="num">2</span>
@@ -172,36 +161,11 @@ def build_device_html():
             </div>
             <div class="dvl-step">
                 <span class="num">3</span>
-                <div>Quay lại tab này — máy mới sẽ tự vào, máy cũ nhất bị đăng xuất</div>
+                <div>Quay lại tab này — máy mới sẽ được đăng nhập, máy <b>cũ nhất tự động đăng xuất</b></div>
             </div>
         </div>
 
-        <!-- Cảnh báo nếu mail không gửi được -->
-        <div class="dvl-warning error" id="dvlEmailErrorBox" style="display:none">
-            <i class="fas fa-exclamation-triangle"></i>
-            <div id="dvlEmailErrorMsg">Không gửi được email. Vui lòng dùng <b>Cách 2</b> (nhờ admin duyệt).</div>
-        </div>
-
-        <!-- Cách 2: Admin -->
-        <div class="dvl-steps admin" id="dvlStepAdmin">
-            <div class="dvl-steps-header" style="color:#d97706">
-                <i class="fas fa-user-shield"></i> Cách 2: Nhờ admin duyệt
-            </div>
-            <div class="dvl-step">
-                <span class="num warn">1</span>
-                <div>Liên hệ admin qua <b>Zalo / Facebook / Hotline</b></div>
-            </div>
-            <div class="dvl-step">
-                <span class="num warn">2</span>
-                <div>Admin sẽ thấy yêu cầu trong panel và bấm <b>Duyệt</b></div>
-            </div>
-            <div class="dvl-step">
-                <span class="num warn">3</span>
-                <div>Trang này sẽ tự vào app sau khi admin duyệt</div>
-            </div>
-        </div>
-
-        <div style="text-align:center;margin-top:.75rem">
+        <div style="text-align:center">
             <div class="dvl-timer" id="dvlTimer">
                 <i class="fas fa-hourglass-half"></i> Còn lại: <span id="dvlTimerCount">05:00</span>
             </div>
@@ -216,7 +180,7 @@ def build_device_html():
 
         <div class="dvl-actions">
             <button type="button" class="dvl-btn" id="dvlVerifyCancelBtn">
-                <i class="fas fa-times"></i> Hủy
+                <i class="fas fa-times"></i> Hủy đăng nhập
             </button>
             <button type="button" class="dvl-btn violet" id="dvlVerifyResendBtn">
                 <i class="fas fa-paper-plane"></i> Gửi lại email
@@ -228,7 +192,6 @@ def build_device_html():
     </div>
 </div>
 
-<!-- ═══════════ MODAL XÁC NHẬN THÀNH CÔNG ═══════════ -->
 <div class="dvl-modal" id="dvlVerifySuccessModal">
     <div class="dvl-box">
         <div class="dvl-icon" style="background:linear-gradient(135deg,#16a34a,#22c55e)"><i class="fas fa-check"></i></div>
@@ -237,7 +200,7 @@ def build_device_html():
             Thiết bị mới đã được đăng nhập. Thiết bị cũ nhất đã bị đăng xuất khỏi tài khoản.
         </div>
         <div class="dvl-actions">
-            <button type="button" class="dvl-btn green" id="dvlSuccessContinueBtn">
+            <button type="button" class="dvl-btn primary" id="dvlSuccessContinueBtn">
                 <i class="fas fa-arrow-right"></i> Tiếp tục
             </button>
         </div>
@@ -271,7 +234,7 @@ def build_device_js():
     }
 
     /* ═══════════════════════════════════════════════════════════
-       ⭐ SUPER ADMIN — BYPASS device limit (nhưng vẫn được duyệt)
+       ⭐ SUPER ADMIN — BYPASS HOÀN TOÀN, KHÔNG CHECK GÌ CẢ
        ═══════════════════════════════════════════════════════════ */
     function __dvlIsSuperAdmin(email) {
         if (!email) return false;
@@ -283,14 +246,6 @@ def build_device_js():
         } catch(e) {}
         if (!sa) return false;
         return String(email).toLowerCase().trim() === sa;
-    }
-
-    /* ⭐ Có quyền admin? (bao gồm cả super admin) */
-    function __dvlHasAdminRights() {
-        if (typeof currentUser === 'undefined' || !currentUser) return false;
-        if (currentUser.role === 'admin') return true;
-        if (__dvlIsSuperAdmin(currentUser.email)) return true;
-        return false;
     }
 
     function timeAgo(ms) {
@@ -415,7 +370,7 @@ def build_device_js():
     }
 
     /* ═══════════════════════════════════════════════════════════
-       Tạo yêu cầu xác nhận
+       Tạo yêu cầu xác nhận (sinh vé 1 lần)
        ═══════════════════════════════════════════════════════════ */
     async function createVerificationRequest(email) {
         if (!email || !db) return null;
@@ -437,9 +392,7 @@ def build_device_js():
                     token: token,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     expireAt: firebase.firestore.Timestamp.fromMillis(expireAt),
-                    status: 'pending',
-                    emailSent: false,
-                    emailAttempts: 0
+                    status: 'pending'
                 });
 
             try { sessionStorage.setItem(VERIFY_TOKEN_KEY, token); } catch(e) {}
@@ -450,6 +403,9 @@ def build_device_js():
         }
     }
 
+    /* ═══════════════════════════════════════════════════════════
+       Tab cũ — poll theo deviceId
+       ═══════════════════════════════════════════════════════════ */
     async function checkVerification(email) {
         if (!email || !db) return { confirmed: false };
         if (__dvlIsSuperAdmin(email)) return { confirmed: false };
@@ -486,6 +442,9 @@ def build_device_js():
         }
     }
 
+    /* ═══════════════════════════════════════════════════════════
+       Tab cũ — xác nhận thành công → đá máy cũ + thêm máy mới
+       ═══════════════════════════════════════════════════════════ */
     async function completeVerification(email) {
         if (!email || !db) return false;
         if (__dvlIsSuperAdmin(email)) return false;
@@ -520,6 +479,7 @@ def build_device_js():
 
         await saveDevices(email, devices);
 
+        /* Xóa pending của deviceId này */
         try {
             var snap = await db.collection('allowed_users').doc(email.toLowerCase())
                 .collection('pending_devices')
@@ -535,6 +495,9 @@ def build_device_js():
         return true;
     }
 
+    /* ═══════════════════════════════════════════════════════════
+       Kiểm tra máy có bị đá
+       ═══════════════════════════════════════════════════════════ */
     async function checkIfKicked(email) {
         if (!email || !db) return false;
         if (__dvlIsSuperAdmin(email)) return false;
@@ -581,6 +544,7 @@ def build_device_js():
         var now = Date.now();
         var devices = await loadDevices(email);
 
+        /* Đã có → update lastSeen */
         var found = -1;
         for (var i = 0; i < devices.length; i++) {
             if (devices[i].id === deviceId) { found = i; break; }
@@ -594,6 +558,7 @@ def build_device_js():
             return { allowed: true };
         }
 
+        /* Đã có pending? */
         try {
             var pendingSnap = await db.collection('allowed_users').doc(email.toLowerCase())
                 .collection('pending_devices')
@@ -620,15 +585,14 @@ def build_device_js():
                             needsVerify: true,
                             expireAt: expMs,
                             token: pd.token,
-                            existing: true,
-                            emailSent: pd.emailSent === true,
-                            emailError: null
+                            existing: true
                         };
                     }
                 }
             }
         } catch(e) {}
 
+        /* Chưa đủ giới hạn → thêm thẳng */
         if (devices.length < MAX_DEVICES) {
             devices.push({
                 id: deviceId, name: getDeviceName(), type: detectDeviceType(),
@@ -639,38 +603,22 @@ def build_device_js():
             return { allowed: true, isNew: true };
         }
 
+        /* Đã đủ → yêu cầu xác nhận email */
         var token = await createVerificationRequest(email);
-
-        var emailResult = { ok: false, reason: 'not_sent' };
-        try {
-            emailResult = await sendVerifyEmail(email, token);
-
-            try {
-                await db.collection('allowed_users').doc(email.toLowerCase())
-                    .collection('pending_devices').doc(deviceId)
-                    .update({
-                        emailSent: emailResult.ok === true,
-                        emailAttempts: firebase.firestore.FieldValue.increment(1),
-                        emailError: emailResult.ok ? null : (emailResult.reason || 'unknown')
-                    });
-            } catch(_e) {}
-        } catch(e) {
-            console.warn('[DVL] Email send failed (admin vẫn duyệt được):', e);
-        }
-
         return {
             allowed: false,
             needsVerify: true,
             expireAt: now + VERIFY_TIMEOUT,
             token: token,
-            devices: devices,
-            emailSent: emailResult.ok === true,
-            emailError: emailResult.ok ? null : emailResult.reason
+            devices: devices
         };
     }
 
+    /* ═══════════════════════════════════════════════════════════
+       Gửi email xác nhận (dùng Firebase sendSignInLink)
+       ═══════════════════════════════════════════════════════════ */
     async function sendVerifyEmail(email, token) {
-        if (!email || !auth) return { ok: false, reason: 'no_auth' };
+        if (!email || !auth) return false;
 
         try {
             var currentHost = window.location.origin + window.location.pathname;
@@ -681,16 +629,16 @@ def build_device_js():
 
             await auth.sendSignInLinkToEmail(email, actionCodeSettings);
             try { localStorage.setItem('dvl_pending_email', email); } catch(e) {}
-
-            console.log('[DVL] ✅ Đã gửi email xác nhận đến:', email);
-            return { ok: true };
-
+            return true;
         } catch(e) {
-            console.error('[DVL] ❌ Send verify email error:', e.code, e.message);
-            return { ok: false, reason: e.code || e.message };
+            console.warn('[DVL] Send verify email error:', e);
+            return false;
         }
     }
 
+    /* ═══════════════════════════════════════════════════════════
+       Tab MỚI (bấm link mail) — CHỈ CONFIRM, KHÔNG LOGIN
+       ═══════════════════════════════════════════════════════════ */
     async function checkVerifyLink() {
         try {
             var params = new URLSearchParams(window.location.search);
@@ -705,12 +653,14 @@ def build_device_js():
 
             if (!email) return false;
 
+            /* ⭐ SUPER ADMIN — bỏ qua */
             if (__dvlIsSuperAdmin(email)) {
                 var url0 = window.location.pathname;
                 window.history.replaceState({}, document.title, url0);
                 return false;
             }
 
+            /* Firebase email-link sign-in (nếu dùng) */
             if (auth && auth.isSignInWithEmailLink && auth.isSignInWithEmailLink(email, window.location.href)) {
                 try {
                     await auth.signInWithEmailLink(email, window.location.href);
@@ -719,6 +669,7 @@ def build_device_js():
                 }
             }
 
+            /* ⭐ Tìm pending theo token → chỉ update status='confirmed' */
             if (db) {
                 try {
                     var snap = await db.collection('allowed_users').doc(email.toLowerCase())
@@ -737,6 +688,7 @@ def build_device_js():
                     var pdoc = snap.docs[0];
                     var pdata = pdoc.data();
 
+                    /* Check hết hạn */
                     var expMs = pdata.expireAt
                         ? (pdata.expireAt.toMillis ? pdata.expireAt.toMillis() : pdata.expireAt.seconds * 1000)
                         : 0;
@@ -747,6 +699,7 @@ def build_device_js():
                         return { verified: false, reason: 'expired' };
                     }
 
+                    /* Đánh dấu confirmed */
                     if (pdata.status !== 'confirmed') {
                         await pdoc.ref.update({
                             status: 'confirmed',
@@ -880,16 +833,11 @@ def build_device_js():
             return;
         }
 
+        /* ⭐ SUPER ADMIN — không mở modal */
         if (__dvlIsSuperAdmin(currentUser.email)) return;
 
         var modal = $('dvlModal');
         if (!modal) return;
-
-        $('dvlTitle').textContent = 'Quản lý thiết bị';
-        $('dvlSubtitle').innerHTML = 'Tài khoản của bạn chỉ được đăng nhập trên tối đa <b>2 thiết bị</b>.';
-        $('dvlCountBox').style.display = 'flex';
-        $('dvlLogoutOthersBtn').style.display = 'inline-flex';
-
         modal.classList.add('show');
 
         var list = $('dvlList');
@@ -905,36 +853,15 @@ def build_device_js():
         if (m) m.classList.remove('show');
     }
 
-    function showVerifyModal(email, expireAt, token, emailSent, emailError) {
+    /* ═══════════════════════════════════════════════════════════
+       Modal verify (tab cũ)
+       ═══════════════════════════════════════════════════════════ */
+    function showVerifyModal(email, expireAt, token) {
         var modal = $('dvlVerifyModal');
         if (!modal) return;
 
         var emailEl = $('dvlVerifyEmail');
         if (emailEl) emailEl.textContent = email;
-        var emailInline = $('dvlEmailInline');
-        if (emailInline) emailInline.textContent = email;
-
-        var errBox = $('dvlEmailErrorBox');
-        var errMsg = $('dvlEmailErrorMsg');
-        var stepEmail = $('dvlStepEmail');
-
-        if (emailSent === false) {
-            if (errBox) errBox.style.display = 'flex';
-            if (errMsg) {
-                var reason = emailError || 'Không rõ nguyên nhân';
-                if (reason === 'auth/operation-not-allowed') reason = 'Chưa bật Email Link trên Firebase Console.';
-                else if (reason === 'auth/unauthorized-continue-uri') reason = 'Domain chưa được add vào Authorized domains.';
-                else if (reason === 'auth/quota-exceeded') reason = 'Đã vượt quota gửi mail hôm nay.';
-                else if (reason === 'auth/invalid-email') reason = 'Email không hợp lệ.';
-                else if (reason === 'auth/network-request-failed') reason = 'Lỗi mạng — thử lại sau.';
-                errMsg.innerHTML = '<b>Không gửi được email:</b> ' + esc(reason) +
-                                   '<br>Vui lòng dùng <b>Cách 2</b> (nhờ admin duyệt).';
-            }
-            if (stepEmail) stepEmail.style.opacity = '0.4';
-        } else {
-            if (errBox) errBox.style.display = 'none';
-            if (stepEmail) stepEmail.style.opacity = '1';
-        }
 
         if (token) {
             _verifyToken = token;
@@ -946,6 +873,7 @@ def build_device_js():
         _verifyExpireAt = expireAt || (Date.now() + VERIFY_TIMEOUT);
         startTimer();
 
+        /* ⭐ Poll 5s — tab cũ tự vào khi tab mới confirm */
         if (_verifyPoller) clearInterval(_verifyPoller);
         _verifyPoller = setInterval(async function() {
             if (!modal.classList.contains('show')) {
@@ -981,30 +909,15 @@ def build_device_js():
                 resendBtn.disabled = true;
                 resendBtn.innerHTML = '<span class="dvl-spinner"></span> Đang gửi...';
 
-                var result = await sendVerifyEmail(email, _verifyToken);
-
-                if (result.ok) {
+                var ok = await sendVerifyEmail(email, _verifyToken);
+                if (ok) {
                     resendBtn.innerHTML = '<i class="fas fa-check"></i> Đã gửi';
-                    if (errBox) errBox.style.display = 'none';
-                    if (stepEmail) stepEmail.style.opacity = '1';
-
-                    try {
-                        await db.collection('allowed_users').doc(email.toLowerCase())
-                            .collection('pending_devices').doc(getDeviceId())
-                            .update({
-                                emailSent: true,
-                                emailAttempts: firebase.firestore.FieldValue.increment(1),
-                                emailError: null
-                            });
-                    } catch(_e) {}
-
                     setTimeout(function() {
                         resendBtn.disabled = false;
                         resendBtn.innerHTML = orig;
                     }, 3000);
                 } else {
-                    alert('❌ Không gửi được email.\n\nLý do: ' + (result.reason || 'Không rõ') +
-                          '\n\n💡 Hãy dùng Cách 2 — nhờ admin duyệt.');
+                    alert('Không gửi được email. Vui lòng thử lại sau.');
                     resendBtn.disabled = false;
                     resendBtn.innerHTML = orig;
                 }
@@ -1026,7 +939,7 @@ def build_device_js():
                     modal.classList.remove('show');
                     showSuccessModal();
                 } else {
-                    alert('Chưa xác nhận.\n\nVui lòng:\n• Kiểm tra email (cả Spam) và bấm link\n• Hoặc nhờ admin duyệt trong panel');
+                    alert('Chưa xác nhận hoặc link đã hết hạn.\n\nVui lòng kiểm tra email và bấm link, hoặc bấm "Gửi lại email".');
                     checkBtn.disabled = false;
                     checkBtn.innerHTML = orig;
                 }
@@ -1077,6 +990,9 @@ def build_device_js():
         if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
     }
 
+    /* ═══════════════════════════════════════════════════════════
+       Đăng xuất các thiết bị khác
+       ═══════════════════════════════════════════════════════════ */
     async function logoutOtherDevices() {
         if (typeof currentUser === 'undefined' || !currentUser || !currentUser.email) return;
         if (__dvlIsSuperAdmin(currentUser.email)) return;
@@ -1102,12 +1018,13 @@ def build_device_js():
     }
 
     /* ═══════════════════════════════════════════════════════════
-       Dropdown — nút "Quản lý thiết bị"
+       Chèn nút vào dropdown (bỏ qua super admin)
        ═══════════════════════════════════════════════════════════ */
     function injectDropdownButton() {
         var dropdown = document.getElementById('userDropdown');
         if (!dropdown) return false;
 
+        /* ⭐ SUPER ADMIN — không hiện nút */
         var curEmail = '';
         try {
             if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
@@ -1116,42 +1033,40 @@ def build_device_js():
                 curEmail = auth.currentUser.email || '';
             }
         } catch(e) {}
-
-        /* Super admin — vẫn hiện nút "Quản lý thiết bị" nếu muốn (nhưng không cần)
-           Hiện tại: ẩn nút "Quản lý thiết bị" cho super admin để giữ dropdown gọn */
         if (__dvlIsSuperAdmin(curEmail)) {
             var oldBtn = dropdown.querySelector('#dvlManageBtn');
             if (oldBtn) oldBtn.remove();
             return true;
         }
 
-        if (!dropdown.querySelector('#dvlManageBtn')) {
-            var logoutBtn = dropdown.querySelector('#logoutBtn');
-            if (logoutBtn) {
-                var btn = document.createElement('button');
-                btn.type = 'button';
-                btn.id = 'dvlManageBtn';
-                btn.className = 'dvl-dropdown-btn';
-                btn.innerHTML = '<i class="fas fa-mobile-screen-button"></i> Quản lý thiết bị<span class="dvl-badge" id="dvlDropdownBadge">0/' + MAX_DEVICES + '</span>';
+        if (dropdown.querySelector('#dvlManageBtn')) return true;
 
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    try {
-                        var dd = document.getElementById('userDropdown');
-                        if (dd) dd.classList.remove('show');
-                    } catch(_e) {}
-                    openManageModal();
-                });
+        var logoutBtn = dropdown.querySelector('#logoutBtn');
+        if (!logoutBtn) return false;
 
-                logoutBtn.parentNode.insertBefore(btn, logoutBtn);
-            }
-        }
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'dvlManageBtn';
+        btn.className = 'dvl-dropdown-btn';
+        btn.innerHTML = '<i class="fas fa-mobile-screen-button"></i> Quản lý thiết bị<span class="dvl-badge" id="dvlDropdownBadge">0/' + MAX_DEVICES + '</span>';
 
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            try {
+                var dd = document.getElementById('userDropdown');
+                if (dd) dd.classList.remove('show');
+            } catch(_e) {}
+            openManageModal();
+        });
+
+        logoutBtn.parentNode.insertBefore(btn, logoutBtn);
         return true;
     }
 
     async function updateDropdownBadge() {
         if (typeof currentUser === 'undefined' || !currentUser || !currentUser.email) return;
+
+        /* ⭐ SUPER ADMIN — không hiện badge */
         if (__dvlIsSuperAdmin(currentUser.email)) {
             var b = document.getElementById('dvlDropdownBadge');
             if (b) b.style.display = 'none';
@@ -1170,190 +1085,7 @@ def build_device_js():
     }
 
     /* ═══════════════════════════════════════════════════════════
-       ⭐ ADMIN — Tab "Yêu cầu chờ duyệt" (bao gồm cả super admin)
-       ═══════════════════════════════════════════════════════════ */
-    async function updatePendingBadge() {
-        if (!db) return;
-        if (!__dvlHasAdminRights()) return;
-
-        try {
-            var snap = await db.collectionGroup('pending_devices')
-                .where('status', '==', 'pending')
-                .get();
-
-            var count = snap.size;
-            var badge = document.getElementById('dvlPendingBadge');
-            if (badge) {
-                badge.textContent = count;
-                badge.style.display = count > 0 ? 'inline-block' : 'none';
-            }
-            return count;
-        } catch(e) {
-            console.warn('[DVL] updatePendingBadge error:', e);
-            return 0;
-        }
-    }
-
-    function injectAdminPendingButton() {
-        if (!__dvlHasAdminRights()) return;
-
-        var dropdown = document.getElementById('userDropdown');
-        if (!dropdown) return;
-        if (dropdown.querySelector('#dvlPendingBtn')) return;
-
-        var logoutBtn = dropdown.querySelector('#logoutBtn');
-        if (!logoutBtn) return;
-
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.id = 'dvlPendingBtn';
-        btn.className = 'dvl-dropdown-btn';
-        btn.innerHTML = '<i class="fas fa-clock" style="color:#f59e0b"></i> Yêu cầu chờ duyệt' +
-                        '<span class="dvl-badge warn" id="dvlPendingBadge" style="display:none">0</span>';
-
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var dd = document.getElementById('userDropdown');
-            if (dd) dd.classList.remove('show');
-            openPendingList();
-        });
-
-        logoutBtn.parentNode.insertBefore(btn, logoutBtn);
-        updatePendingBadge();
-    }
-
-    async function openPendingList() {
-        if (!__dvlHasAdminRights()) {
-            alert('Chỉ admin mới có quyền này.');
-            return;
-        }
-
-        var modal = $('dvlModal');
-        if (!modal) return;
-
-        $('dvlTitle').textContent = 'Yêu cầu chờ duyệt';
-        $('dvlSubtitle').innerHTML = 'Danh sách thiết bị đang chờ admin xác nhận. Bấm <b>Duyệt</b> để cho phép đăng nhập.';
-        $('dvlCountBox').style.display = 'none';
-        $('dvlWarning').style.display = 'none';
-        $('dvlLogoutOthersBtn').style.display = 'none';
-
-        modal.classList.add('show');
-
-        var list = $('dvlList');
-        list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3)"><i class="fas fa-spinner fa-pulse"></i> Đang tải...</div>';
-
-        try {
-            var snap = await db.collectionGroup('pending_devices')
-                .where('status', '==', 'pending')
-                .get();
-
-            if (snap.empty) {
-                list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3)">' +
-                    '<i class="fas fa-inbox" style="font-size:2rem;opacity:.4;display:block;margin-bottom:.5rem"></i>' +
-                    'Không có yêu cầu nào</div>';
-                return;
-            }
-
-            var items = [];
-            snap.forEach(function(doc) {
-                var d = doc.data();
-                var email = doc.ref.parent.parent.id;
-                items.push({ doc: doc, data: d, email: email });
-            });
-            items.sort(function(a, b) {
-                var ta = a.data.createdAt ? a.data.createdAt.toMillis() : 0;
-                var tb = b.data.createdAt ? b.data.createdAt.toMillis() : 0;
-                return tb - ta;
-            });
-
-            var html = '';
-            items.forEach(function(item) {
-                var d = item.data;
-                var email = item.email;
-                var deviceId = d.deviceId;
-
-                var created = d.createdAt && d.createdAt.toMillis
-                    ? new Date(d.createdAt.toMillis()).toLocaleString('vi-VN')
-                    : 'Không rõ';
-
-                var expMs = d.expireAt ? (d.expireAt.toMillis ? d.expireAt.toMillis() : d.expireAt.seconds * 1000) : 0;
-                var remain = expMs ? Math.max(0, Math.floor((expMs - Date.now()) / 1000)) : 0;
-                var remainStr = remain > 0
-                    ? Math.floor(remain / 60) + 'p ' + (remain % 60) + 's'
-                    : 'Hết hạn';
-
-                var emailStatus = d.emailSent
-                    ? '<span class="dvl-tag ok"><i class="fas fa-envelope"></i> Đã gửi mail</span>'
-                    : '<span class="dvl-tag" style="background:rgba(220,38,38,.1);color:#dc2626;border-color:rgba(220,38,38,.3)"><i class="fas fa-envelope"></i> Mail lỗi</span>';
-
-                html += '<div class="dvl-item" data-email="' + esc(email) + '" data-device-id="' + esc(deviceId) + '">' +
-                    '<div class="dvl-item-icon"><i class="fas ' + getDeviceIcon(d.deviceType || 'desktop') + '"></i></div>' +
-                    '<div class="dvl-item-info">' +
-                        '<div class="dvl-item-name">' + esc(email) + '</div>' +
-                        '<div class="dvl-item-meta">' +
-                            '<span class="dvl-tag info"><i class="fas fa-mobile"></i> ' + esc(d.deviceName || 'Thiết bị') + '</span>' +
-                            emailStatus +
-                            '<span><i class="fas fa-clock"></i> ' + created + '</span>' +
-                            '<span style="color:' + (remain > 0 ? '#16a34a' : '#dc2626') + '">⏱ ' + remainStr + '</span>' +
-                        '</div>' +
-                    '</div>' +
-                    '<button class="dvl-btn green small dvl-approve-btn">' +
-                        '<i class="fas fa-check"></i> Duyệt' +
-                    '</button>' +
-                '</div>';
-            });
-
-            list.innerHTML = html;
-
-            list.querySelectorAll('.dvl-approve-btn').forEach(function(btn) {
-                btn.onclick = async function(e) {
-                    e.stopPropagation();
-                    var item = this.closest('.dvl-item');
-                    var email = item.dataset.email;
-                    var deviceId = item.dataset.deviceId;
-
-                    if (!confirm('Xác nhận cho thiết bị này đăng nhập?\n\nUser: ' + email)) return;
-
-                    var orig = this.innerHTML;
-                    this.disabled = true;
-                    this.innerHTML = '<span class="dvl-spinner"></span>';
-
-                    try {
-                        await db.collection('allowed_users').doc(email)
-                            .collection('pending_devices').doc(deviceId)
-                            .update({
-                                status: 'confirmed',
-                                confirmedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                                confirmedBy: currentUser.email,
-                                confirmedVia: 'admin_panel'
-                            });
-
-                        item.style.opacity = '0.5';
-                        item.style.pointerEvents = 'none';
-                        this.innerHTML = '<i class="fas fa-check"></i> Đã duyệt';
-                        this.style.background = 'linear-gradient(135deg,#16a34a,#22c55e)';
-
-                        updatePendingBadge();
-
-                        if (typeof showUserChangedToast === 'function') {
-                            showUserChangedToast('✅ Đã duyệt thiết bị cho ' + email, 'success');
-                        }
-                    } catch(err) {
-                        alert('Lỗi: ' + err.message);
-                        this.disabled = false;
-                        this.innerHTML = orig;
-                    }
-                };
-            });
-
-        } catch(e) {
-            console.error('[DVL] openPendingList error:', e);
-            list.innerHTML = '<div style="text-align:center;padding:2rem;color:#dc2626">Lỗi: ' + esc(e.message) + '</div>';
-        }
-    }
-
-    /* ═══════════════════════════════════════════════════════════
-       Nút admin xem thiết bị của user (trong #userList)
+       Nút admin trong user row
        ═══════════════════════════════════════════════════════════ */
     function injectAdminDeviceButton() {
         var userList = document.getElementById('userList');
@@ -1388,27 +1120,32 @@ def build_device_js():
     }
 
     async function openAdminDeviceView(email) {
-        if (!__dvlHasAdminRights()) {
+        if (typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'admin') {
             alert('Chỉ admin mới có quyền này.');
             return;
         }
 
         var modal = $('dvlModal');
         if (!modal) return;
-
-        $('dvlTitle').textContent = 'Thiết bị của user';
-        $('dvlSubtitle').innerHTML = 'Danh sách thiết bị đăng nhập của user: <b>' + esc(email) + '</b>.';
-        $('dvlCountBox').style.display = 'flex';
-        $('dvlWarning').style.display = 'none';
-        $('dvlLogoutOthersBtn').style.display = 'none';
-
         modal.classList.add('show');
 
+        var subtitle = $('dvlSubtitle');
+        if (subtitle) {
+            subtitle.innerHTML = 'Danh sách thiết bị đăng nhập của user: <b>' + esc(email) + '</b>.';
+        }
+
+        var titleEl = $('dvlTitle');
+        if (titleEl) titleEl.textContent = 'Thiết bị của user';
+
         var list = $('dvlList');
-        list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3)"><i class="fas fa-spinner fa-pulse"></i> Đang tải...</div>';
+        if (list) list.innerHTML = '<div style="text-align:center;padding:2rem 1rem;color:var(--text-3)"><i class="fas fa-spinner fa-pulse"></i> Đang tải...</div>';
 
         var devices = await loadDevices(email);
         updateModalUI(email, devices);
+
+        var logoutOthers = $('dvlLogoutOthersBtn');
+        if (logoutOthers) logoutOthers.style.display = 'none';
+
         renderDeviceList(list, devices, email, false);
     }
 
@@ -1520,7 +1257,6 @@ def build_device_js():
             try {
                 injectDropdownButton();
                 injectAdminDeviceButton();
-                injectAdminPendingButton();
             } catch(e) {}
             if (tries > 120) clearInterval(injectTimer);
         }, 500);
@@ -1530,11 +1266,6 @@ def build_device_js():
             auth.onAuthStateChanged(function(user) {
                 if (user && user.email) {
                     setTimeout(function() { updateDropdownBadge(); }, 1500);
-                    setTimeout(function() {
-                        if (__dvlHasAdminRights()) {
-                            updatePendingBadge();
-                        }
-                    }, 2000);
                 }
             });
         }
@@ -1554,12 +1285,7 @@ def build_device_js():
             }
         }, 30000);
 
-        setInterval(function() {
-            if (__dvlHasAdminRights()) {
-                updatePendingBadge();
-            }
-        }, 30000);
-
+        /* ⭐ Kiểm tra URL có link xác nhận (tab mới từ mail) */
         setTimeout(async function() {
             var res = await checkVerifyLink();
             if (!res) return;
@@ -1580,19 +1306,15 @@ def build_device_js():
     window.__dvlShowVerifyModal = showVerifyModal;
     window.__dvlOpenManage = openManageModal;
     window.__dvlOpenAdmin = openAdminDeviceView;
-    window.__dvlOpenPending = openPendingList;
     window.__dvlMaxDevices = MAX_DEVICES;
     window.__dvlIsSuperAdmin = __dvlIsSuperAdmin;
-    window.__dvlHasAdminRights = __dvlHasAdminRights;
 
     window.__dvlDebug = {
         openManage: openManageModal,
         openAdmin: openAdminDeviceView,
-        openPending: openPendingList,
         getDeviceId: getDeviceId,
         getDeviceName: getDeviceName,
         isSuperAdmin: __dvlIsSuperAdmin,
-        hasAdminRights: __dvlHasAdminRights,
         resetDeviceId: function() {
             try { localStorage.removeItem(DEVICE_ID_KEY); } catch(e) {}
             currentDeviceId = null;
@@ -1600,12 +1322,7 @@ def build_device_js():
         loadDevices: loadDevices,
         register: registerCurrentDevice,
         checkKicked: checkIfKicked,
-        checkVerify: checkVerification,
-        testSendMail: async function(email, token) {
-            var res = await sendVerifyEmail(email || 'test@gmail.com', token || 'TESTTOKEN');
-            console.log('Test send mail result:', res);
-            return res;
-        }
+        checkVerify: checkVerification
     };
 
     if (document.readyState === 'loading') {
@@ -1614,8 +1331,8 @@ def build_device_js():
         initDvl();
     }
 
-    console.log('[Device Limiter] Module loaded — super admin vẫn duyệt được, max ' + MAX_DEVICES);
-})()
+    console.log('[Device Limiter] Module loaded — super admin bypass, token 1 lần, max ' + MAX_DEVICES);
+})();
 """
 
 
@@ -1630,18 +1347,11 @@ if __name__ == "__main__":
 
     assert 'dvlVerifyModal' in html
     assert 'dvlVerifySuccessModal' in html
-    assert 'dvlEmailErrorBox' in html
-    assert 'dvlStepEmail' in html
-    assert 'dvlStepAdmin' in html
-    assert '__dvlHasAdminRights' in js
     assert 'registerCurrentDevice' in js
     assert 'sendVerifyEmail' in js
     assert 'checkVerifyLink' in js
-    assert 'openPendingList' in js
-    assert 'updatePendingBadge' in js
-    assert 'injectAdminPendingButton' in js
     assert 'MAX_DEVICES = 2' in js
     assert '__dvlIsSuperAdmin' in js
     assert 'renderVerifySuccessPage' in js
 
-    print("✅ Module san sang dung")
+    print("Module san sang dung")
