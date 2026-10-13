@@ -2785,31 +2785,68 @@ function applyUserUI() {
         try { markCurrentDatasetActive(); } catch(e) {}
     }
 
-    /* ⭐ Check lệnh gia hạn đang chờ */
+   /* ⭐ Check lệnh gia hạn đang chờ */
     setTimeout(checkPendingRenewalBadge, 500);
+
+    /* ⭐ FIX: Force bind theme toggle + avatar sau login */
     setTimeout(function() {
-    var themeBtn = document.getElementById('themeToggle');
-    if (themeBtn) {
-        themeBtn.style.pointerEvents = 'auto';
-        themeBtn.style.position = 'relative';
-        themeBtn.style.zIndex = '1001';
-    }
-    
-    var userMenu = document.getElementById('userMenu');
-    if (userMenu) {
-        userMenu.style.pointerEvents = 'auto';
-        userMenu.style.position = 'relative';
-        userMenu.style.zIndex = '1000';
-    }
-    
-    var ha = document.querySelector('.header-actions');
-    if (ha) {
-        ha.style.pointerEvents = 'auto';
-        ha.style.zIndex = '900';
-    }
-    
-    console.log('[Auth] applyUserUI: force pointer-events OK');
-}, 100);
+        /* --- Theme toggle --- */
+        var themeBtn = document.getElementById('themeToggle');
+        if (themeBtn) {
+            themeBtn.style.pointerEvents = 'auto';
+            themeBtn.style.position = 'relative';
+            themeBtn.style.zIndex = '1001';
+
+            /* ⭐ Force bind listener (xoá cũ bằng clone) */
+            if (!themeBtn.__themeFixed) {
+                var newBtn = themeBtn.cloneNode(true);
+                themeBtn.parentNode.replaceChild(newBtn, themeBtn);
+                newBtn.__themeFixed = true;
+
+                newBtn.addEventListener('click', function() {
+                    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                    var newTheme = isDark ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    try { localStorage.setItem('theme', newTheme); } catch(e) {}
+                    var icon = newBtn.querySelector('i');
+                    if (icon) icon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
+                });
+
+                /* Set icon đúng trạng thái hiện tại */
+                var curIcon = newBtn.querySelector('i');
+                if (curIcon) {
+                    curIcon.className = document.documentElement.getAttribute('data-theme') === 'dark'
+                        ? 'fas fa-sun' : 'fas fa-moon';
+                }
+            }
+        }
+
+        /* --- User avatar --- */
+        var avatar = document.getElementById('userAvatar');
+        if (avatar && !avatar.__avatarFixed) {
+            var newAvatar = avatar.cloneNode(true);
+            avatar.parentNode.replaceChild(newAvatar, avatar);
+            newAvatar.__avatarFixed = true;
+
+            newAvatar.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var dd = document.getElementById('userDropdown');
+                if (!dd) return;
+                var willOpen = !dd.classList.contains('show');
+                dd.classList.toggle('show');
+                try { sessionStorage.setItem('userDropdownClosed', willOpen ? '0' : '1'); } catch(_e) {}
+            });
+        }
+
+        /* --- header-actions pointer events --- */
+        var ha = document.querySelector('.header-actions');
+        if (ha) {
+            ha.style.pointerEvents = 'auto';
+            ha.style.zIndex = '900';
+        }
+
+        console.log('[Auth] applyUserUI: force bind theme + avatar OK');
+    }, 150);
 }
 async function checkPendingRenewalBadge() {
     if (!currentUser || currentUser.role === 'admin' || currentUser.isPermanent) {
