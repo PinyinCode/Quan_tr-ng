@@ -2793,22 +2793,17 @@ function applyUserUI() {
         /* ===== THEME ===== */
         var t = document.getElementById('themeToggle');
         if (t) {
-            t.style.pointerEvents = 'auto';
-            t.style.position = 'relative';
-            t.style.zIndex = '1001';
+    t.style.pointerEvents = 'auto';
+    t.style.position = 'relative';
+    t.style.zIndex = '1001';
 
-            t.onclick = function(e) {
-                if (e) e.preventDefault();
-                var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                var newTheme = isDark ? 'light' : 'dark';
-                document.documentElement.setAttribute('data-theme', newTheme);
-                try { localStorage.setItem('theme', newTheme); } catch(err) {}
-
-                /* Update icon */
-                var icon = t.querySelector('i');
-                if (icon) icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-            };
-
+    /* Chỉ set icon đúng trạng thái — KHÔNG bind onclick */
+    var curIcon = t.querySelector('i');
+    if (curIcon) {
+        curIcon.className = document.documentElement.getAttribute('data-theme') === 'dark'
+            ? 'fas fa-sun' : 'fas fa-moon';
+    }
+}
             /* Set icon đúng trạng thái hiện tại */
             var curIcon = t.querySelector('i');
             if (curIcon) {
