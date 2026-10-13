@@ -7,6 +7,7 @@ import sys
 import glob
 import re
 import unicodedata
+from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -64,6 +65,8 @@ from device_account_monitor import (
     build_dam_js,
 )
 from auto_scale import build_auto_scale_css, build_auto_scale_js
+
+
 def _js_str(s):
     if s is None:
         return ""
@@ -984,7 +987,6 @@ function renderMnemonicModal(modal, data) {
 
     var html = '<div class="mnemonic-box">';
 
-    // HEADER — có nút loa
     html += '<div class="mnemonic-header">';
     html += '<span class="mnemonic-char">' + escapeHtml(ch) + '</span>';
     html += '<button class="mnemonic-audio-btn" onclick="speakMnemonicChar(\'' +
@@ -996,7 +998,6 @@ function renderMnemonicModal(modal, data) {
 
     html += '<div class="mnemonic-body">';
 
-    // BỘ THỦ — KHÔNG nút loa
     if (rad && rad.zh) {
         html += '<div class="mnemonic-section">';
         html += '<div class="mnemonic-section-title">🏛️ Bộ thủ chính</div>';
@@ -1012,7 +1013,6 @@ function renderMnemonicModal(modal, data) {
         html += '</div></div></div>';
     }
 
-    // MẸO NHỚ
     if (mnemonic) {
         html += '<div class="mnemonic-section">';
         html += '<div class="mnemonic-section-title">💡 Mẹo nhớ</div>';
@@ -1020,7 +1020,6 @@ function renderMnemonicModal(modal, data) {
         html += '</div>';
     }
 
-    // DỄ NHẦM — mỗi chữ có nút loa
     if (similar && similar.list && similar.list.length > 0) {
         html += '<div class="mnemonic-section">';
         html += '<div class="mnemonic-section-title">🔍 Dễ nhầm</div>';
@@ -1077,8 +1076,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     return patch_grading_js(js)
 
 
-
-
 full_js = (
     build_config_js(CONFIG)
     + "\n/* AUTO SCALE */\n" + build_auto_scale_js()
@@ -1103,6 +1100,9 @@ full_js = full_js.replace('<script>', '').replace('</script>', '')
 full_js = full_js.replace('<SCRIPT>', '').replace('</SCRIPT>', '')
 
 
+# ═══════════════════════════════════════════════════════════════
+# ⭐ HTML_SHELL — ĐÃ FIX: Data loader lên TRƯỚC __JS__
+# ═══════════════════════════════════════════════════════════════
 HTML_SHELL = r'''<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -1127,6 +1127,9 @@ __CSS__
 
 __BODY__
 
+<!-- ═══════════════════════════════════════════════════════════════
+     BLOCK 1: BIẾN TOÀN CỤC + DATA LOADER (chạy TRƯỚC __JS__)
+     ═══════════════════════════════════════════════════════════════ -->
 <script>
 var DATASET_REGISTRY_META = __DATASET_REGISTRY__;
 var DATASET_REGISTRY = {};
@@ -1157,8 +1160,7 @@ var ONBOARDING_CONFIG = __ONBOARDING_CONFIG__;
 
 var $ = function(id) { return document.getElementById(id); };
 
-__JS__
-
+/* ⭐ DATA LOADER — TẠO TRƯỚC KHI __JS__ CHẠY */
 window.__dataLoaded = false;
 window.__dataLoadPromise = (async function() {
     try {
@@ -1204,6 +1206,7 @@ window.__dataLoadPromise = (async function() {
     }
 })();
 
+/* ⭐ waitForData SUPER SAFE — có fallback event + timeout */
 function waitForData(callback) {
     if (window.__dataLoaded) {
         callback();
@@ -1213,7 +1216,16 @@ function waitForData(callback) {
         window.__dataLoadPromise.then(callback).catch(function() {});
         return;
     }
-    window.addEventListener('dataLoaded', callback, { once: true });
+    console.log('[waitForData] Promise chưa có → chờ event dataLoaded');
+    var done = false;
+    function fire() {
+        if (done) return;
+        done = true;
+        try { callback(); } catch(e) { console.error('[waitForData] cb error:', e); }
+    }
+    window.addEventListener('dataLoaded', fire, { once: true });
+    window.addEventListener('dataLoadError', fire, { once: true });
+    setTimeout(function() { if (!done) { console.warn('[waitForData] Timeout 15s — force'); fire(); } }, 15000);
 }
 
 window.__switchRawData = function(datasetId) {
@@ -1224,6 +1236,16 @@ window.__switchRawData = function(datasetId) {
 };
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════
+     BLOCK 2: CODE CHÍNH (chạy SAU khi data loader đã sẵn sàng)
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+__JS__
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BLOCK 3: TELEGRAM NOTIFY (độc lập)
+     ═══════════════════════════════════════════════════════════════ -->
 <script>
 (function() {
     'use strict';
@@ -1275,6 +1297,7 @@ window.__switchRawData = function(datasetId) {
 </body>
 </html>'''
 
+# ⭐ Thêm timestamp để phá cache
 html_output = (HTML_SHELL
     .replace("__CSS__",  full_css)
     .replace("__BODY__", full_body)
@@ -1304,6 +1327,10 @@ html_output = (HTML_SHELL
     .replace("__TELEGRAM_CHAT_ID__",   _js_str(telegram_chat_id))
 )
 
+# ⭐ Thêm comment timestamp ở đầu HTML để phá cache GitHub Pages
+build_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+html_output = "<!-- Build: " + build_time + " -->\n" + html_output
+
 with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
     f.write(html_output)
 
@@ -1315,6 +1342,7 @@ print(f"\n🎉 Đã tạo: {OUTPUT_HTML}")
 print(f"📦 Kích thước: {size_kb:.1f} KB")
 print(f"📚 Datasets: {total_datasets} ({_chuyen_nganh_count} chuyên ngành)")
 print(f"📝 Tổng số câu: {total_questions}")
+print(f"🕐 Build time: {build_time}")
 
 _opens = html_output.count('<script')
 _closes = html_output.count('</script>')
