@@ -2724,8 +2724,8 @@ function applyUserUI() {
         if (avatar2) {
             if (currentUser.photo) {
                 avatar2.src = currentUser.photo;
-            } else {
-                avatar2.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+            }ỉ else {
+                avatar2.src = ' forcedata:image/svg+xml;utf8,' + encodeURIComponent(
                     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
                     '<rect fill="#7c3aed" width="100" height="100"/>' +
                     '<text x="50" y="65" font-size="45" fill="#fff" text-anchor="middle" ' +
@@ -2788,7 +2788,8 @@ function applyUserUI() {
     /* ⭐ Check lệnh gia hạn đang chờ */
     setTimeout(checkPendingRenewalBadge, 500);
 
-    /* ⭐ FIX: Chỉ force CSS cho theme + avatar — KHÔNG bind onclick */
+    /* ⭐ FIX: Ch CSS + set icon — KHÔNG bind onclick
+       (theme + avatar dùng onclick attribute HTML — tránh double bind) */
     setTimeout(function() {
         /* ===== THEME ===== */
         var t = document.getElementById('themeToggle');
@@ -2797,7 +2798,7 @@ function applyUserUI() {
             t.style.position = 'relative';
             t.style.zIndex = '1001';
 
-            /* Chỉ update icon đúng trạng thái hiện tại */
+            /* Chỉ set icon đúng trạng thái hiện tại */
             var curIcon = t.querySelector('i');
             if (curIcon) {
                 curIcon.className = document.documentElement.getAttribute('data-theme') === 'dark'
@@ -2809,16 +2810,7 @@ function applyUserUI() {
         var av = document.getElementById('userAvatar');
         if (av) {
             av.style.pointerEvents = 'auto';
-
-            /* Dùng onclick ghi đè — chỉ 1 nguồn duy nhất */
-            av.onclick = function(e) {
-                if (e) { e.preventDefault(); e.stopPropagation(); }
-                var dd = document.getElementById('userDropdown');
-                if (!dd) return;
-                var willOpen = !dd.classList.contains('show');
-                dd.classList.toggle('show');
-                try { sessionStorage.setItem('userDropdownClosed', willOpen ? '0' : '1'); } catch(_e) {}
-            };
+            /* KHÔNG bind onclick — dùng onclick attribute HTML */
         }
 
         /* ===== HEADER ACTIONS ===== */
