@@ -16446,13 +16446,8 @@ function initTheme() {
         else document.documentElement.setAttribute('data-theme', 'light');
     } catch(e) {}
     updateThemeIcon();
-    $('themeToggle').addEventListener('click', function() {
-        var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        var newTheme = isDark ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', newTheme);
-        try { localStorage.setItem('theme', newTheme); } catch(e) {}
-        updateThemeIcon();
-    });
+    /* ⭐ KHÔNG bind addEventListener ở đây — dùng onclick attribute HTML 
+       (window.__toggleTheme) để tránh double toggle */
 }
 
 function updateThemeIcon() {
