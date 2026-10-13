@@ -1,21 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Module đặt mật khẩu lần đầu + đăng nhập Email/Password trong loginModal.
-
-✅ FIX (2026-10):
-   - BỎ hoàn toàn elfLoginModal riêng — form email nằm thẳng trong loginModal
-   - BỎ injectEmailButton() — không cần nút "Đăng nhập bằng Email" nữa
-   - Nút Google chuyển xuống DƯỚI form email (ưu tiên email/password)
-   - Thêm checkbox "Lưu tài khoản" (chỉ lưu email, KHÔNG lưu mật khẩu)
-   - Thêm nút "Quên mật khẩu?" + switch Đăng nhập ↔ Đăng ký trong cùng modal
-   - Giữ elfSetPwdModal (đặt mật khẩu lần đầu khi login Google)
-"""
+"""Login fallback module."""
 
 
 def build_login_fallback_css():
     return r"""
-/* ═══════════════════════════════════════════════════════════
-   FORM ĐĂNG NHẬP TRONG LOGIN MODAL
-   ═══════════════════════════════════════════════════════════ */
 .login-field{margin-bottom:.85rem;text-align:left}
 .login-field label{display:block;font-size:.72rem;font-weight:700;color:#475569;margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.3px}
 [data-theme="dark"] .login-field label{color:#cbd5e1}
@@ -23,13 +11,11 @@ def build_login_fallback_css():
 .login-field input:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.15)}
 [data-theme="dark"] .login-field input{background:#0f172a;border-color:#475569;color:#f1f5f9}
 [data-theme="dark"] .login-field input:focus{border-color:#a78bfa;box-shadow:0 0 0 3px rgba(167,139,250,.2)}
-
 .login-pwd-wrap{position:relative}
 .login-pwd-wrap input{padding-right:2.6rem}
 .login-pwd-toggle{position:absolute;right:.5rem;top:50%;transform:translateY(-50%);width:32px;height:32px;border:none;background:transparent;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;border-radius:8px;transition:.15s}
 .login-pwd-toggle:hover{background:#f1f5f9;color:#7c3aed}
 [data-theme="dark"] .login-pwd-toggle:hover{background:#334155;color:#a78bfa}
-
 .login-extras{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin:.35rem 0 1rem;flex-wrap:wrap}
 .login-checkbox{display:flex;align-items:center;gap:.45rem;font-size:.78rem;color:#475569;cursor:pointer;user-select:none;font-weight:500}
 .login-checkbox input[type="checkbox"]{width:16px;height:16px;accent-color:#7c3aed;cursor:pointer;flex-shrink:0;margin:0}
@@ -38,19 +24,18 @@ def build_login_fallback_css():
 .login-link:hover{background:rgba(124,58,237,.1);text-decoration:underline}
 [data-theme="dark"] .login-link{color:#a78bfa}
 [data-theme="dark"] .login-link:hover{background:rgba(167,139,250,.15)}
-
 .login-submit-btn{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;padding:.85rem 1.25rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-size:.92rem;font-weight:800;font-family:inherit;cursor:pointer;transition:.2s;box-shadow:0 4px 14px rgba(124,58,237,.35);letter-spacing:.2px}
 .login-submit-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 22px rgba(124,58,237,.5)}
 .login-submit-btn:active:not(:disabled){transform:translateY(0) scale(.98)}
 .login-submit-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
-
 .login-divider{display:flex;align-items:center;gap:.75rem;margin:1.25rem 0;color:#94a3b8;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
 .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:#e2e8f0}
 [data-theme="dark"] .login-divider::before,[data-theme="dark"] .login-divider::after{background:#475569}
-
-.login-switch{display:flex;align-items:center;justify-content:center;gap:.35rem;margin-top:1rem;font-size:.82rem;color:#64748b}
-[data-theme="dark"] .login-switch{color:#94a3b8}
-
+.login-hint-register{display:flex;align-items:flex-start;gap:.55rem;margin-top:1.25rem;padding:.75rem .9rem;background:linear-gradient(135deg,rgba(79,70,229,.06),rgba(124,58,237,.04));border:1px solid rgba(124,58,237,.2);border-radius:10px;font-size:.78rem;color:#5b21b6;line-height:1.5;text-align:left}
+[data-theme="dark"] .login-hint-register{background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(79,70,229,.1));border-color:rgba(165,180,252,.3);color:#c4b5fd}
+.login-hint-register i{color:#7c3aed;margin-top:.15rem;flex-shrink:0;font-size:.95rem}
+.login-hint-register b{color:#4f46e5;font-weight:800}
+[data-theme="dark"] .login-hint-register b{color:#a78bfa}
 .login-error{margin-top:.85rem;padding:.7rem .9rem;border-radius:10px;font-size:.82rem;display:none;text-align:left;line-height:1.45}
 .login-error.show{display:block}
 .login-error.error{background:#fee2e2;color:#dc2626}
@@ -59,10 +44,6 @@ def build_login_fallback_css():
 [data-theme="dark"] .login-error.error{background:rgba(220,38,38,.2);color:#fca5a5}
 [data-theme="dark"] .login-error.success{background:rgba(22,163,74,.2);color:#4ade80}
 [data-theme="dark"] .login-error.info{background:rgba(59,130,246,.2);color:#93c5fd}
-
-/* ═══════════════════════════════════════════════════════════
-   MODAL ĐẶT MẬT KHẨU LẦN ĐẦU
-   ═══════════════════════════════════════════════════════════ */
 .elf-modal{position:fixed;inset:0;background:rgba(15,23,42,.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:3100;display:none;align-items:center;justify-content:center;padding:1.25rem;overflow-y:auto;animation:elfFadeIn .2s ease}
 .elf-modal.show{display:flex}
 @keyframes elfFadeIn{from{opacity:0}to{opacity:1}}
@@ -221,9 +202,6 @@ def build_login_fallback_js():
         }, 250);
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       MESSAGE HELPERS
-       ═══════════════════════════════════════════════════════════ */
     function showLoginMsg(msg, type) {
         var el = $('loginError');
         if (!el) return;
@@ -249,9 +227,6 @@ def build_login_fallback_js():
         el.innerHTML = '';
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       LƯU EMAIL (KHÔNG LƯU MẬT KHẨU)
-       ═══════════════════════════════════════════════════════════ */
     function saveEmailHint(email, remember) {
         try {
             if (remember && email) {
@@ -272,9 +247,6 @@ def build_login_fallback_js():
         } catch(e) {}
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       PASSWORD TOGGLES
-       ═══════════════════════════════════════════════════════════ */
     function bindPwdToggles() {
         document.querySelectorAll('.login-pwd-toggle, .elf-pwd-toggle').forEach(function(btn) {
             if (btn.__elfBound) return;
@@ -292,64 +264,6 @@ def build_login_fallback_js():
         });
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       SWITCH ĐĂNG NHẬP ↔ ĐĂNG KÝ
-       ═══════════════════════════════════════════════════════════ */
-    var currentForm = 'login';
-
-    function updateLoginSwitchUI() {
-        var txt = $('loginSwitchText');
-        var btn = $('loginSwitchBtn');
-        var title = $('loginTitle');
-        var subtitle = $('loginSubtitle');
-        if (currentForm === 'login') {
-            if (txt) txt.textContent = 'Chưa có tài khoản?';
-            if (btn) btn.textContent = 'Đăng ký ngay';
-            if (title) title.textContent = 'Đăng nhập để mở khóa';
-            if (subtitle) subtitle.innerHTML = 'Đăng nhập để sử dụng <b>toàn bộ câu</b>, tất cả bộ lọc HSK1-6, chủ đề đầy đủ, luyện viết không giới hạn và nhiều tính năng khác.';
-        } else {
-            if (txt) txt.textContent = 'Đã có tài khoản?';
-            if (btn) btn.textContent = 'Đăng nhập';
-            if (title) title.textContent = 'Tạo tài khoản mới';
-            if (subtitle) subtitle.innerHTML = 'Đăng ký để nhận <b>3 ngày dùng thử miễn phí</b> — không cần thẻ tín dụng.';
-        }
-    }
-
-    function showLoginForm() {
-        currentForm = 'login';
-        var lf = $('loginForm');
-        var rf = $('registerForm');
-        var gBtn = $('googleLoginBtn');
-        var div = document.querySelector('.login-divider');
-        if (lf) lf.style.display = '';
-        if (rf) rf.style.display = 'none';
-        if (gBtn) gBtn.style.display = '';
-        if (div) div.style.display = '';
-        clearLoginMsg();
-        updateLoginSwitchUI();
-    }
-
-    function showRegisterForm() {
-        currentForm = 'register';
-        var lf = $('loginForm');
-        var rf = $('registerForm');
-        var gBtn = $('googleLoginBtn');
-        var div = document.querySelector('.login-divider');
-        if (lf) lf.style.display = 'none';
-        if (rf) rf.style.display = '';
-        if (gBtn) gBtn.style.display = 'none';
-        if (div) div.style.display = 'none';
-        clearLoginMsg();
-        updateLoginSwitchUI();
-        setTimeout(function() {
-            var inp = $('regEmail');
-            if (inp) inp.focus();
-        }, 100);
-    }
-
-    /* ═══════════════════════════════════════════════════════════
-       ĐĂNG NHẬP EMAIL/PASSWORD
-       ═══════════════════════════════════════════════════════════ */
     async function doEmailLogin(e) {
         if (e) e.preventDefault();
         var emailEl = $('loginEmail');
@@ -382,9 +296,8 @@ def build_login_fallback_js():
             try { await auth.setPersistence(persistence); } catch(_e) {}
 
             await auth.signInWithEmailAndPassword(email, pwd);
-
             saveEmailHint(email, remember);
-            showLoginMsg('✅ Đăng nhập thành công!', 'success');
+            showLoginMsg('Đăng nhập thành công!', 'success');
 
             setTimeout(function() {
                 var m = $('loginModal');
@@ -392,10 +305,9 @@ def build_login_fallback_js():
             }, 600);
 
         } catch (err) {
-            console.error('[Login]', err);
             var msg = 'Lỗi: ' + (err.code || err.message);
             if (err.code === 'auth/user-not-found') {
-                msg = 'Không tìm thấy tài khoản với email này.<br>Bạn có muốn <b>Đăng ký</b>?';
+                msg = 'Không tìm thấy tài khoản với email này.<br>Vui lòng bấm <b>Đăng nhập bằng Google</b> ở trên để tạo tài khoản.';
             } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
                 msg = 'Sai mật khẩu. Vui lòng thử lại hoặc bấm <b>Quên mật khẩu</b>.';
             } else if (err.code === 'auth/invalid-email') {
@@ -403,7 +315,7 @@ def build_login_fallback_js():
             } else if (err.code === 'auth/too-many-requests') {
                 msg = 'Bạn đã thử quá nhiều lần. Vui lòng đợi vài phút.';
             } else if (err.code === 'auth/operation-not-allowed') {
-                msg = '⚠️ Chưa bật <b>Email/Password</b> trên Firebase Console.';
+                msg = 'Chưa bật <b>Email/Password</b> trên Firebase Console.';
             } else if (err.code === 'auth/invalid-login-credentials') {
                 msg = 'Email hoặc mật khẩu không đúng.<br>Nếu bạn từng đăng nhập bằng Google, hãy dùng <b>Quên mật khẩu</b> để tạo mật khẩu mới.';
             }
@@ -414,81 +326,6 @@ def build_login_fallback_js():
         }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       ĐĂNG KÝ EMAIL/PASSWORD
-       ═══════════════════════════════════════════════════════════ */
-    async function doEmailRegister(e) {
-        if (e) e.preventDefault();
-        var emailEl = $('regEmail');
-        var nameEl = $('regName');
-        var pwdEl = $('regPwd');
-        var pwd2El = $('regPwd2');
-        var rememberEl = $('regSaveAccount');
-        var btn = $('registerSubmitBtn');
-        if (!emailEl || !pwdEl || !pwd2El) return;
-
-        var email = (emailEl.value || '').trim().toLowerCase();
-        var name = (nameEl ? nameEl.value : '').trim();
-        var pwd = pwdEl.value || '';
-        var pwd2 = pwd2El.value || '';
-        var remember = rememberEl ? rememberEl.checked : true;
-
-        if (!email || !email.includes('@')) {
-            showLoginMsg('Email không hợp lệ.', 'error');
-            return;
-        }
-        if (pwd.length < 6) {
-            showLoginMsg('Mật khẩu phải từ 6 ký tự trở lên.', 'error');
-            return;
-        }
-        if (pwd !== pwd2) {
-            showLoginMsg('Mật khẩu nhập lại không khớp.', 'error');
-            return;
-        }
-
-        var orig = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="elf-spinner"></span> Đang tạo tài khoản...';
-
-        try {
-            var persistence = remember
-                ? firebase.auth.Auth.Persistence.LOCAL
-                : firebase.auth.Auth.Persistence.SESSION;
-            try { await auth.setPersistence(persistence); } catch(_e) {}
-
-            var cred = await auth.createUserWithEmailAndPassword(email, pwd);
-            if (name && cred.user) {
-                try { await cred.user.updateProfile({ displayName: name }); } catch(_e) {}
-            }
-
-            saveEmailHint(email, remember);
-            showLoginMsg('✅ Tạo tài khoản thành công! Đang đăng nhập...', 'success');
-
-            setTimeout(function() {
-                var m = $('loginModal');
-                if (m) m.classList.remove('show');
-            }, 800);
-
-        } catch (err) {
-            console.error('[Register]', err);
-            var msg = 'Lỗi: ' + (err.code || err.message);
-            if (err.code === 'auth/email-already-in-use') {
-                msg = 'Email này đã được đăng ký.<br>Vui lòng chuyển sang <b>Đăng nhập</b>.';
-            } else if (err.code === 'auth/weak-password') {
-                msg = 'Mật khẩu quá yếu. Vui lòng dùng mật khẩu từ 6 ký tự.';
-            } else if (err.code === 'auth/operation-not-allowed') {
-                msg = '⚠️ Chưa bật <b>Email/Password</b> trên Firebase Console.';
-            }
-            showLoginMsg(msg, 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = orig;
-        }
-    }
-
-    /* ═══════════════════════════════════════════════════════════
-       QUÊN MẬT KHẨU
-       ═══════════════════════════════════════════════════════════ */
     async function doForgot() {
         var emailEl = $('loginEmail');
         var email = emailEl ? (emailEl.value || '').trim().toLowerCase() : '';
@@ -500,9 +337,8 @@ def build_login_fallback_js():
 
         try {
             await auth.sendPasswordResetEmail(email);
-            showLoginMsg('✅ Đã gửi email khôi phục!<br>Kiểm tra hộp thư (kể cả mục Spam).', 'success');
+            showLoginMsg('Đã gửi email khôi phục!<br>Kiểm tra hộp thư (kể cả mục Spam).', 'success');
         } catch (err) {
-            console.error('[Forgot]', err);
             var msg = 'Lỗi: ' + (err.code || err.message);
             if (err.code === 'auth/user-not-found') {
                 msg = 'Không tìm thấy tài khoản với email này.';
@@ -511,9 +347,6 @@ def build_login_fallback_js():
         }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       ĐẶT MẬT KHẨU LẦN ĐẦU (sau khi login Google)
-       ═══════════════════════════════════════════════════════════ */
     function openSetPwdModal() {
         var m = $('elfSetPwdModal');
         if (!m) return;
@@ -592,7 +425,6 @@ def build_login_fallback_js():
         } catch(e) {}
 
         if (anyBusyModalOpen()) {
-            /* Đợi 1.5s rồi check lại — KHÔNG đệ quy vô hạn */
             setTimeout(function() { checkAndAskSetPassword(user); }, 1500);
             return;
         }
@@ -634,17 +466,16 @@ def build_login_fallback_js():
 
             try { sessionStorage.removeItem(PWD_ASKED_KEY + user.email.toLowerCase()); } catch(e) {}
 
-            showElfMsg('✅ Đặt mật khẩu thành công!<br>Lần sau bạn có thể đăng nhập bằng Email.', 'success');
+            showElfMsg('Đặt mật khẩu thành công!<br>Lần sau bạn có thể đăng nhập bằng Email.', 'success');
 
             setTimeout(function() {
                 closeSetPwdModal();
                 if (typeof showUserChangedToast === 'function') {
-                    showUserChangedToast('🔐 Đã đặt mật khẩu đăng nhập', 'success');
+                    showUserChangedToast('Đã đặt mật khẩu đăng nhập', 'success');
                 }
             }, 1500);
 
         } catch (err) {
-            console.error('[ELF SetPwd]', err);
             var msg = 'Lỗi: ' + (err.code || err.message);
             if (err.code === 'auth/provider-already-linked') {
                 msg = 'Tài khoản này đã có mật khẩu. Không cần đặt lại.';
@@ -657,7 +488,7 @@ def build_login_fallback_js():
             } else if (err.code === 'auth/credential-already-in-use') {
                 msg = 'Email này đã được liên kết với tài khoản khác.<br>Vui lòng liên hệ hỗ trợ hoặc dùng <b>Quên mật khẩu</b>.';
             } else if (err.code === 'auth/operation-not-allowed') {
-                msg = '⚠️ Chưa bật <b>Email/Password</b> trên Firebase Console.';
+                msg = 'Chưa bật <b>Email/Password</b> trên Firebase Console.';
             }
             showElfMsg(msg, 'error');
         } finally {
@@ -682,7 +513,7 @@ def build_login_fallback_js():
 
         var level = 0;
         if (score >= 4) level = 3;
-        else if (score >= 3) level =  ═2;
+        else if (score >= 3) level = 2;
         else if (score >= 2) level = 1;
 
         bars.forEach(function(b, i) {
@@ -695,9 +526,6 @@ def build_login_fallback_js():
         });
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       NÚT GOOGLE trong loginModal
-      ══════════════════════════════════════════════════════════ */
     function bindGoogleButton() {
         var btn = $('googleLoginBtn');
         if (!btn || btn.__elfBound) return;
@@ -721,11 +549,10 @@ def build_login_fallback_js():
                     if (m) m.classList.remove('show');
                 }
             } catch (err) {
-                console.error('[Google]', err);
                 var msg = '';
                 if (err.code === 'auth/popup-closed-by-user' ||
                     err.code === 'auth/cancelled-popup-request') {
-                    /* Im lặng */
+                    msg = '';
                 } else if (err.code === 'auth/popup-blocked') {
                     msg = 'Trình duyệt đã chặn popup. Vui lòng cho phép popup rồi thử lại.';
                 } else if (err.code === 'auth/web-storage-unsupported' ||
@@ -742,65 +569,36 @@ def build_login_fallback_js():
         });
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       HOOK: mở loginModal → reset form
-       ═══════════════════════════════════════════════════════════ */
     function hookLoginModalOpen() {
         var origShow = window.showLoginModal;
         if (typeof origShow === 'function' && !origShow.__elfHooked) {
             window.showLoginModal = function() {
-                currentForm = 'login';
-                showLoginForm();
-                restoreEmailHint();
                 clearLoginMsg();
+                restoreEmailHint();
+                var pwd = $('loginPwd');
+                if (pwd) pwd.value = '';
                 origShow.apply(this, arguments);
             };
             window.showLoginModal.__elfHooked = true;
         }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       INIT
-       ═══════════════════════════════════════════════════════════ */
     function initElf() {
-        /* ═══ LOGIN FORM ═══ */
         var lf = $('loginForm');
         if (lf && !lf.__elfBound) {
             lf.__elfBound = true;
             lf.addEventListener('submit', doEmailLogin);
         }
 
-        /* ═══ REGISTER FORM ═══ */
-        var rf = $('registerForm');
-        if (rf && !rf.__elfBound) {
-            rf.__elfBound = true;
-            rf.addEventListener('submit', doEmailRegister);
-        }
-
-        /* ═══ SWITCH LOGIN ↔ REGISTER ═══ */
-        var swBtn = $('loginSwitchBtn');
-        if (swBtn && !swBtn.__elfBound) {
-            swBtn.__elfBound = true;
-            swBtn.addEventListener('click', function() {
-                if (currentForm === 'login') showRegisterForm();
-                else showLoginForm();
-            });
-        }
-
-        /* ═══ FORGOT PASSWORD ═══ */
         var forgot = $('loginForgotBtn');
         if (forgot && !forgot.__elfBound) {
             forgot.__elfBound = true;
             forgot.addEventListener('click', doForgot);
         }
 
-        /* ═══ GOOGLE BUTTON ═══ */
         bindGoogleButton();
-
-        /* ═══ PWD TOGGLES ═══ */
         bindPwdToggles();
 
-        /* ═══ SET PASSWORD MODAL (sau khi login Google) ═══ */
         var closeBtn = $('elfSetPwdClose');
         if (closeBtn && !closeBtn.__elfBound) {
             closeBtn.__elfBound = true;
@@ -831,13 +629,9 @@ def build_login_fallback_js():
             });
         }
 
-        /* ═══ HOOK loginModal OPEN ═══ */
         hookLoginModalOpen();
-
-        /* ═══ RESTORE EMAIL khi load ═══ */
         restoreEmailHint();
 
-        /* ═══ AUTH STATE — check đặt mật khẩu ═══ */
         if (auth && !auth.__elfHooked) {
             auth.__elfHooked = true;
             auth.onAuthStateChanged(function(user) {
@@ -845,7 +639,6 @@ def build_login_fallback_js():
             });
         }
 
-        /* ═══ ESC key ═══ */
         document.addEventListener('keydown', function(e) {
             if (e.key !== 'Escape') return;
             var m1 = $('elfSetPwdModal');
@@ -855,7 +648,6 @@ def build_login_fallback_js():
             }
         });
 
-        /* ═══ Retry hook login modal nếu chưa có ═══ */
         var tries = 0;
         var retry = setInterval(function() {
             tries++;
@@ -867,16 +659,13 @@ def build_login_fallback_js():
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded',(SAVED function() {
+        document.addEventListener('DOMContentLoaded', function() {
             waitAuth(initElf);
         });
     } else {
         waitAuth(initElf);
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       PUBLIC API
-       ═══════════════════════════════════════════════════════════ */
     window.__elfOpenSetPwd = openSetPwdModal;
     window.__elfDebug = {
         openSetPwd: openSetPwdModal,
@@ -892,13 +681,11 @@ def build_login_fallback_js():
             } catch(e) {}
         },
         clearSavedEmail: function() {
-            try { localStorage.removeItem_EMAIL_KEY); } catch(e) {}
-        },
-        showRegister: showRegisterForm,
-        showLogin: showLoginForm
+            try { localStorage.removeItem(SAVED_EMAIL_KEY); } catch(e) {}
+        }
     };
 
-    console.log('[Login Fallback] Module loaded OK — form email trong loginModal');
+    console.log('[Login Fallback] Module loaded');
 })();
 """
 
@@ -913,13 +700,13 @@ if __name__ == "__main__":
     print("JS:   %d ky tu" % len(js))
 
     assert 'elfSetPwdModal' in html
-    assert 'elfLoginModal' not in html, "elfLoginModal phải bị xóa"
-    assert 'injectEmailButton' not in js, "injectEmailButton phải bị xóa"
+    assert 'elfLoginModal' not in html
+    assert 'injectEmailButton' not in js
     assert 'linkWithCredential' in js
     assert 'signInWithEmailAndPassword' in js
     assert 'sendPasswordResetEmail' in js
     assert 'bindGoogleButton' in js
     assert 'loginForm' in js
-    assert 'registerForm' in sang js
+    assert 'registerForm' not in js
 
-    print("Module san dung")
+    print("Module san sang dung")
