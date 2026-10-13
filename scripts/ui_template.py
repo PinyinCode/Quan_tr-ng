@@ -3563,9 +3563,9 @@ def build_ui_html():
 <button class="btn-login-header" id="headerLoginBtn" style="display:none"><i class="fas fa-sign-in-alt"></i> <span>Đăng nhập</span></button>
 <button class="icon-btn intro-btn" id="introBtn" title="Giới thiệu"><i class="fas fa-info-circle"></i></button>
 <button class="icon-btn reset-btn hidden" id="resetBtn" title="Đặt lại bộ lọc"><i class="fas fa-undo-alt"></i><span class="badge" id="resetBadge">0</span></button>
-<button class="icon-btn" id="themeToggle" title="Đổi giao diện"><i class="fas fa-moon"></i></button>
+<button class="icon-btn" id="themeToggle" onclick="window.__toggleTheme && window.__toggleTheme()" title="Đổi giao diện"><i class="fas fa-moon"></i></button>
 <div class="user-menu" id="userMenu" style="display:none">
-<img class="user-avatar" id="userAvatar" src="" alt="Avatar">
+<img class="user-avatar" id="userAvatar" src="" alt="Avatar" onclick="window.__toggleUserMenu && window.__toggleUserMenu(event)">
 <div class="user-dropdown show" id="userDropdown">
 <div class="user-info"><div class="name" id="userName">-</div><div class="email" id="userEmail">-</div><span class="role" id="userRole">user</span></div>
 <div class="user-details" id="userDetails" style="display:none">
@@ -8635,4 +8635,23 @@ window.removeOnboardingBannerIfNeeded = removeOnboardingBannerIfNeeded;
 window.pfApplyFilter = pfApplyFilter;
 window.pfBuildQuickNav = pfBuildQuickNav;
 window.pfUpdateFilterUI = pfUpdateFilterUI;
+/* ⭐ FIX: Toggle theme qua inline onclick — không bao giờ mất */
+window.__toggleTheme = function() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    var newTheme = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    try { localStorage.setItem('theme', newTheme); } catch(e) {}
+    var icon = document.querySelector('#themeToggle i');
+    if (icon) icon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
+};
+
+/* ⭐ FIX: Toggle user menu qua inline onclick */
+window.__toggleUserMenu = function(e) {
+    if (e) e.stopPropagation();
+    var dd = document.getElementById('userDropdown');
+    if (!dd) return;
+    var willOpen = !dd.classList.contains('show');
+    dd.classList.toggle('show');
+    try { sessionStorage.setItem('userDropdownClosed', willOpen ? '0' : '1'); } catch(_e) {}
+};
 """
