@@ -44,7 +44,7 @@ def build_login_fallback_css():
 [data-theme="dark"] .login-error.error{background:rgba(220,38,38,.2);color:#fca5a5}
 [data-theme="dark"] .login-error.success{background:rgba(22,163,74,.2);color:#4ade80}
 [data-theme="dark"] .login-error.info{background:rgba(59,130,246,.2);color:#93c5fd}
-.elf-modal{position:fixed;inset:0;background:rgba(15,23,42,.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:3100;display:none;align-items:center;justify-content:center;padding:1.25rem;overflow-y:auto;animation:elfFadeIn .2s ease}
+.elf-modal{position:fixed;inset:0;background:rgba(15,23,42,.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:99999;display:none;align-items:center;justify-content:center;padding:1.25rem;overflow-y:auto;animation:elfFadeIn .2s ease}
 .elf-modal.show{display:flex}
 @keyframes elfFadeIn{from{opacity:0}to{opacity:1}}
 .elf-box{background:#fff;border-radius:20px;padding:2rem 1.75rem;max-width:440px;width:100%;max-height:calc(100vh - 2.5rem);overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.35);text-align:center;position:relative;animation:elfSlideUp .32s cubic-bezier(.34,1.56,.64,1)}
@@ -112,7 +112,8 @@ def build_login_fallback_css():
 .elf-spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:elfSpin .7s linear infinite}
 @keyframes elfSpin{to{transform:rotate(360deg)}}
 @media(max-width:500px){
-.elf-box{padding:1.5rem 1.25rem;border-radius:16px}
+.elf-modal{padding:.5rem}
+.elf-box{padding:1.5rem 1.25rem;border-radius:16px;max-height:calc(100vh - 1rem)}
 .elf-logo{width:56px;height:56px;font-size:1.5rem}
 .elf-title{font-size:1.15rem}
 .elf-subtitle{font-size:.8rem}
@@ -347,11 +348,55 @@ def build_login_fallback_js():
         }
     }
 
+    function anyBusyModalOpen() {
+        var busy = [
+            'adminModal', 'importModal', 'editExpiryModal', 'changeNameModal',
+            'renewalModal', 'permissionModal', 'onboardingModal', 'voiceModal',
+            'writerModal', 'practiceFullModal', 'chatModal', 'loginModal',
+            'dvlVerifyModal', 'dvlModal', 'renewalHistoryModal',
+            'adminChatModal', 'adminChatManagerModal', 'bulkMessageModal',
+            'chatManagerModal', 'adminChatPanel'
+        ];
+        for (var i = 0; i < busy.length; i++) {
+            var m = $(busy[i]);
+            if (m && m.classList.contains('show')) return true;
+        }
+        var allModals = document.querySelectorAll('.modal.show, .admin-modal.show, .edit-modal.show, .renewal-modal.show, .import-modal.show, .permission-modal.show, .chat-modal.show');
+        for (var j = 0; j < allModals.length; j++) {
+            var el = allModals[j];
+            if (el.id === 'elfSetPwdModal') continue;
+            if (el.classList.contains('show')) return true;
+        }
+        return false;
+    }
+
+    function closeOtherModals() {
+        var ids = [
+            'renewalModal', 'renewalHistoryModal', 'editExpiryModal', 'changeNameModal',
+            'permissionModal', 'importModal', 'adminModal', 'loginModal',
+            'onboardingModal', 'voiceModal', 'writerModal', 'practiceFullModal',
+            'chatModal', 'adminChatModal', 'adminChatManagerModal', 'bulkMessageModal',
+            'chatManagerModal'
+        ];
+        ids.forEach(function(id) {
+            var el = $(id);
+            if (el && el.classList.contains('show')) {
+                el.classList.remove('show');
+            }
+        });
+        try {
+            document.body.style.overflow = '';
+        } catch(e) {}
+    }
+
     function openSetPwdModal() {
         var m = $('elfSetPwdModal');
         if (!m) return;
+
+        closeOtherModals();
         m.classList.add('show');
         clearElfMsg();
+
         try {
             var u = auth.currentUser;
             if (u) {
@@ -367,10 +412,11 @@ def build_login_fallback_js():
                 }
             }
         } catch(e) {}
+
         setTimeout(function() {
             var inp = $('elfSetPwd1');
             if (inp) inp.focus();
-        }, 150);
+        }, 200);
     }
 
     function closeSetPwdModal() {
@@ -402,17 +448,7 @@ def build_login_fallback_js():
         return false;
     }
 
-    function anyBusyModalOpen() {
-        var busy = ['adminModal', 'importModal', 'editExpiryModal', 'changeNameModal',
-                    'renewalModal', 'permissionModal', 'onboardingModal', 'voiceModal',
-                    'writerModal', 'practiceFullModal', 'chatModal', 'loginModal',
-                    'dvlVerifyModal', 'dvlModal'];
-        for (var i = 0; i < busy.length; i++) {
-            var m = $(busy[i]);
-            if (m && m.classList.contains('show')) return true;
-        }
-        return false;
-    }
+    var _askRetries = 0;
 
     function checkAndAskSetPassword(user) {
         if (!user || !user.email) return;
@@ -425,13 +461,20 @@ def build_login_fallback_js():
         } catch(e) {}
 
         if (anyBusyModalOpen()) {
+            _askRetries++;
+            if (_askRetries > 120) {
+                _askRetries = 0;
+                try { sessionStorage.setItem(PWD_ASKED_KEY + email, '1'); } catch(e) {}
+                return;
+            }
             setTimeout(function() { checkAndAskSetPassword(user); }, 1500);
             return;
         }
 
+        _askRetries = 0;
         try { sessionStorage.setItem(PWD_ASKED_KEY + email, '1'); } catch(e) {}
 
-        setTimeout(openSetPwdModal, 1500);
+        setTimeout(openSetPwdModal, 1200);
     }
 
     async function handleSetPassword(e) {
@@ -708,5 +751,7 @@ if __name__ == "__main__":
     assert 'bindGoogleButton' in js
     assert 'loginForm' in js
     assert 'registerForm' not in js
+    assert 'z-index:99999' in css
+    assert 'closeOtherModals' in js
 
     print("Module san sang dung")
