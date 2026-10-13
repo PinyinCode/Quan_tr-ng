@@ -2008,46 +2008,46 @@ html body .practice-full-body{padding-top:.5rem!important;padding-bottom:calc(66
 html body .practice-full-content{gap:.5rem!important}
 }
 
+@media (max-width:768px){
+html body .practice-full-body{padding-top:.5rem!important;padding-bottom:calc(66px + env(safe-area-inset-bottom))!important}
+html body .practice-full-content{gap:.5rem!important}
+}
+
 /* ═══════════════════════════════════════════════════════════════ */
-/* ⭐ LOẠI 2 NÚT KHỎI LOGIC SCALE — KÍCH THƯỚC CỐ ĐỊNH             */
-/* - Nút "Chỉ câu yêu thích" (toggle) trong Practice Full          */
-/* - Nút "Yêu thích" (trái tim đỏ) trên card + trong PF header     */
+/* ⭐ 2 NÚT NỔI "CHỈ CÂU YÊU THÍCH" + "YÊU THÍCH" — FIXED SIZE    */
+/* Không scale theo --ui-scale và --pf-scale                      */
 /* ═══════════════════════════════════════════════════════════════ */
 
-/* Nút toggle "Chỉ câu yêu thích" — fixed size */
-html body .pf-fav-filter-btn{
-    padding:.28rem .6rem!important;
-    font-size:.66rem!important;
-    gap:.3rem!important;
-    flex-shrink:0!important;
-}
-html body .pf-fav-filter-btn i:first-child{
+/* Nút "Chỉ câu yêu thích" (toggle nổi) */
+html body .pf-fav-only-float{
+    padding:.55rem .85rem .55rem .7rem!important;
     font-size:.8rem!important;
+    gap:.4rem!important;
+    max-width:none!important;
+    max-height:none!important;
 }
-html body .pf-fav-filter-badge{
-    min-width:17px!important;
-    height:17px!important;
-    font-size:.58rem!important;
-    padding:0 .3rem!important;
+html body .pf-fav-only-float i{
+    font-size:.95rem!important;
 }
-
-/* Nút "Yêu thích" (trái tim đỏ) trên card — fixed size */
-html body .fav-btn{
-    width:34px!important;
-    height:34px!important;
-    font-size:.85rem!important;
-    flex-shrink:0!important;
+html body .pf-fav-only-count{
+    min-width:20px!important;
+    height:20px!important;
+    font-size:.65rem!important;
+    padding:0 .4rem!important;
 }
 
-/* Nút "Yêu thích" trong Practice Full header — fixed size */
-html body .pf-fav-btn{
-    width:36px!important;
-    height:36px!important;
-    font-size:.9rem!important;
-    flex-shrink:0!important;
+/* Nút "Yêu thích" (trái tim đỏ nổi) */
+html body .pf-fav-float{
+    padding:.55rem .85rem .55rem .7rem!important;
+    font-size:.82rem!important;
+    gap:.4rem!important;
+    max-width:none!important;
+    max-height:none!important;
+}
+html body .pf-fav-float i{
+    font-size:1.05rem!important;
 }
 """
-
 
 def build_auto_scale_js():
     return r"""
