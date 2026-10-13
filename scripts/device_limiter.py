@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """Module giới hạn 2 thiết bị — xác nhận qua EMAIL hoặc ADMIN duyệt.
 
-✅ Tính năng:
-   - Super admin BYPASS hoàn toàn
+✅ FIX 2026-10:
+   - Super admin BYPASS device limit (không bị chặn login máy 3)
+   - Super admin VẪN THẤY nút "Yêu cầu chờ duyệt" + duyệt được
+   - Super admin VẪN xem được thiết bị của user khác
    - Máy thứ 3 login → tạo pending + gửi email + báo admin
    - User có 2 cách xác nhận: bấm link mail HOẶC nhờ admin duyệt
-   - Tab cũ poll 5s → tự vào khi có confirm (bất kể từ kênh nào)
-   - Admin có tab "Yêu cầu chờ duyệt" với badge số lượng
+   - Tab cũ poll 5s → tự vào khi có confirm
 """
 
 
@@ -270,7 +271,7 @@ def build_device_js():
     }
 
     /* ═══════════════════════════════════════════════════════════
-       ⭐ SUPER ADMIN — BYPASS HOÀN TOÀN
+       ⭐ SUPER ADMIN — BYPASS device limit (nhưng vẫn được duyệt)
        ═══════════════════════════════════════════════════════════ */
     function __dvlIsSuperAdmin(email) {
         if (!email) return false;
@@ -282,6 +283,14 @@ def build_device_js():
         } catch(e) {}
         if (!sa) return false;
         return String(email).toLowerCase().trim() === sa;
+    }
+
+    /* ⭐ Có quyền admin? (bao gồm cả super admin) */
+    function __dvlHasAdminRights() {
+        if (typeof currentUser === 'undefined' || !currentUser) return false;
+        if (currentUser.role === 'admin') return true;
+        if (__dvlIsSuperAdmin(currentUser.email)) return true;
+        return false;
     }
 
     function timeAgo(ms) {
@@ -406,7 +415,7 @@ def build_device_js():
     }
 
     /* ═══════════════════════════════════════════════════════════
-       Tạo yêu cầu xác nhận (sinh vé 1 lần)
+       Tạo yêu cầu xác nhận
        ═══════════════════════════════════════════════════════════ */
     async function createVerificationRequest(email) {
         if (!email || !db) return null;
@@ -441,9 +450,6 @@ def build_device_js():
         }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Tab cũ — poll theo deviceId
-       ═══════════════════════════════════════════════════════════ */
     async function checkVerification(email) {
         if (!email || !db) return { confirmed: false };
         if (__dvlIsSuperAdmin(email)) return { confirmed: false };
@@ -480,9 +486,6 @@ def build_device_js():
         }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Tab cũ — xác nhận thành công → đá máy cũ + thêm máy mới
-       ═══════════════════════════════════════════════════════════ */
     async function completeVerification(email) {
         if (!email || !db) return false;
         if (__dvlIsSuperAdmin(email)) return false;
@@ -517,7 +520,6 @@ def build_device_js():
 
         await saveDevices(email, devices);
 
-        /* Xóa pending của deviceId này */
         try {
             var snap = await db.collection('allowed_users').doc(email.toLowerCase())
                 .collection('pending_devices')
@@ -533,9 +535,6 @@ def build_device_js():
         return true;
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Kiểm tra máy có bị đá
-       ═══════════════════════════════════════════════════════════ */
     async function checkIfKicked(email) {
         if (!email || !db) return false;
         if (__dvlIsSuperAdmin(email)) return false;
@@ -582,7 +581,6 @@ def build_device_js():
         var now = Date.now();
         var devices = await loadDevices(email);
 
-        /* Đã có → update lastSeen */
         var found = -1;
         for (var i = 0; i < devices.length; i++) {
             if (devices[i].id === deviceId) { found = i; break; }
@@ -596,7 +594,6 @@ def build_device_js():
             return { allowed: true };
         }
 
-        /* Đã có pending? */
         try {
             var pendingSnap = await db.collection('allowed_users').doc(email.toLowerCase())
                 .collection('pending_devices')
@@ -618,7 +615,6 @@ def build_device_js():
                     if (Date.now() > expMs) {
                         try { await pdoc.ref.delete(); } catch(e) {}
                     } else {
-                        /* Trả về pending có sẵn (giữ emailSent cũ) */
                         return {
                             allowed: false,
                             needsVerify: true,
@@ -633,7 +629,6 @@ def build_device_js():
             }
         } catch(e) {}
 
-        /* Chưa đủ giới hạn → thêm thẳng */
         if (devices.length < MAX_DEVICES) {
             devices.push({
                 id: deviceId, name: getDeviceName(), type: detectDeviceType(),
@@ -644,14 +639,12 @@ def build_device_js():
             return { allowed: true, isNew: true };
         }
 
-        /* ⭐ Đã đủ → tạo pending + gửi email (song song, không block) */
         var token = await createVerificationRequest(email);
 
         var emailResult = { ok: false, reason: 'not_sent' };
         try {
             emailResult = await sendVerifyEmail(email, token);
 
-            /* Cập nhật trạng thái gửi mail vào pending doc */
             try {
                 await db.collection('allowed_users').doc(email.toLowerCase())
                     .collection('pending_devices').doc(deviceId)
@@ -676,9 +669,6 @@ def build_device_js():
         };
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Gửi email xác nhận (Firebase Email Link)
-       ═══════════════════════════════════════════════════════════ */
     async function sendVerifyEmail(email, token) {
         if (!email || !auth) return { ok: false, reason: 'no_auth' };
 
@@ -701,9 +691,6 @@ def build_device_js():
         }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Tab MỚI (bấm link mail) — CHỈ CONFIRM, KHÔNG LOGIN
-       ═══════════════════════════════════════════════════════════ */
     async function checkVerifyLink() {
         try {
             var params = new URLSearchParams(window.location.search);
@@ -718,14 +705,12 @@ def build_device_js():
 
             if (!email) return false;
 
-            /* ⭐ SUPER ADMIN — bỏ qua */
             if (__dvlIsSuperAdmin(email)) {
                 var url0 = window.location.pathname;
                 window.history.replaceState({}, document.title, url0);
                 return false;
             }
 
-            /* Firebase email-link sign-in */
             if (auth && auth.isSignInWithEmailLink && auth.isSignInWithEmailLink(email, window.location.href)) {
                 try {
                     await auth.signInWithEmailLink(email, window.location.href);
@@ -734,7 +719,6 @@ def build_device_js():
                 }
             }
 
-            /* Tìm pending theo token → update status='confirmed' */
             if (db) {
                 try {
                     var snap = await db.collection('allowed_users').doc(email.toLowerCase())
@@ -753,7 +737,6 @@ def build_device_js():
                     var pdoc = snap.docs[0];
                     var pdata = pdoc.data();
 
-                    /* Check hết hạn */
                     var expMs = pdata.expireAt
                         ? (pdata.expireAt.toMillis ? pdata.expireAt.toMillis() : pdata.expireAt.seconds * 1000)
                         : 0;
@@ -764,7 +747,6 @@ def build_device_js():
                         return { verified: false, reason: 'expired' };
                     }
 
-                    /* Đánh dấu confirmed */
                     if (pdata.status !== 'confirmed') {
                         await pdoc.ref.update({
                             status: 'confirmed',
@@ -898,13 +880,11 @@ def build_device_js():
             return;
         }
 
-        /* ⭐ SUPER ADMIN — không mở modal */
         if (__dvlIsSuperAdmin(currentUser.email)) return;
 
         var modal = $('dvlModal');
         if (!modal) return;
 
-        /* Reset UI về mặc định */
         $('dvlTitle').textContent = 'Quản lý thiết bị';
         $('dvlSubtitle').innerHTML = 'Tài khoản của bạn chỉ được đăng nhập trên tối đa <b>2 thiết bị</b>.';
         $('dvlCountBox').style.display = 'flex';
@@ -925,9 +905,6 @@ def build_device_js():
         if (m) m.classList.remove('show');
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Modal verify (tab cũ) — nhận emailSent + emailError
-       ═══════════════════════════════════════════════════════════ */
     function showVerifyModal(email, expireAt, token, emailSent, emailError) {
         var modal = $('dvlVerifyModal');
         if (!modal) return;
@@ -937,7 +914,6 @@ def build_device_js():
         var emailInline = $('dvlEmailInline');
         if (emailInline) emailInline.textContent = email;
 
-        /* Hiện cảnh báo nếu mail không gửi được */
         var errBox = $('dvlEmailErrorBox');
         var errMsg = $('dvlEmailErrorMsg');
         var stepEmail = $('dvlStepEmail');
@@ -970,7 +946,6 @@ def build_device_js():
         _verifyExpireAt = expireAt || (Date.now() + VERIFY_TIMEOUT);
         startTimer();
 
-        /* Poll 5s — chờ email HOẶC admin duyệt */
         if (_verifyPoller) clearInterval(_verifyPoller);
         _verifyPoller = setInterval(async function() {
             if (!modal.classList.contains('show')) {
@@ -989,7 +964,6 @@ def build_device_js():
             }
         }, 5000);
 
-        /* Cancel */
         var cancelBtn = $('dvlVerifyCancelBtn');
         if (cancelBtn) {
             cancelBtn.onclick = function() {
@@ -1000,7 +974,6 @@ def build_device_js():
             };
         }
 
-        /* Gửi lại email */
         var resendBtn = $('dvlVerifyResendBtn');
         if (resendBtn) {
             resendBtn.onclick = async function() {
@@ -1015,7 +988,6 @@ def build_device_js():
                     if (errBox) errBox.style.display = 'none';
                     if (stepEmail) stepEmail.style.opacity = '1';
 
-                    /* Update Firestore */
                     try {
                         await db.collection('allowed_users').doc(email.toLowerCase())
                             .collection('pending_devices').doc(getDeviceId())
@@ -1039,7 +1011,6 @@ def build_device_js():
             };
         }
 
-        /* Check thủ công */
         var checkBtn = $('dvlVerifyCheckBtn');
         if (checkBtn) {
             checkBtn.onclick = async function() {
@@ -1106,9 +1077,6 @@ def build_device_js():
         if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       Đăng xuất các thiết bị khác
-       ═══════════════════════════════════════════════════════════ */
     async function logoutOtherDevices() {
         if (typeof currentUser === 'undefined' || !currentUser || !currentUser.email) return;
         if (__dvlIsSuperAdmin(currentUser.email)) return;
@@ -1134,13 +1102,12 @@ def build_device_js():
     }
 
     /* ═══════════════════════════════════════════════════════════
-       Dropdown — nút "Quản lý thiết bị" + "Yêu cầu chờ duyệt"
+       Dropdown — nút "Quản lý thiết bị"
        ═══════════════════════════════════════════════════════════ */
     function injectDropdownButton() {
         var dropdown = document.getElementById('userDropdown');
         if (!dropdown) return false;
 
-        /* SUPER ADMIN — không hiện */
         var curEmail = '';
         try {
             if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
@@ -1149,13 +1116,15 @@ def build_device_js():
                 curEmail = auth.currentUser.email || '';
             }
         } catch(e) {}
+
+        /* Super admin — vẫn hiện nút "Quản lý thiết bị" nếu muốn (nhưng không cần)
+           Hiện tại: ẩn nút "Quản lý thiết bị" cho super admin để giữ dropdown gọn */
         if (__dvlIsSuperAdmin(curEmail)) {
             var oldBtn = dropdown.querySelector('#dvlManageBtn');
             if (oldBtn) oldBtn.remove();
             return true;
         }
 
-        /* Nút "Quản lý thiết bị" */
         if (!dropdown.querySelector('#dvlManageBtn')) {
             var logoutBtn = dropdown.querySelector('#logoutBtn');
             if (logoutBtn) {
@@ -1201,11 +1170,11 @@ def build_device_js():
     }
 
     /* ═══════════════════════════════════════════════════════════
-       ⭐ ADMIN — Tab "Yêu cầu chờ duyệt"
+       ⭐ ADMIN — Tab "Yêu cầu chờ duyệt" (bao gồm cả super admin)
        ═══════════════════════════════════════════════════════════ */
     async function updatePendingBadge() {
         if (!db) return;
-        if (typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'admin') return;
+        if (!__dvlHasAdminRights()) return;
 
         try {
             var snap = await db.collectionGroup('pending_devices')
@@ -1226,7 +1195,7 @@ def build_device_js():
     }
 
     function injectAdminPendingButton() {
-        if (typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'admin') return;
+        if (!__dvlHasAdminRights()) return;
 
         var dropdown = document.getElementById('userDropdown');
         if (!dropdown) return;
@@ -1254,7 +1223,7 @@ def build_device_js():
     }
 
     async function openPendingList() {
-        if (typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'admin') {
+        if (!__dvlHasAdminRights()) {
             alert('Chỉ admin mới có quyền này.');
             return;
         }
@@ -1285,7 +1254,6 @@ def build_device_js():
                 return;
             }
 
-            /* Sắp xếp mới nhất lên đầu */
             var items = [];
             snap.forEach(function(doc) {
                 var d = doc.data();
@@ -1337,7 +1305,6 @@ def build_device_js():
 
             list.innerHTML = html;
 
-            /* Bind nút duyệt */
             list.querySelectorAll('.dvl-approve-btn').forEach(function(btn) {
                 btn.onclick = async function(e) {
                     e.stopPropagation();
@@ -1421,7 +1388,7 @@ def build_device_js():
     }
 
     async function openAdminDeviceView(email) {
-        if (typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'admin') {
+        if (!__dvlHasAdminRights()) {
             alert('Chỉ admin mới có quyền này.');
             return;
         }
@@ -1547,7 +1514,6 @@ def build_device_js():
             }
         });
 
-        /* Inject buttons */
         var tries = 0;
         var injectTimer = setInterval(function() {
             tries++;
@@ -1559,14 +1525,13 @@ def build_device_js():
             if (tries > 120) clearInterval(injectTimer);
         }, 500);
 
-        /* Auth hook */
         if (typeof auth !== 'undefined' && auth && !auth.__dvlHooked) {
             auth.__dvlHooked = true;
             auth.onAuthStateChanged(function(user) {
                 if (user && user.email) {
                     setTimeout(function() { updateDropdownBadge(); }, 1500);
                     setTimeout(function() {
-                        if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin') {
+                        if (__dvlHasAdminRights()) {
                             updatePendingBadge();
                         }
                     }, 2000);
@@ -1574,7 +1539,6 @@ def build_device_js():
             });
         }
 
-        /* MutationObserver cho #userList */
         var userList = document.getElementById('userList');
         if (userList && !userList.__dvlObserved) {
             userList.__dvlObserved = true;
@@ -1584,21 +1548,18 @@ def build_device_js():
             mo.observe(userList, { childList: true, subtree: true });
         }
 
-        /* Check kicked định kỳ */
         setInterval(function() {
             if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
                 checkIfKicked(currentUser.email);
             }
         }, 30000);
 
-        /* Cập nhật badge pending định kỳ (chỉ admin) */
         setInterval(function() {
-            if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin') {
+            if (__dvlHasAdminRights()) {
                 updatePendingBadge();
             }
         }, 30000);
 
-        /* Kiểm tra URL có link xác nhận (tab mới từ mail) */
         setTimeout(async function() {
             var res = await checkVerifyLink();
             if (!res) return;
@@ -1622,6 +1583,7 @@ def build_device_js():
     window.__dvlOpenPending = openPendingList;
     window.__dvlMaxDevices = MAX_DEVICES;
     window.__dvlIsSuperAdmin = __dvlIsSuperAdmin;
+    window.__dvlHasAdminRights = __dvlHasAdminRights;
 
     window.__dvlDebug = {
         openManage: openManageModal,
@@ -1630,6 +1592,7 @@ def build_device_js():
         getDeviceId: getDeviceId,
         getDeviceName: getDeviceName,
         isSuperAdmin: __dvlIsSuperAdmin,
+        hasAdminRights: __dvlHasAdminRights,
         resetDeviceId: function() {
             try { localStorage.removeItem(DEVICE_ID_KEY); } catch(e) {}
             currentDeviceId = null;
@@ -1651,8 +1614,8 @@ def build_device_js():
         initDvl();
     }
 
-    console.log('[Device Limiter] Module loaded — email + admin dual-channel, max ' + MAX_DEVICES);
-})();
+    console.log('[Device Limiter] Module loaded — super admin vẫn duyệt được, max ' + MAX_DEVICES);
+})()
 """
 
 
@@ -1670,6 +1633,7 @@ if __name__ == "__main__":
     assert 'dvlEmailErrorBox' in html
     assert 'dvlStepEmail' in html
     assert 'dvlStepAdmin' in html
+    assert '__dvlHasAdminRights' in js
     assert 'registerCurrentDevice' in js
     assert 'sendVerifyEmail' in js
     assert 'checkVerifyLink' in js
@@ -1680,4 +1644,4 @@ if __name__ == "__main__":
     assert '__dvlIsSuperAdmin' in js
     assert 'renderVerifySuccessPage' in js
 
-    print("✅ Module san sang dung — Email + Admin dual-channel")
+    print("✅ Module san sang dung")
