@@ -2785,26 +2785,19 @@ function applyUserUI() {
         try { markCurrentDatasetActive(); } catch(e) {}
     }
 
-   /* ⭐ Check lệnh gia hạn đang chờ */
+    /* ⭐ Check lệnh gia hạn đang chờ */
     setTimeout(checkPendingRenewalBadge, 500);
 
-    /* ⭐ FIX: Bind theme + avatar — KHÔNG clone, dùng onclick ghi đè */
+    /* ⭐ FIX: Chỉ force CSS cho theme + avatar — KHÔNG bind onclick */
     setTimeout(function() {
         /* ===== THEME ===== */
         var t = document.getElementById('themeToggle');
         if (t) {
-    t.style.pointerEvents = 'auto';
-    t.style.position = 'relative';
-    t.style.zIndex = '1001';
+            t.style.pointerEvents = 'auto';
+            t.style.position = 'relative';
+            t.style.zIndex = '1001';
 
-    /* Chỉ set icon đúng trạng thái — KHÔNG bind onclick */
-    var curIcon = t.querySelector('i');
-    if (curIcon) {
-        curIcon.className = document.documentElement.getAttribute('data-theme') === 'dark'
-            ? 'fas fa-sun' : 'fas fa-moon';
-    }
-}
-            /* Set icon đúng trạng thái hiện tại */
+            /* Chỉ update icon đúng trạng thái hiện tại */
             var curIcon = t.querySelector('i');
             if (curIcon) {
                 curIcon.className = document.documentElement.getAttribute('data-theme') === 'dark'
@@ -2817,6 +2810,7 @@ function applyUserUI() {
         if (av) {
             av.style.pointerEvents = 'auto';
 
+            /* Dùng onclick ghi đè — chỉ 1 nguồn duy nhất */
             av.onclick = function(e) {
                 if (e) { e.preventDefault(); e.stopPropagation(); }
                 var dd = document.getElementById('userDropdown');
@@ -2834,7 +2828,7 @@ function applyUserUI() {
             ha.style.zIndex = '900';
         }
 
-        console.log('[Auth] applyUserUI: bind theme + avatar OK');
+        console.log('[Auth] applyUserUI: force CSS theme + avatar OK');
     }, 150);
 }
 async function checkPendingRenewalBadge() {
