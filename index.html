@@ -20449,6 +20449,29 @@ function applyUserUI() {
 
     /* ⭐ Check lệnh gia hạn đang chờ */
     setTimeout(checkPendingRenewalBadge, 500);
+    setTimeout(function() {
+    var themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) {
+        themeBtn.style.pointerEvents = 'auto';
+        themeBtn.style.position = 'relative';
+        themeBtn.style.zIndex = '1001';
+    }
+    
+    var userMenu = document.getElementById('userMenu');
+    if (userMenu) {
+        userMenu.style.pointerEvents = 'auto';
+        userMenu.style.position = 'relative';
+        userMenu.style.zIndex = '1000';
+    }
+    
+    var ha = document.querySelector('.header-actions');
+    if (ha) {
+        ha.style.pointerEvents = 'auto';
+        ha.style.zIndex = '900';
+    }
+    
+    console.log('[Auth] applyUserUI: force pointer-events OK');
+}, 100);
 }
 async function checkPendingRenewalBadge() {
     if (!currentUser || currentUser.role === 'admin' || currentUser.isPermanent) {
