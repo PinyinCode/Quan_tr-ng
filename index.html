@@ -35386,15 +35386,8 @@ window.__dataLoadPromise = (async function() {
 })();
 
 function waitForData(callback) {
-    if (window.__dataLoaded) {
-        callback();
-        return;
-    }
-    if (window.__dataLoadPromise && typeof window.__dataLoadPromise.then === 'function') {
-        window.__dataLoadPromise.then(callback).catch(function() {});
-        return;
-    }
-    window.addEventListener('dataLoaded', callback, { once: true });
+    if (window.__dataLoaded) return callback();
+    window.__dataLoadPromise.then(callback).catch(function() {});
 }
 
 window.__switchRawData = function(datasetId) {
