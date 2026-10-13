@@ -1895,31 +1895,20 @@ async function handleAuthChange(user) {
             }
         }
 
-        /* ═══ CHECK DEVICE LIMIT ═══ */
+        /* ═══ CHECK DEVICE LIMIT — KHÔNG RETURN, VẪN TẢI CÂU HỎI ═══ */
         try {
             if (window.__dvlCheckAndRegister && currentUser && currentUser.email) {
                 var _dvlResult = await window.__dvlCheckAndRegister(currentUser.email);
 
                 if (_dvlResult && _dvlResult.needsVerify) {
                     var _vEmail = currentUser.email;
-                    var _vExpire = _dvlResult.expireAt || (Date.now() + 300000);
+                    var _vExpire = _dvlResult.expireAt || (Date.now() + 600000);
 
-                    if (window.__dvlSendVerifyEmail) {
-                        window.__dvlSendVerifyEmail(_vEmail, _dvlResult.token);
-                    }
-                    if (window.__dvlShowVerifyModal) {
-                        window.__dvlShowVerifyModal(_vEmail, _vExpire);
-                    }
-
-                    /* ⭐ FIX: Ẩn loading screen để user bấm được các nút khác */
-                    var _ls1 = document.getElementById('loadingScreen');
-                    if (_ls1) _ls1.classList.add('hidden');
-                    var _st1 = document.getElementById('stickyTop');
-                    if (_st1) _st1.style.display = 'block';
-                    var _mc1 = document.getElementById('mainContent');
-                    if (_mc1) _mc1.style.display = 'block';
-
-                    return;
+                    setTimeout(function() {
+                        if (window.__dvlShowVerifyModal) {
+                            window.__dvlShowVerifyModal(_vEmail, _vExpire);
+                        }
+                    }, 1500);
                 }
             }
         } catch(_dvlErr) {
@@ -2073,31 +2062,20 @@ async function handleAuthChange(user) {
             }));
         } catch(e) {}
 
-        /* ═══ CHECK DEVICE LIMIT ═══ */
+        /* ═══ CHECK DEVICE LIMIT — KHÔNG RETURN, VẪN TẢI CÂU HỎI ═══ */
         try {
             if (window.__dvlCheckAndRegister && currentUser && currentUser.email) {
                 var _dvlResult2 = await window.__dvlCheckAndRegister(currentUser.email);
 
                 if (_dvlResult2 && _dvlResult2.needsVerify) {
                     var _vEmail2 = currentUser.email;
-                    var _vExpire2 = _dvlResult2.expireAt || (Date.now() + 300000);
+                    var _vExpire2 = _dvlResult2.expireAt || (Date.now() + 600000);
 
-                    if (window.__dvlSendVerifyEmail) {
-                        window.__dvlSendVerifyEmail(_vEmail2, _dvlResult2.token);
-                    }
-                    if (window.__dvlShowVerifyModal) {
-                        window.__dvlShowVerifyModal(_vEmail2, _vExpire2);
-                    }
-
-                    /* ⭐ FIX: Ẩn loading screen */
-                    var _ls2 = document.getElementById('loadingScreen');
-                    if (_ls2) _ls2.classList.add('hidden');
-                    var _st2 = document.getElementById('stickyTop');
-                    if (_st2) _st2.style.display = 'block';
-                    var _mc2 = document.getElementById('mainContent');
-                    if (_mc2) _mc2.style.display = 'block';
-
-                    return;
+                    setTimeout(function() {
+                        if (window.__dvlShowVerifyModal) {
+                            window.__dvlShowVerifyModal(_vEmail2, _vExpire2);
+                        }
+                    }, 1500);
                 }
             }
         } catch(_dvlErr2) {
