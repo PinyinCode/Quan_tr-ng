@@ -1157,42 +1157,6 @@ def build_accounts_css():
         min-width: 200px !important;
     }
 }
-/* ═══════════════════════════════════════════════════════════
-   FORM ĐĂNG NHẬP TRONG LOGIN MODAL
-   ═══════════════════════════════════════════════════════════ */
-.login-field{margin-bottom:.85rem;text-align:left}
-.login-field label{display:block;font-size:.72rem;font-weight:700;color:#475569;margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.3px}
-[data-theme="dark"] .login-field label{color:#cbd5e1}
-.login-field input{width:100%;padding:.75rem .9rem;border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;color:#0f172a;font-size:.9rem;font-family:inherit;outline:none;transition:.15s;box-sizing:border-box}
-.login-field input:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.15)}
-[data-theme="dark"] .login-field input{background:#0f172a;border-color:#475569;color:#f1f5f9}
-[data-theme="dark"] .login-field input:focus{border-color:#a78bfa;box-shadow:0 0 0 3px rgba(167,139,250,.2)}
-
-.login-pwd-wrap{position:relative}
-.login-pwd-wrap input{padding-right:2.6rem}
-.login-pwd-toggle{position:absolute;right:.5rem;top:50%;transform:translateY(-50%);width:32px;height:32px;border:none;background:transparent;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;border-radius:8px;transition:.15s}
-.login-pwd-toggle:hover{background:#f1f5f9;color:#7c3aed}
-[data-theme="dark"] .login-pwd-toggle:hover{background:#334155;color:#a78bfa}
-
-.login-extras{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin:.35rem 0 1rem;flex-wrap:wrap}
-.login-checkbox{display:flex;align-items:center;gap:.45rem;font-size:.78rem;color:#475569;cursor:pointer;user-select:none;font-weight:500}
-.login-checkbox input[type="checkbox"]{width:16px;height:16px;accent-color:#7c3aed;cursor:pointer;flex-shrink:0;margin:0}
-[data-theme="dark"] .login-checkbox{color:#cbd{background:none;border:none;color:#7c3aed;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;padding:.2rem .35rem;border-radius:6px;transition:.15s}
-.login-link:hover{background:rgba(124,58,237,.1);text-decoration:underline}
-[data-theme="dark"] .login-link{color:#a78bfa}
-[data-theme="dark"] .login-link:hover{background:rgba(167,139,250,.15)}
-
-.login-submit-btn{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;padding:.85rem 1.25rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-size:.92rem;font-weight:800;font-family:inherit;cursor:pointer;transition:.2s;box-shadow:0 4px 14px rgba(124,58,237,.35);letter-spacing:.2px}
-.login-submit-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 22px rgba(124,58,237,.5)}
-.login-submit-btn:active:not(:disabled){transform:translateY(0) scale(.98)}
-.login-submit-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
-
-.login-divider{display:flex;align-items:center;gap:.75rem;margin:1.25rem 0;color:#94a3b8;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:#e2e8f0}
-[data-theme="dark"] .login-divider::before,[data-theme="dark"] .login-divider::after{background:#475569}
-
-.login-switch{display:flex;align-items:center;justify-content:center;gap:.35rem;margin-top:1rem;font-size:.82rem;color:#64748b}
-[data-theme="dark"] .login-switch{color:#94a3b8}
 """
 
 
@@ -1205,87 +1169,13 @@ def build_accounts_html():
     <div class="login-box">
         <button class="login-close" id="loginClose"><i class="fas fa-times"></i></button>
         <div class="login-logo"><i class="fas fa-gem"></i></div>
-        <h2 id="loginTitle">Đăng nhập để mở khóa</h2>
-        <p id="loginSubtitle">Đăng nhập để sử dụng <b>toàn bộ câu</b>, tất cả bộ lọc HSK1-6, chủ đề đầy đủ, luyện viết không giới hạn và nhiều tính năng khác.</p>
-
-        <!-- ═══ FORM ĐĂNG NHẬP ═══ -->
-        <form id="loginForm" autocomplete="on" novalidate>
-            <div class="login-field">
-                <label>Email</label>
-                <input type="email" id="loginEmail" placeholder="user@gmail.com" autocomplete="username" required>
-            </5div>
-            <div class="logine-field">
-                <label>Mật kh1ẩu</label>
-                <div class="}
-login-pwd-wrap">
-                    <input type=".loginpassword" id="loginPwd"-link placeholder="Tối thiểu 6 ký tự" autocomplete="current-password" required minlength="6">
-                    <button type="button" class="login-pwd-toggle" data-pwd="loginPwd" aria-label="Hiện/ẩn mật khẩu"><i class="fas fa-eye"></i></button>
-                </div>
-            </div>
-            <div class="login-extras">
-                <label class="login-checkbox">
-                    <input type="checkbox" id="loginSaveAccount" checked>
-                    <span>Lưu tài khoản</span>
-                </label>
-                <button type="button" class="login-link" id="loginForgotBtn">Quên mật khẩu?</button>
-            </div>
-            <button type="submit" class="login-submit-btn" id="loginSubmitBtn">
-                <i class="fas fa-sign-in-alt"></i> Đăng nhập
-            </button>
-        </form>
-
-        <!-- ═══ FORM ĐĂNG KÝ ═══ -->
-        <form id="registerForm" autocomplete="on" novalidate style="display:none;">
-            <div class="login-field">
-                <label>Email</label>
-                <input type="email" id="regEmail" placeholder="user@gmail.com" autocomplete="username" required>
-            </div>
-            <div class="login-field">
-                <label>Họ tên (tùy chọn)</label>
-                <input type="text" id="regName" placeholder="Nguyễn Văn A" autocomplete="name" maxlength="50">
-            </div>
-            <div class="login-field">
-                <label>Mật khẩu</label>
-                <div class="login-pwd-wrap">
-                    <input type="password" id="regPwd" placeholder="Tối thiểu 6 ký tự" autocomplete="new-password" required minlength="6">
-                    <button type="button" class="login-pwd-toggle" data-pwd="regPwd" aria-label="Hiện/ẩn mật khẩu"><i class="fas fa-eye"></i></button>
-                </div>
-            </div>
-            <div class="login-field">
-                <label>Nhập lại mật khẩu</label>
-                <div class="login-pwd-wrap">
-                    <input type="password" id="regPwd2" placeholder="Nhập lại mật khẩu" autocomplete="new-password" required minlength="6">
-                    <button type="button" class="login-pwd-toggle" data-pwd="regPwd2" aria-label="Hiện/ẩn mật khẩu"><i class="fas fa-eye"></i></button>
-                </div>
-            </div>
-            <label class="login-checkbox" style="margin-bottom:.85rem;">
-                <input type="checkbox" id="regSaveAccount" checked>
-                <span>Lưu tài khoản</span>
-            </label>
-            <button type="submit" class="login-submit-btn" id="registerSubmitBtn">
-                <i class="fas fa-user-plus"></i> Tạo tài khoản
-            </button>
-        </form>
-
-        <!-- ═══ DIVIDER ═══ -->
-        <div class="login-divider">
-            <span>Hoặc</span>
-        </div>
-
-        <!-- ═══ NÚT GOOGLE ═══ -->
-        <button type="button" class="btn-google" id="googleLoginBtn">
+        <h2>Đăng nhập để mở khóa</h2>
+        <p>Đăng nhập bằng Google để sử dụng <b>toàn bộ câu</b>, tất cả bộ lọc HSK1-6, chủ đề đầy đủ, luyện viết không giới hạn và nhiều tính năng khác.</p>
+        <button class="btn-google" id="googleLoginBtn">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
             Đăng nhập bằng Google
         </button>
-
-        <!-- ═══ SWITCH LOGIN/REGISTER ═══ -->
-        <div class="login-switch">
-            <span id="loginSwitchText">Chưa có tài khoản?</span>
-            <button type="button" class="login-link" id="loginSwitchBtn">Đăng ký ngay</button>
-        </div>
-
         <div class="login-error" id="loginError"></div>
-
         <div class="login-footer">
             <i class="fas fa-shield-alt"></i> Tài khoản mới được <b>tặng miễn phí <span id="trialDaysText">3</span> ngày</b> dùng thử.
         </div>
