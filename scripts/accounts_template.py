@@ -2821,21 +2821,17 @@ function applyUserUI() {
             }
         }
 
-        /* --- User avatar --- */
+       /* --- User avatar — dùng onclick ghi đè --- */
         var avatar = document.getElementById('userAvatar');
-        if (avatar && !avatar.__avatarFixed) {
-            var newAvatar = avatar.cloneNode(true);
-            avatar.parentNode.replaceChild(newAvatar, avatar);
-            newAvatar.__avatarFixed = true;
-
-            newAvatar.addEventListener('click', function(e) {
-                e.stopPropagation();
+        if (avatar) {
+            avatar.onclick = function(e) {
+                if (e) { e.preventDefault(); e.stopPropagation(); }
                 var dd = document.getElementById('userDropdown');
                 if (!dd) return;
                 var willOpen = !dd.classList.contains('show');
                 dd.classList.toggle('show');
                 try { sessionStorage.setItem('userDropdownClosed', willOpen ? '0' : '1'); } catch(_e) {}
-            });
+            };
         }
 
         /* --- header-actions pointer events --- */
@@ -5235,16 +5231,7 @@ function initAuthUI() {
         });
     }
 
-    if ($('userAvatar')) {
-        $('userAvatar').addEventListener('click', function(e) {
-            e.stopPropagation();
-            var dd = $('userDropdown');
-            if (!dd) return;
-            var willOpen = !dd.classList.contains('show');
-            dd.classList.toggle('show');
-            try { sessionStorage.setItem('userDropdownClosed', willOpen ? '0' : '1'); } catch(_e) {}
-        });
-    }
+    
     document.addEventListener('click', function(e) {
         var dd = $('userDropdown');
         if (dd && !dd.contains(e.target) && $('userAvatar') && !$('userAvatar').contains(e.target)) {
