@@ -124,6 +124,19 @@ def load_config():
         }
     })
 
+    # ═══════════════════════════════════════════════════
+    # Firebase databaseURL — tự động fix region cho RTDB
+    # ═══════════════════════════════════════════════════
+    fb = cfg.setdefault("firebase_config", {})
+    if not fb.get("databaseURL"):
+        project_id = fb.get("projectId", "")
+        if project_id:
+            fb["databaseURL"] = (
+                f"https://{project_id}-default-rtdb."
+                f"asia-southeast1.firebasedatabase.app"
+            )
+            print(f"   [FIX] Tự động thêm databaseURL: {fb['databaseURL']}")
+
     return cfg
 
 
