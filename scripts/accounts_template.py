@@ -1910,6 +1910,15 @@ async function handleAuthChange(user) {
                     if (window.__dvlShowVerifyModal) {
                         window.__dvlShowVerifyModal(_vEmail, _vExpire);
                     }
+
+                    /* ⭐ FIX: Ẩn loading screen để user bấm được các nút khác */
+                    var _ls1 = document.getElementById('loadingScreen');
+                    if (_ls1) _ls1.classList.add('hidden');
+                    var _st1 = document.getElementById('stickyTop');
+                    if (_st1) _st1.style.display = 'block';
+                    var _mc1 = document.getElementById('mainContent');
+                    if (_mc1) _mc1.style.display = 'block';
+
                     return;
                 }
             }
@@ -1926,6 +1935,8 @@ async function handleAuthChange(user) {
                 if (_damResult && _damResult.blocked) {
                     if (typeof auth !== 'undefined' && auth) auth.signOut();
                     alert('🚫 Thiết bị này đã bị admin chặn.\n\nVui lòng liên hệ admin để biết thêm chi tiết.');
+                    var _lsb1 = document.getElementById('loadingScreen');
+                    if (_lsb1) _lsb1.classList.add('hidden');
                     return;
                 }
 
@@ -1933,6 +1944,8 @@ async function handleAuthChange(user) {
                     if (window.__damShowCooldown) {
                         window.__damShowCooldown(_damResult.remainMs, _damResult.recentCount);
                     }
+                    var _lsc1 = document.getElementById('loadingScreen');
+                    if (_lsc1) _lsc1.classList.add('hidden');
                     return;
                 }
             }
@@ -2075,6 +2088,15 @@ async function handleAuthChange(user) {
                     if (window.__dvlShowVerifyModal) {
                         window.__dvlShowVerifyModal(_vEmail2, _vExpire2);
                     }
+
+                    /* ⭐ FIX: Ẩn loading screen */
+                    var _ls2 = document.getElementById('loadingScreen');
+                    if (_ls2) _ls2.classList.add('hidden');
+                    var _st2 = document.getElementById('stickyTop');
+                    if (_st2) _st2.style.display = 'block';
+                    var _mc2 = document.getElementById('mainContent');
+                    if (_mc2) _mc2.style.display = 'block';
+
                     return;
                 }
             }
@@ -2091,6 +2113,8 @@ async function handleAuthChange(user) {
                 if (_damResult2 && _damResult2.blocked) {
                     if (typeof auth !== 'undefined' && auth) auth.signOut();
                     alert('🚫 Thiết bị này đã bị admin chặn.\n\nVui lòng liên hệ admin để biết thêm chi tiết.');
+                    var _lsb2 = document.getElementById('loadingScreen');
+                    if (_lsb2) _lsb2.classList.add('hidden');
                     return;
                 }
 
@@ -2098,6 +2122,8 @@ async function handleAuthChange(user) {
                     if (window.__damShowCooldown) {
                         window.__damShowCooldown(_damResult2.remainMs, _damResult2.recentCount);
                     }
+                    var _lsc2 = document.getElementById('loadingScreen');
+                    if (_lsc2) _lsc2.classList.add('hidden');
                     return;
                 }
             }
