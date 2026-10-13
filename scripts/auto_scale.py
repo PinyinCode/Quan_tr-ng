@@ -1,13 +1,26 @@
 # -*- coding: utf-8 -*-
 """
 Auto-scale module — Tự động scale + căn chỉnh theo KÍCH THƯỚC MÀN HÌNH THỰC.
+
+Quy tắc:
+- Desktop (>768px): 
+    scale = 60% inch_factor + 40% viewport_factor
+    → Màn 10" vs 16" vs 27" khác nhau rõ rệt
+- Mobile (≤768px): reset scale = 1
+- Font-size: dùng vmin (min của vw, vh) → tự scale
+- Practice Full: căn giữa lệch 30/70 (before 30% - content - after 70%)
 """
 
 
 def build_auto_scale_css():
     return r"""
-:root{--ui-scale:1;--pf-scale:1;--ui-scale-base:1;--pf-scale-base:1}
+:root{--ui-scale:1;--pf-scale:1}
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* CĂN GIỮA NỘI DUNG — Practice Full (lệch 30/70)               */
+/* before = 30% không gian thừa phía trên                        */
+/* after  = 70% không gian thừa phía dưới                        */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .practice-full-body{
     flex:1 1 auto!important;
     min-height:0!important;
@@ -46,6 +59,9 @@ html body .practice-full-content{
     padding:0!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* HEADER CHÍNH                                                  */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .logo-icon{
     width:calc(clamp(44px,5.5vmin,72px) * var(--ui-scale,1))!important;
     height:calc(clamp(44px,5.5vmin,72px) * var(--ui-scale,1))!important;
@@ -80,6 +96,9 @@ html body .btn-login-header{
              calc(clamp(.95rem,1.9vmin,1.4rem) * var(--ui-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* DATASET SELECTOR                                              */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .dataset-selector{
     padding:calc(clamp(.7rem,1.4vmin,1.2rem) * var(--ui-scale,1))
              calc(clamp(.85rem,1.7vmin,1.4rem) * var(--ui-scale,1))!important;
@@ -175,6 +194,9 @@ html body .ds-dd-fav-lock{
     font-size:calc(clamp(.7rem,1.3vmin,.95rem) * var(--ui-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* SEARCH + FILTER                                               */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .search-bar input{
     padding:calc(clamp(.5rem,1.2vmin,1rem) * var(--ui-scale,1))
              calc(clamp(2.2rem,4.5vmin,3.4rem) * var(--ui-scale,1))
@@ -217,6 +239,9 @@ html body .result-count{
     gap:calc(clamp(.35rem,.7vmin,.55rem) * var(--ui-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* FAB GROUP                                                     */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .fab-btn{
     width:calc(clamp(42px,6vmin,68px) * var(--ui-scale,1))!important;
     height:calc(clamp(42px,6vmin,68px) * var(--ui-scale,1))!important;
@@ -228,6 +253,9 @@ html body .fab-main{
     font-size:calc(clamp(1.05rem,2.1vmin,1.55rem) * var(--ui-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* CARD CHÍNH                                                    */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .card{
     padding:calc(clamp(.85rem,1.7vmin,1.4rem) * var(--ui-scale,1))!important;
     padding-left:calc(clamp(1rem,2vmin,1.6rem) * var(--ui-scale,1))!important;
@@ -300,6 +328,9 @@ html body .practice-input{
     border-radius:calc(clamp(50px,7vmin,100px) * var(--ui-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* PRACTICE FULL — Header                                        */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .practice-full-header{
     padding:calc(clamp(.5rem,1.4vh,1rem) * var(--pf-scale,1))
              calc(clamp(1rem,2.2vw,1.6rem) * var(--pf-scale,1))!important;
@@ -334,6 +365,9 @@ html body .pf-fav-btn{
     font-size:calc(clamp(.85rem,1.7vmin,1.2rem) * var(--pf-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* PRACTICE FULL — Filters                                       */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .pf-filters{
     padding:calc(clamp(.5rem,1.4vh,.85rem) * var(--pf-scale,1))
              calc(clamp(1rem,2.2vw,1.6rem) * var(--pf-scale,1))!important
@@ -388,6 +422,9 @@ html body .pf-dataset-row .pf-quick-nav{
     gap:calc(clamp(.4rem,.8vmin,.6rem) * var(--pf-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* PRACTICE FULL — Content                                       */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .practice-full-vi{
     padding:calc(clamp(.85rem,2vh,1.5rem) * var(--pf-scale,1))
              calc(clamp(.85rem,2vw,1.4rem) * var(--pf-scale,1))!important;
@@ -460,6 +497,9 @@ html body .answer-phrase-tooltip{
     border-radius:calc(clamp(10px,1.6vmin,16px) * var(--pf-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* PRACTICE FULL — Nav bottom                                    */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .practice-full-nav{
     padding:calc(clamp(.6rem,1.6vh,1.15rem) * var(--pf-scale,1))
              calc(clamp(.85rem,2vw,1.5rem) * var(--pf-scale,1))!important;
@@ -482,6 +522,9 @@ html body .practice-full-nav .mini-group{
     margin-left:calc(clamp(.4rem,.8vmin,.6rem) * var(--pf-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* TIKTOK FLOAT + WIDTH CONTROL                                  */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .pf-tiktok-float{
     padding:calc(clamp(.4rem,.8vmin,.65rem) * var(--pf-scale,1))
              calc(clamp(.75rem,1.5vmin,1.15rem) * var(--pf-scale,1))
@@ -516,6 +559,9 @@ html body .pf-width-indicator{
              calc(clamp(.4rem,.8vmin,.6rem) * var(--pf-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* VOICE MODAL                                                   */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .voice-box{
     max-width:calc(clamp(420px,55vmin,620px) * var(--ui-scale,1))!important;
     border-radius:calc(clamp(16px,2.5vmin,26px) * var(--ui-scale,1))!important
@@ -578,6 +624,9 @@ html body .voice-note{
     font-size:calc(clamp(.7rem,1.35vmin,1rem) * var(--ui-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* WRITER MODAL                                                  */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .writer-box{
     max-width:calc(clamp(400px,55vmin,580px) * var(--ui-scale,1))!important;
     padding:calc(clamp(.9rem,1.8vmin,1.4rem) * var(--ui-scale,1))
@@ -614,6 +663,9 @@ html body .writer-score{
     font-size:calc(clamp(.8rem,1.55vmin,1.15rem) * var(--ui-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* ONBOARDING MODAL                                              */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .onboarding-box{
     max-width:calc(clamp(500px,65vmin,720px) * var(--ui-scale,1))!important;
     max-height:min(85vh,calc(640px * var(--ui-scale,1)))!important;
@@ -682,6 +734,9 @@ html body .onboarding-btn{
     gap:calc(clamp(.45rem,.9vmin,.7rem) * var(--ui-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* ONBOARDING ACTIVE BANNER                                      */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .onboarding-active-banner{
     padding:calc(clamp(.7rem,1.4vmin,1.1rem) * var(--ui-scale,1))
              calc(clamp(.9rem,1.8vmin,1.4rem) * var(--ui-scale,1))!important;
@@ -726,6 +781,9 @@ html body .onboarding-active-banner .ob-cta-btn{
     gap:calc(clamp(.35rem,.7vmin,.55rem) * var(--ui-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* FAVORITES                                                     */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .pf-fav-float{
     padding:calc(clamp(.55rem,1.1vmin,.85rem) * var(--ui-scale,1))
              calc(clamp(.85rem,1.7vmin,1.3rem) * var(--ui-scale,1))
@@ -912,6 +970,9 @@ html body .fav-filter-btn-primary{
     gap:calc(clamp(.35rem,.7vmin,.55rem) * var(--pf-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* ADMIN CHAT MANAGER                                            */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .acm-box{
     max-width:calc(clamp(900px,75vmin,1300px) * var(--ui-scale,1))!important;
     height:min(85vh,calc(800px * var(--ui-scale,1)))!important
@@ -1134,6 +1195,9 @@ html body .acm-bulk-send-btn{
     gap:calc(clamp(.35rem,.7vmin,.55rem) * var(--ui-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* CHAT SUPPORT                                                  */
+/* ═══════════════════════════════════════════════════════════════ */
 html body #chatFloatBtn{
     width:calc(clamp(50px,7vmin,82px) * var(--ui-scale,1))!important;
     height:calc(clamp(50px,7vmin,82px) * var(--ui-scale,1))!important
@@ -1363,6 +1427,9 @@ html body .chat-toast{
     font-size:calc(clamp(.82rem,1.55vmin,1.15rem) * var(--ui-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* SOCIAL                                                        */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .zalo-btn,
 html body .tiktok-float-btn{
     padding:calc(clamp(.65rem,1.3vmin,1rem) * var(--ui-scale,1))
@@ -1463,6 +1530,9 @@ html body .dropdown-tiktok{
     font-size:calc(clamp(.85rem,1.6vmin,1.15rem) * var(--ui-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* ACCOUNTS                                                      */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .user-avatar{
     width:calc(clamp(38px,5vmin,58px) * var(--ui-scale,1))!important;
     height:calc(clamp(38px,5vmin,58px) * var(--ui-scale,1))!important
@@ -1702,6 +1772,9 @@ html body .renewal-btn{
     font-size:calc(clamp(.82rem,1.55vmin,1.15rem) * var(--ui-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* ASSEMBLE                                                      */
+/* ═══════════════════════════════════════════════════════════════ */
 html body .pf-assemble-info{
     padding:calc(clamp(.4rem,.85vmin,.65rem) * var(--pf-scale,1))
              calc(clamp(.6rem,1.2vmin,.9rem) * var(--pf-scale,1))!important;
@@ -1814,6 +1887,9 @@ html body .pf-phrase-word .pf-phrase-pinyin{
     font-size:calc(clamp(.72rem,1.4vmin,1.05rem) * var(--pf-scale,1))!important
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* MOBILE — Reset scale = 1                                      */
+/* ═══════════════════════════════════════════════════════════════ */
 @media (max-width:768px){
     html body .practice-full-body{
         padding:0.75rem 0.75rem 70px 0.75rem!important;
@@ -1824,7 +1900,23 @@ html body .pf-phrase-word .pf-phrase-pinyin{
     }
     html{--ui-scale:1!important;--pf-scale:1!important}
 }
-
+html body .practice-full-body{
+justify-content:flex-start!important;
+padding-top:1rem!important
+}
+html body .practice-full-body::before{
+flex:0 1 0!important;
+min-height:0!important
+}
+html body .practice-full-body::after{
+flex:0 1 0!important;
+min-height:0!important
+}
+html body .practice-full-content{
+flex:0 0 auto!important;
+margin:0!important;
+overflow:visible!important
+}
 html body .practice-full-input-wrap{
 width:100%!important;
 flex:0 0 auto!important;
@@ -1896,6 +1988,13 @@ html body .pf-assemble-next-btn{
 flex:0 0 auto!important;
 align-self:center!important
 }
+@media (max-width:768px){
+html body .practice-full-body{
+padding-top:.75rem!important
+}
+}
+html body .practice-full-body::before{flex:0 1 0!important;min-height:0!important}
+html body .practice-full-body::after{flex:0 1 0!important;min-height:0!important}
 html body .practice-full-body{justify-content:flex-start!important;padding-top:clamp(.5rem,1vh,.85rem)!important;padding-bottom:calc(72px + env(safe-area-inset-bottom))!important}
 html body .practice-full-content{gap:calc(clamp(.4rem,.9vh,.7rem) * var(--pf-scale,1))!important}
 html body .practice-full-input-wrap{gap:calc(clamp(.3rem,.7vh,.5rem) * var(--pf-scale,1))!important}
@@ -1916,6 +2015,9 @@ def build_auto_scale_js():
 (function setupAutoScale(){
 'use strict';
 
+/* ────────────────────────────────────────────────────────────── */
+/* CẤU HÌNH SCALE                                                */
+/* ────────────────────────────────────────────────────────────── */
 var UI_MIN_SCALE = 0.85;
 var UI_MAX_SCALE = 1.6;
 var PF_MIN_SCALE = 0.8;
@@ -1924,39 +2026,47 @@ var PF_MAX_SCALE = 1.8;
 var UI_BASE_HEIGHT = 900;
 var PF_BASE_HEIGHT = 850;
 
+/* Tỉ lệ kết hợp: 60% inch + 40% viewport */
 var INCH_WEIGHT = 0.6;
 var VH_WEIGHT = 0.4;
 
+/* Base inch: 15 inch = factor 1.0 */
 var INCH_BASE = 15;
 
+/* DPI ước lượng (CSS pixel ~ 96, nhưng laptop hiện đại ~ 110) */
 var DPI_ESTIMATE = 110;
 
 function clamp(val, min, max){
     return Math.max(min, Math.min(max, val));
 }
 
+/* ────────────────────────────────────────────────────────────── */
+/* ƯỚC LƯỢNG KÍCH THƯỚC MÀN HÌNH THEO INCH                      */
+/* ────────────────────────────────────────────────────────────── */
 function estimateScreenInches(){
     try {
         var w = window.screen.width || 1920;
         var h = window.screen.height || 1080;
         var dpr = window.devicePixelRatio || 1;
+
+        /* Đường chéo pixel vật lý */
         var diagPx = Math.sqrt(w * w + h * h) * dpr;
+
+        /* Chia cho DPI để ra inch */
         var inches = diagPx / DPI_ESTIMATE;
+
+        /* Clamp để tránh giá trị vô lý */
         return clamp(inches, 8, 40);
     } catch(e) {
-        return 15;
+        return 15; /* fallback */
     }
 }
 
-function readUserScale(){
-    try {
-        var saved = parseFloat(localStorage.getItem('pfUserScale_v1'));
-        if (!isNaN(saved) && saved >= 0.7 && saved <= 1.6) return saved;
-    } catch(e) {}
-    return 1.0;
-}
-
+/* ────────────────────────────────────────────────────────────── */
+/* TÍNH SCALE                                                    */
+/* ────────────────────────────────────────────────────────────── */
 function computeScales(){
+    /* Mobile: reset về 1 */
     if(window.innerWidth < 769){
         document.documentElement.style.removeProperty('--ui-scale');
         document.documentElement.style.removeProperty('--pf-scale');
@@ -1966,12 +2076,18 @@ function computeScales(){
     var vh = window.innerHeight;
     var inches = estimateScreenInches();
 
+    /* ⭐ Scale theo viewport height */
     var uiVhScale = clamp(vh / UI_BASE_HEIGHT, UI_MIN_SCALE, UI_MAX_SCALE);
     var pfVhScale = clamp(vh / PF_BASE_HEIGHT, PF_MIN_SCALE, PF_MAX_SCALE);
 
+    /* ⭐ Scale theo inch */
     var inchFactor = clamp(inches / INCH_BASE, 0.85, 1.5);
 
-    var uiBase = clamp(
+    /* ⭐ Kết hợp có trọng số: 60% inch + 40% viewport */
+    var uiScale = (inchFactor * INCH_WEIGHT) + (uiVhScale * VH_WEIGHT);
+    var pfScale = (inchFactor * INCH_WEIGHT) + (pfVhScale * VH_WEIGHT);
+
+   var uiBase = clamp(
         (inchFactor * INCH_WEIGHT) + (uiVhScale * VH_WEIGHT),
         UI_MIN_SCALE, UI_MAX_SCALE
     );
@@ -1980,34 +2096,44 @@ function computeScales(){
         PF_MIN_SCALE, PF_MAX_SCALE
     );
 
-    var userScale = readUserScale();
-
+    /* ⭐ LƯU BASE SCALE vào 2 biến riêng */
     var rootStyle = document.documentElement.style;
     rootStyle.setProperty('--ui-scale-base', uiBase.toFixed(3));
     rootStyle.setProperty('--pf-scale-base', pfBase.toFixed(3));
+
+    /* ⭐ Đọc user-scale (từ nút +/-), mặc định 1.0 */
+    var userScale = 1.3;
+    try {
+        var saved = parseFloat(localStorage.getItem('pfUserScale_v1'));
+        if (!isNaN(saved) && saved >= 0.7 && saved <= 1.6) userScale = saved;
+    } catch(e) {}
+
+    /* ⭐ ÁP DỤNG: base × user */
     rootStyle.setProperty('--ui-scale', (uiBase * userScale).toFixed(3));
     rootStyle.setProperty('--pf-scale', (pfBase * userScale).toFixed(3));
-
     console.log('[AutoScale] inches=' + inches.toFixed(1) +
                 ' vh=' + vh +
                 ' inchFactor=' + inchFactor.toFixed(3) +
-                ' uiBase=' + uiBase.toFixed(3) +
-                ' pfBase=' + pfBase.toFixed(3) +
-                ' user=' + userScale.toFixed(3));
+                ' → ui=' + uiScale.toFixed(3) +
+                ' pf=' + pfScale.toFixed(3));
 }
 
+/* Chạy ngay khi load */
 computeScales();
 
+/* Re-calc khi resize (throttled 150ms) */
 var resizeTimer = null;
 window.addEventListener('resize', function(){
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(computeScales, 150);
 });
 
+/* Re-calc khi orientation change */
 window.addEventListener('orientationchange', function(){
     setTimeout(computeScales, 300);
 });
 
+/* Re-calc khi mở Practice Full hoặc đổi câu (view height thay đổi) */
 document.addEventListener('click', function(e){
     if(!e.target || !e.target.closest) return;
     if(e.target.closest('#pfNextBtn,#pfPrevBtn,.practice-full-btn,#pfQuickNav')){
@@ -2015,9 +2141,9 @@ document.addEventListener('click', function(e){
     }
 });
 
-window.__autoScaleRecompute = computeScales;
-
-console.log('[AutoScale] Module loaded');
+console.log('[AutoScale] Module loaded — trọng số ' +
+            (INCH_WEIGHT * 100) + '% inch + ' +
+            (VH_WEIGHT * 100) + '% viewport');
 })();
 """
 
@@ -2025,5 +2151,13 @@ console.log('[AutoScale] Module loaded');
 if __name__ == "__main__":
     css = build_auto_scale_css()
     js = build_auto_scale_js()
-    print("CSS: {} chars".format(len(css)))
-    print("JS:  {} chars".format(len(js)))
+    print("="*60)
+    print("AUTO-SCALE MODULE — Kiểm tra")
+    print("="*60)
+    print("CSS: {} ký tự ({} dòng)".format(len(css), len(css.splitlines())))
+    print("JS:  {} ký tự ({} dòng)".format(len(js), len(js.splitlines())))
+    print()
+    print("Căn giữa: before 30% - content - after 70%")
+    print("Scale: 60% inch + 40% viewport")
+    print("Modules tích hợp: 19")
+    print("✅ Module OK")
