@@ -35338,6 +35338,150 @@ window.__switchRawData = function(datasetId) {
     } catch(e) {}
 })();
 </script>
+<!-- ⚡ SELF-WAKE — Chèn từ module self_wake.py -->
+
+<!-- ⚡ Self-Wake Render Servers -->
+<script>
+
+/* ═══════════════════════════════════════════════════════════════
+   ⚡ SELF-WAKE RENDER SERVERS
+   Tự động ping các Render server khi user vào trang.
+   Config đọc từ: self_wake_config.json
+   ═══════════════════════════════════════════════════════════════ */
+(function selfWakeServers() {
+    'use strict';
+    
+    /* ⭐ CONFIG từ Python (đọc từ JSON) */
+    var CFG = {"enabled": true, "servers": [{"name": "OTP Server", "url": "https://apigmail-n8bp.onrender.com/ping"}, {"name": "Grading Server", "url": "https://chinese-grading.onrender.com/ping"}, {"name": "Vocab API", "url": "https://chinese-vocab-api.onrender.com/ping"}], "pingInterval": 300000, "pingTimeout": 10000, "repingOnVisibleAfter": 120000, "pingOnFirstClick": true, "heartbeatEnabled": true, "debug": false};
+    
+    if (!CFG || !CFG.enabled) {
+        return;
+    }
+    if (!CFG.servers || !CFG.servers.length) {
+        console.warn('[self-wake] Không có server nào để ping');
+        return;
+    }
+    
+    var SERVERS = CFG.servers;
+    var PING_INTERVAL = CFG.pingInterval || (5 * 60 * 1000);
+    var PING_TIMEOUT = CFG.pingTimeout || 10000;
+    var DEBUG = CFG.debug || false;
+    var REPING_AFTER = CFG.repingOnVisibleAfter || (2 * 60 * 1000);
+    var PING_ON_CLICK = CFG.pingOnFirstClick !== false;
+    var HEARTBEAT = CFG.heartbeatEnabled !== false;
+    
+    /* ⭐ Logging helper */
+    function log() {
+        if (DEBUG) {
+            var args = Array.prototype.slice.call(arguments);
+            args.unshift('[self-wake]');
+            console.log.apply(console, args);
+        }
+    }
+    
+    /* ⭐ Ping 1 server — không chặn UI, dùng no-cors để tránh CORS */
+    function ping(server) {
+        var url = server.url;
+        var name = server.name || url;
+        
+        return new Promise(function(resolve) {
+            var controller = null;
+            var timer = null;
+            
+            try {
+                controller = new AbortController();
+                timer = setTimeout(function() {
+                    try { controller.abort(); } catch(e) {}
+                    log('⏱ timeout:', name);
+                    resolve({ name: name, url: url, ok: false, reason: 'timeout' });
+                }, PING_TIMEOUT);
+                
+                fetch(url, {
+                    method: 'GET',
+                    mode: 'no-cors',
+                    cache: 'no-store',
+                    credentials: 'omit',
+                    signal: controller.signal,
+                    keepalive: true
+                })
+                .then(function() {
+                    clearTimeout(timer);
+                    log('✅', name);
+                    resolve({ name: name, url: url, ok: true });
+                })
+                .catch(function(err) {
+                    clearTimeout(timer);
+                    var isAbort = (err && err.name === 'AbortError');
+                    if (isAbort) {
+                        log('⏱ abort:', name);
+                        resolve({ name: name, url: url, ok: false, reason: 'abort' });
+                    } else {
+                        log('⚠️', name, err && err.message);
+                        resolve({ name: name, url: url, ok: true, uncertain: true });
+                    }
+                });
+            } catch (e) {
+                if (timer) clearTimeout(timer);
+                log('❌ exception:', name, e);
+                resolve({ name: name, url: url, ok: false, reason: 'exception' });
+            }
+        });
+    }
+    
+    /* ⭐ Ping tất cả server song song */
+    function pingAll() {
+        log('Pinging', SERVERS.length, 'servers...');
+        return Promise.all(SERVERS.map(ping));
+    }
+    
+    /* ═══ TRIGGER 1: Ping ngay khi JS load ═══ */
+    pingAll();
+    
+    /* ═══ TRIGGER 2: Heartbeat mỗi PING_INTERVAL ═══ */
+    if (HEARTBEAT) {
+        setInterval(function() {
+            if (document.visibilityState === 'visible') {
+                log('Heartbeat tick');
+                pingAll();
+            }
+        }, PING_INTERVAL);
+    }
+    
+    /* ═══ TRIGGER 3: Ping khi tab active lại ═══ */
+    var lastHidden = 0;
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+            lastHidden = Date.now();
+        } else if (document.visibilityState === 'visible') {
+            var away = Date.now() - lastHidden;
+            if (away > REPING_AFTER) {
+                log('Tab active lại sau', Math.round(away / 1000), 's → ping');
+                pingAll();
+            }
+        }
+    });
+    
+    /* ═══ TRIGGER 4: Ping lần đầu khi user click ═══ */
+    if (PING_ON_CLICK) {
+        document.addEventListener('click', function onFirstClick() {
+            document.removeEventListener('click', onFirstClick);
+            log('First click → ping');
+            pingAll();
+        }, { once: true, passive: true });
+    }
+    
+    log('Self-wake initialized với', SERVERS.length, 'servers');
+    
+    /* ⭐ Expose ra window để debug thủ công */
+    window.__selfWake = {
+        pingAll: pingAll,
+        servers: SERVERS,
+        config: CFG
+    };
+})();
+
+</script>
+
 
 <div class="vocab-upgrade-modal" id="vocabUpgradeModal">
     <div class="vocab-upgrade-box">
@@ -37719,6 +37863,7 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
 </script>
 
 
+
 <script>
 /* PATCH_BUTTONS: FIX ACTIVE TAB */
 (function() {
@@ -37770,6 +37915,7 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
     }, true);
 })();
 </script>
+
 
 
 
@@ -38010,6 +38156,7 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
 })();
 
 </script>
+
 
 
 
