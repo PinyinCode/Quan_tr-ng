@@ -5647,24 +5647,25 @@ body.hide-floating .tiktok-bar { display: none !important; }
 }
 
 .user-row .u-settings-menu {
-    position: absolute !important;
-    top: calc(100% + 6px) !important;
-    right: 0 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: auto !important;
     min-width: 220px !important;
     background: var(--surface) !important;
     border: 1.5px solid var(--border) !important;
     border-radius: 12px !important;
-    box-shadow: 0 12px 32px rgba(15,23,42,.15),
-                0 4px 12px rgba(15,23,42,.08) !important;
+    box-shadow: 0 12px 32px rgba(15,23,42,.18),
+                0 4px 12px rgba(15,23,42,.10) !important;
     padding: .35rem !important;
     display: none !important;
     flex-direction: column !important;
     gap: .1rem !important;
-    z-index: 5000 !important;
+    z-index: 9999 !important;
     animation: uSettingsIn .18s cubic-bezier(.34,1.56,.64,1) !important;
     transform-origin: top right !important;
+    will-change: top, left !important;
 }
-
 [data-theme="dark"] .user-row .u-settings-menu {
     box-shadow: 0 12px 32px rgba(0,0,0,.5),
                 0 4px 12px rgba(0,0,0,.3) !important;
@@ -22958,22 +22959,115 @@ window.testTelegram = function() {
     }
     setInterval(sync, 500);
 })();
-/* ═══ TOGGLE USER SETTINGS MENU ═══ */
+/* ═══════════════════════════════════════════════════════════════
+   ⭐ TOGGLE USER SETTINGS MENU — FIX: dùng position:fixed
+   để không bị .admin-body { overflow-y:auto } cắt mất
+   ═══════════════════════════════════════════════════════════════ */
 window.toggleUserSettings = function(btn) {
     var menu = btn.nextElementSibling;
     if (!menu) return;
 
-    /* Đóng tất cả menu khác */
+    var isOpen = menu.classList.contains('show');
+
+    /* ── Đóng TẤT CẢ menu + nút đang active ── */
     document.querySelectorAll('.user-row .u-settings-menu.show').forEach(function(m) {
-        if (m !== menu) m.classList.remove('show');
+        m.classList.remove('show');
+        m.style.top = '';
+        m.style.left = '';
     });
     document.querySelectorAll('.user-row .u-settings-btn.active').forEach(function(b) {
-        if (b !== btn) b.classList.remove('active');
+        b.classList.remove('active');
     });
 
-    var isOpen = menu.classList.toggle('show');
-    btn.classList.toggle('active', isOpen);
+    /* Nếu đang mở → click lần 2 = đóng */
+    if (isOpen) return;
+
+    /* ── Mở menu ── */
+    menu.classList.add('show');
+    btn.classList.add('active');
+
+    /* ── Định vị menu theo nút bằng position:fixed ── */
+    /* Dùng requestAnimationFrame để chờ browser render xong kích thước menu */
+    requestAnimationFrame(function() {
+        var rect = btn.getBoundingClientRect();
+        var menuRect = menu.getBoundingClientRect();
+        var menuW = menuRect.width || 220;
+        var menuH = menuRect.height || 300;
+
+        var GAP = 6;      /* khoảng cách với nút */
+        var EDGE = 8;     /* khoảng cách tối thiểu với mép viewport */
+
+        /* Mặc định: mở xuống dưới, căn phải với nút */
+        var top  = rect.bottom + GAP;
+        var left = rect.right - menuW;
+
+        /* Nếu tràn ĐÁY → lật lên trên */
+        if (top + menuH > window.innerHeight - EDGE) {
+            top = rect.top - menuH - GAP;
+        }
+
+        /* Nếu vẫn tràn đáy (menu quá cao) → ép vào trong */
+        if (top < EDGE) top = EDGE;
+        if (top + menuH > window.innerHeight - EDGE) {
+            top = window.innerHeight - menuH - EDGE;
+        }
+
+        /* Nếu tràn TRÁI → đẩy vào */
+        if (left < EDGE) left = EDGE;
+
+        /* Nếu tràn PHẢI → đẩy vào */
+        if (left + menuW > window.innerWidth - EDGE) {
+            left = window.innerWidth - menuW - EDGE;
+        }
+
+        menu.style.top  = top  + 'px';
+        menu.style.left = left + 'px';
+    });
 };
+
+/* ─────────────────────────────────────────────────────────────
+   Đóng menu khi click ra ngoài
+   ───────────────────────────────────────────────────────────── */
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.u-settings-wrap')) return;
+    document.querySelectorAll('.user-row .u-settings-menu.show').forEach(function(m) {
+        m.classList.remove('show');
+        m.style.top = '';
+        m.style.left = '';
+    });
+    document.querySelectorAll('.user-row .u-settings-btn.active').forEach(function(b) {
+        b.classList.remove('active');
+    });
+});
+
+/* ─────────────────────────────────────────────────────────────
+   Đóng menu khi scroll (bất kỳ container nào)
+   → tránh menu bị "trôi" khỏi nút
+   ───────────────────────────────────────────────────────────── */
+document.addEventListener('scroll', function() {
+    document.querySelectorAll('.user-row .u-settings-menu.show').forEach(function(m) {
+        m.classList.remove('show');
+        m.style.top = '';
+        m.style.left = '';
+    });
+    document.querySelectorAll('.user-row .u-settings-btn.active').forEach(function(b) {
+        b.classList.remove('active');
+    });
+}, true);
+
+/* ─────────────────────────────────────────────────────────────
+   Đóng menu khi resize cửa sổ
+   ───────────────────────────────────────────────────────────── */
+window.addEventListener('resize', function() {
+    document.querySelectorAll('.user-row .u-settings-menu.show').forEach(function(m) {
+        m.classList.remove('show');
+        m.style.top = '';
+        m.style.left = '';
+    });
+    document.querySelectorAll('.user-row .u-settings-btn.active').forEach(function(b) {
+        b.classList.remove('active');
+    });
+});
 
 /* Đóng menu khi click ra ngoài */
 document.addEventListener('click', function(e) {
