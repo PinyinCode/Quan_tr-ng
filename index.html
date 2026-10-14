@@ -28651,75 +28651,86 @@ window.gradeWithAPI = gradeWithAPI;
     }
 
     function init() {
-        if (CHAT.inited) return;
-        CHAT.inited = true;
-        mountChatButton();
-        initLimitBanner();
-        var closeBtn = $id('chatClose');
-        if (closeBtn) closeBtn.addEventListener('click', closeChat);
-        var backBtn = $id('chatBack');
-        if (backBtn) backBtn.addEventListener('click', function() { if (isAdmin()) openAdminListView(); });
-        var modal = $id('chatModal');
-        if (modal) modal.addEventListener('click', function(e) { if (e.target === this) closeChat(); });
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && CHAT.isOpen) closeChat();
+    if (CHAT.inited) return;
+    CHAT.inited = true;
+    mountChatButton();
+    initLimitBanner();
+    var closeBtn = $id('chatClose');
+    if (closeBtn) closeBtn.addEventListener('click', closeChat);
+    var backBtn = $id('chatBack');
+    if (backBtn) backBtn.addEventListener('click', function() { if (isAdmin()) openAdminListView(); });
+    var modal = $id('chatModal');
+    if (modal) modal.addEventListener('click', function(e) { if (e.target === this) closeChat(); });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && CHAT.isOpen) closeChat();
+    });
+    var input = $id('chatInput');
+    if (input) {
+        input.addEventListener('input', function() {
+            autoResize();
+            $id('chatSendBtn').disabled = !this.value.trim();
+            if (this.value.trim()) markTyping();
         });
-        var input = $id('chatInput');
-        if (input) {
-            input.addEventListener('input', function() {
-                autoResize();
-                $id('chatSendBtn').disabled = !this.value.trim();
-                if (this.value.trim()) markTyping();
-            });
-            input.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if (!this.value.trim()) return;
-                    sendMessage();
-                }
-            });
-        }
-        var sendBtn = $id('chatSendBtn');
-        if (sendBtn) sendBtn.addEventListener('click', sendMessage);
-        document.querySelectorAll('.chat-quick-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var inp = $id('chatInput');
-                inp.value = this.dataset.reply || this.textContent.trim();
-                autoResize();
-                $id('chatSendBtn').disabled = false;
-                inp.focus();
-            });
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!this.value.trim()) return;
+                sendMessage();
+            }
         });
-
-        var toggleOnlineBtn = $id('toggleOnlineBtn');
-        var onlineSection = $id('adminOnlineSection');
-        if (toggleOnlineBtn && onlineSection) {
-            toggleOnlineBtn.addEventListener('click', function() {
-                onlineSection.classList.toggle('collapsed');
-                var isVisible = !onlineSection.classList.contains('collapsed');
-                var icon = this.querySelector('i');
-                if (icon) icon.className = isVisible ? 'fas fa-eye' : 'fas fa-eye-slash';
-                this.classList.toggle('active', isVisible);
-                this.title = isVisible ? 'Ẩn' : 'Hiện';
-            });
-        }
-
-        syncFloatingGroupState();
-        setInterval(syncFloatingGroupState, 1000);
-
-        window.addEventListener('resize', function() {
-            if (CHAT.isOpen) positionChatBox();
+    }
+    var sendBtn = $id('chatSendBtn');
+    if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+    document.querySelectorAll('.chat-quick-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var inp = $id('chatInput');
+            inp.value = this.dataset.reply || this.textContent.trim();
+            autoResize();
+            $id('chatSendBtn').disabled = false;
+            inp.focus();
         });
+    });
 
-        window.addEventListener('scroll', function() {
-            if (CHAT.isOpen) positionChatBox();
-        }, { passive: true });
-
-        window.__chatOpenThread = openAdminThread;
-        window.__chatOpen = openChat;
-        window.__chatPosition = positionChatBox;
+    var toggleOnlineBtn = $id('toggleOnlineBtn');
+    var onlineSection = $id('adminOnlineSection');
+    if (toggleOnlineBtn && onlineSection) {
+        toggleOnlineBtn.addEventListener('click', function() {
+            onlineSection.classList.toggle('collapsed');
+            var isVisible = !onlineSection.classList.contains('collapsed');
+            var icon = this.querySelector('i');
+            if (icon) icon.className = isVisible ? 'fas fa-eye' : 'fas fa-eye-slash';
+            this.classList.toggle('active', isVisible);
+            this.title = isVisible ? 'Ẩn' : 'Hiện';
+        });
     }
 
+    syncFloatingGroupState();
+    setInterval(syncFloatingGroupState, 1000);
+
+    window.addEventListener('resize', function() {
+        if (CHAT.isOpen) positionChatBox();
+    });
+
+    window.addEventListener('scroll', function() {
+        if (CHAT.isOpen) positionChatBox();
+    }, { passive: true });
+
+    /* ⭐ AUTO-START Online Listener khi admin login */
+    var _onlineWatchStarted = false;
+    function autoStartOnlineWatch() {
+        if (_onlineWatchStarted) return;
+        if (!isAdmin()) return;
+        _onlineWatchStarted = true;
+        console.log('[online] Auto-starting online listener for admin');
+        startOnlineWatch();
+    }
+    setInterval(autoStartOnlineWatch, 2000);
+    setTimeout(autoStartOnlineWatch, 1500);
+
+    window.__chatOpenThread = openAdminThread;
+    window.__chatOpen = openChat;
+    window.__chatPosition = positionChatBox;
+}
     var _lastEmail = null;
     function watchAuth() {
         setInterval(function() {
