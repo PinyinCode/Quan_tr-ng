@@ -1,0 +1,35 @@
+{
+    "_comment": "Cấu hình Self-Wake — sửa file này để thay đổi servers, không cần sửa code",
+    
+    "enabled": true,
+    
+    "servers": [
+        {
+            "name": "OTP Server",
+            "url": "https://apigmail-n8bp.onrender.com/ping"
+        },
+        {
+            "name": "Grading Server",
+            "url": "https://chinese-grading.onrender.com/ping"
+        },
+        {
+            "name": "Vocab API",
+            "url": "https://chinese-vocab-api.onrender.com/ping"
+        }
+    ],
+    
+    "ping_interval_ms": 300000,
+    "_ping_interval_comment": "5000ms = 5 giây, 60000ms = 1 phút, 300000ms = 5 phút",
+    
+    "ping_timeout_ms": 10000,
+    "_ping_timeout_comment": "Timeout mỗi request ping (ms)",
+    
+    "reping_on_visible_after_ms": 120000,
+    "_reping_on_visible_comment": "Ping lại khi user quay lại tab sau khoảng này (ms)",
+    
+    "ping_on_first_click": true,
+    "heartbeat_enabled": true,
+    "debug": false,
+    
+    "_debug_comment": "Bật true để xem log [self-wake] trong Console"
+}
