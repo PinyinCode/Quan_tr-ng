@@ -3574,6 +3574,23 @@ def build_ui_html():
 </div>
 <button class="dropdown-item" id="changeNameBtn"><i class="fas fa-user-edit"></i> Đổi tên hiển thị</button>
 <button class="dropdown-item" id="openAdminBtn" style="display:none"><i class="fas fa-shield-alt"></i> Quản lý tài khoản</button>
+<div class="dropdown-server-status" id="dropdownServerStatus" style="display:none">
+    <div class="dss-header">
+        <div class="dss-title">
+            <i class="fas fa-server"></i> Trạng thái server
+        </div>
+        <button class="dss-refresh" id="dssRefreshBtn" title="Kiểm tra lại" type="button">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+    </div>
+    <div class="dss-list" id="dssList">
+        <div class="dss-item status-unknown">
+            <span class="dss-dot"></span>
+            <span class="dss-name">Đang tải...</span>
+            <span class="dss-time">...</span>
+        </div>
+    </div>
+</div>
 <button class="dropdown-item" id="renewalPendingBtn" style="display:none">
     <i class="fas fa-hourglass-half" style="color:#f59e0b"></i> Lệnh đang chờ
     <span id="renewalPendingCount" style="margin-left:auto;background:#f59e0b;color:#fff;font-size:.65rem;font-weight:800;padding:.15rem .45rem;border-radius:50px;min-width:20px;text-align:center;">1</span>
