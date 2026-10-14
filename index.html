@@ -23001,50 +23001,57 @@ window.toggleUserSettings = function(btn) {
     if (isOpen) return;
 
     /* ── Mở menu ── */
-menu.classList.add('show');
-btn.classList.add('active');
+    menu.classList.add('show');
+    btn.classList.add('active');
 
-/* ⭐ Ép browser flush layout để đo chính xác kích thước menu */
-void menu.offsetHeight;
+    /* ── Định vị menu theo nút bằng position:fixed ── */
+    /* ⭐ Dùng 2 frame: frame 1 để browser render menu (đo size), 
+       frame 2 để set position chính xác. Tránh đo khi animation chưa xong. */
+    requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+            /* Tạm tắt animation khi đo để có kích thước thật */
+            var oldAnim = menu.style.animation;
+            menu.style.animation = 'none';
 
-/* ── Định vị menu theo nút bằng position:fixed ── */
-requestAnimationFrame(function() {
-        var rect = btn.getBoundingClientRect();
-        var menuRect = menu.getBoundingClientRect();
-        var menuW = menuRect.width || 220;
-        var menuH = menuRect.height || 300;
+            var rect = btn.getBoundingClientRect();
+            var menuRect = menu.getBoundingClientRect();
+            var menuW = menuRect.width || 220;
+            var menuH = menuRect.height || 300;
 
-        var GAP = 6;      /* khoảng cách với nút */
-        var EDGE = 8;     /* khoảng cách tối thiểu với mép viewport */
+            menu.style.animation = oldAnim || '';
 
-        /* Mặc định: mở xuống dưới, căn phải với nút */
-        var top  = rect.bottom + GAP;
-        var left = rect.right - menuW;
+            var GAP = 6;
+            var EDGE = 8;
 
-        /* Nếu tràn ĐÁY → lật lên trên */
-        if (top + menuH > window.innerHeight - EDGE) {
-            top = rect.top - menuH - GAP;
-        }
+            var top  = rect.bottom + GAP;
+            var left = rect.right - menuW;
 
-        /* Nếu vẫn tràn đáy (menu quá cao) → ép vào trong */
-        if (top < EDGE) top = EDGE;
-        if (top + menuH > window.innerHeight - EDGE) {
-            top = window.innerHeight - menuH - EDGE;
-        }
+            /* Nếu tràn ĐÁY → lật lên trên */
+            if (top + menuH > window.innerHeight - EDGE) {
+                top = rect.top - menuH - GAP;
+            }
 
-        /* Nếu tràn TRÁI → đẩy vào */
-        if (left < EDGE) left = EDGE;
+            /* Nếu vẫn tràn đáy → ép vào trong */
+            if (top < EDGE) top = EDGE;
+            if (top + menuH > window.innerHeight - EDGE) {
+                top = window.innerHeight - menuH - EDGE;
+            }
 
-        /* Nếu tràn PHẢI → đẩy vào */
-        if (left + menuW > window.innerWidth - EDGE) {
-            left = window.innerWidth - menuW - EDGE;
-        }
+            /* Nếu tràn TRÁI → đẩy vào */
+            if (left < EDGE) left = EDGE;
 
-        menu.style.top  = top  + 'px';
-        menu.style.left = left + 'px';
+            /* Nếu tràn PHẢI → đẩy vào */
+            if (left + menuW > window.innerWidth - EDGE) {
+                left = window.innerWidth - menuW - EDGE;
+            }
+
+            menu.style.top  = top  + 'px';
+            menu.style.left = left + 'px';
+
+            console.log('[u-settings-menu] positioned:', { top, left, menuW, menuH, btnRect: rect });
+        });
     });
 };
-
 /* ─────────────────────────────────────────────────────────────
    Đóng menu khi click ra ngoài
    ───────────────────────────────────────────────────────────── */
