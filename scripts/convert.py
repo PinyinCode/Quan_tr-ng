@@ -64,6 +64,18 @@ from device_account_monitor import (
     build_dam_js,
 )
 from auto_scale import build_auto_scale_css, build_auto_scale_js
+
+# ⭐ SELF-WAKE — tự động ping Render servers
+try:
+    from self_wake import (
+        build_self_wake_html,
+        load_config as load_self_wake_config,
+        SelfWakeConfig,
+    )
+    SELF_WAKE_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️  [self-wake] Không import được module: {e}")
+    SELF_WAKE_AVAILABLE = False
 def _js_str(s):
     if s is None:
         return ""
@@ -1103,6 +1115,30 @@ full_js = full_js.replace('<script>', '').replace('</script>', '')
 full_js = full_js.replace('<SCRIPT>', '').replace('</SCRIPT>', '')
 
 
+# ═══════════════════════════════════════════════════════════════
+# ⚡ SELF-WAKE — Build HTML bundle
+# ═══════════════════════════════════════════════════════════════
+self_wake_html = ""
+
+if SELF_WAKE_AVAILABLE:
+    try:
+        # Đọc config từ self_wake_config.json (bên ngoài)
+        sw_cfg = load_self_wake_config()
+        
+        if sw_cfg.enabled:
+            self_wake_html = build_self_wake_html(sw_cfg)
+            print(f"\n⚡ Self-Wake: Đã bật ({len(sw_cfg.servers)} servers)")
+            for _srv in sw_cfg.servers:
+                print(f"   • {_srv.name}: {_srv.url}")
+        else:
+            print("\n⚡ Self-Wake: Đã tắt (enabled=false trong config)")
+    except Exception as _e:
+        print(f"\n⚠️  [self-wake] Lỗi build: {_e}")
+        self_wake_html = ""
+else:
+    print("\n⚠️  [self-wake] Module không khả dụng — bỏ qua")
+
+
 HTML_SHELL = r'''<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -1269,6 +1305,8 @@ window.__switchRawData = function(datasetId) {
     } catch(e) {}
 })();
 </script>
+<!-- ⚡ SELF-WAKE — Chèn từ module self_wake.py -->
+__SELF_WAKE__
 </body>
 </html>'''
 
@@ -1299,6 +1337,7 @@ html_output = (HTML_SHELL
     .replace("__TIKTOK_URL__",         _js_str(CONFIG["tiktok_url"]))
     .replace("__TELEGRAM_BOT_TOKEN__", _js_str(telegram_bot_token))
     .replace("__TELEGRAM_CHAT_ID__",   _js_str(telegram_chat_id))
+    .replace("__SELF_WAKE__",          self_wake_html)
 )
 
 with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
@@ -1312,6 +1351,13 @@ print(f"\n🎉 Đã tạo: {OUTPUT_HTML}")
 print(f"📦 Kích thước: {size_kb:.1f} KB")
 print(f"📚 Datasets: {total_datasets} ({_chuyen_nganh_count} chuyên ngành)")
 print(f"📝 Tổng số câu: {total_questions}")
+
+# ⭐ Thông báo self-wake
+if SELF_WAKE_AVAILABLE and self_wake_html:
+    if 'selfWakeServers' in html_output or 'SELF-WAKE' in html_output:
+        print(f"⚡ Self-Wake: Đã chèn vào HTML")
+    else:
+        print(f"⚠️  Self-Wake: KHÔNG chèn được (kiểm tra placeholder __SELF_WAKE__)")
 
 _opens = html_output.count('<script')
 _closes = html_output.count('</script>')
