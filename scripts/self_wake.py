@@ -140,8 +140,8 @@ def load_config(force_reload=False, config_path=None):
         servers=servers,
         ping_interval=get_int("ping_interval_ms", 300000, min_val=60000),
         ping_timeout=get_int("ping_timeout_ms", 15000, min_val=1000),
-        reping_on_visible_after=get_int("reping_on_visible_after_ms", 120000, min_val=0),
-        initial_jitter_ms=get_int("initial_jitter_ms", 30000, min_val=0),
+        reping_on_visible_after=get_int("reping_on_visible_after_ms", 120000, min_val=0),  # Đã sửa _j0 thành 0
+        initial_jitter_ms=get_int("initial_jitter_ms", 30000, min_val=0),  # Đã sửa lỗi chính tả initialitter_ms
         heartbeat_jitter_ms=get_int("heartbeat_jitter_ms", 60000, min_val=0),
         cooldown_factor=get_float("cooldown_factor", 0.9, min_val=0.1),
         max_concurrent_ping=get_int("max_concurrent_ping", 2, min_val=1),
@@ -306,20 +306,18 @@ def build_self_wake_js(config=None):
                     }).catch(function() {
                         results[i] = { ok: false };
                         active--;
-                        completed {
-++;
-                        if (completed === total)            resolve(results);
+                        completed++;
+                        if (completed === total) resolve(results);
                         else startNext();
                     });
-                return }
+                }
             }
             startNext();
         });
-    {
- }
+    }
 
     function pingAll() {
-        if (               isPinging) { log('locked'); last return Promise.resolve(); }
+        if (isPinging) { log('locked'); return Promise.resolve(); }
         if (!shouldPing()) { log('cooldown'); return Promise.resolve(); }
 
         isPinging = true;
@@ -378,7 +376,9 @@ def build_self_wake_js(config=None):
         pingNow: function() { lastPingMemory = 0; return pingAll(); },
         servers: SERVERS,
         config: CFG,
-        getStats: function()Ping: getLastPing(),
+        getStats: function() {
+            return {
+                lastPing: getLastPing(),
                 interval: PING_INTERVAL,
                 servers: SERVERS.length,
                 isPinging: isPinging
