@@ -5484,25 +5484,6 @@ document.addEventListener('click', function(e) {
         b.classList.remove('active');
     });
 });
-
-
-
-/* ─────────────────────────────────────────────────────────────
-   Đóng menu khi resize cửa sổ
-   ───────────────────────────────────────────────────────────── */
-window.addEventListener('resize', function() {
-    document.querySelectorAll('.user-row .u-settings-menu.show').forEach(function(m) {
-        m.classList.remove('show');
-        m.style.top = '';
-        m.style.left = '';
-    });
-    document.querySelectorAll('.user-row .u-settings-btn.active').forEach(function(b) {
-        b.classList.remove('active');
-    });
-});
-
-
-
 """
 
     return js
