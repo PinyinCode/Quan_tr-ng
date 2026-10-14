@@ -1067,7 +1067,7 @@ def build_accounts_css():
     display: none !important;
     flex-direction: column !important;
     gap: .1rem !important;
-    z-index: 9999 !important;
+    z-index: 99999 !important;
     animation: uSettingsIn .18s cubic-bezier(.34,1.56,.64,1) !important;
     transform-origin: top right !important;
     will-change: top, left !important;
