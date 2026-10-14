@@ -1175,6 +1175,134 @@ def build_accounts_css():
         min-width: 200px !important;
     }
 }
+/* ═══════════════════════════════════════════════════════════════
+   ⚡ SERVER STATUS — Trong dropdown user menu
+   ═══════════════════════════════════════════════════════════════ */
+.dropdown-server-status {
+    padding: .65rem .75rem;
+    margin: .4rem 0;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(59,130,246,.06), rgba(124,58,237,.04));
+    border: 1px solid rgba(59,130,246,.18);
+}
+[data-theme="dark"] .dropdown-server-status {
+    background: linear-gradient(135deg, rgba(59,130,246,.12), rgba(124,58,237,.08));
+    border-color: rgba(96,165,250,.25);
+}
+.dss-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .55rem;
+    gap: .5rem;
+}
+.dss-title {
+    font-size: .68rem;
+    font-weight: 800;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+}
+.dss-title i {
+    color: #4f46e5;
+    font-size: .75rem;
+}
+.dss-refresh {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-3);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .62rem;
+    transition: all .15s;
+    padding: 0;
+}
+.dss-refresh:hover {
+    border-color: #4f46e5;
+    color: #4f46e5;
+    background: rgba(79,70,229,.08);
+}
+.dss-refresh.spinning i {
+    animation: dssSpin .8s linear infinite;
+}
+@keyframes dssSpin {
+    to { transform: rotate(360deg); }
+}
+.dss-list {
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+}
+.dss-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .35rem .5rem;
+    border-radius: 7px;
+    background: rgba(255,255,255,.5);
+    font-size: .74rem;
+    transition: background .15s;
+}
+[data-theme="dark"] .dss-item {
+    background: rgba(255,255,255,.04);
+}
+.dss-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #94a3b8;
+    flex-shrink: 0;
+    transition: background .3s;
+}
+.dss-item.status-active .dss-dot {
+    background: #16a34a;
+    box-shadow: 0 0 0 2px rgba(22,163,74,.2);
+    animation: dssDotPulse 2s infinite;
+}
+.dss-item.status-waking .dss-dot {
+    background: #f59e0b;
+    animation: dssDotPulse 1.5s infinite;
+}
+.dss-item.status-slow .dss-dot {
+    background: #ea580c;
+    animation: dssDotPulse 1s infinite;
+}
+.dss-item.status-error .dss-dot {
+    background: #dc2626;
+}
+@keyframes dssDotPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .5; transform: scale(1.2); }
+}
+.dss-name {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    color: var(--text-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dss-time {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .68rem;
+    font-weight: 700;
+    color: var(--text-3);
+    flex-shrink: 0;
+    transition: color .3s;
+}
+.dss-item.status-active .dss-time { color: #16a34a; }
+.dss-item.status-waking .dss-time { color: #d97706; }
+.dss-item.status-slow .dss-time { color: #ea580c; }
+.dss-item.status-error .dss-time { color: #dc2626; }
 """
 
 
@@ -1556,6 +1684,24 @@ def build_user_dropdown_html():
     <button class="dropdown-item" id="openAdminBtn" style="display:none">
         <i class="fas fa-shield-alt"></i> Quản lý tài khoản
     </button>
+    <!-- ⚡ Server Status -->
+    <div class="dropdown-server-status" id="dropdownServerStatus" style="display:none">
+        <div class="dss-header">
+            <div class="dss-title">
+                <i class="fas fa-server"></i> Trạng thái server
+            </div>
+            <button class="dss-refresh" id="dssRefreshBtn" title="Kiểm tra lại" type="button">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+        <div class="dss-list" id="dssList">
+            <div class="dss-item status-unknown">
+                <span class="dss-dot"></span>
+                <span class="dss-name">Đang tải...</span>
+                <span class="dss-time">...</span>
+            </div>
+        </div>
+    </div>
     <button class="dropdown-item" id="renewalPendingBtn" style="display:none">
     <i class="fas fa-hourglass-half" style="color:#f59e0b"></i> Lệnh đang chờ
     <span id="renewalPendingCount" style="margin-left:auto;background:#f59e0b;color:#fff;font-size:.65rem;font-weight:800;padding:.15rem .45rem;border-radius:50px;min-width:20px;text-align:center;">1</span>
@@ -5370,6 +5516,177 @@ window.testTelegram = function() {
             alert('❌ Lỗi gửi test: ' + err.message + '\n\nXem F12 Console để biết chi tiết.');
         });
 };
+/* ═══════════════════════════════════════════════════════════════
+   ⚡ SERVER STATUS — Trong dropdown user menu
+   Đọc config từ self_wake_config.json (inject qua Python)
+   ═══════════════════════════════════════════════════════════════ */
+(function() {
+    'use strict';
+    
+    /* ⭐ Config inject từ Python */
+    var SERVERS = __SERVER_STATUS_SERVERS__;
+    var TIMEOUT = __SERVER_STATUS_TIMEOUT__;
+    
+    if (!SERVERS || !SERVERS.length) {
+        console.log('[server-status] Không có server config');
+        return;
+    }
+    
+    var STATUS = {};
+    SERVERS.forEach(function(s) {
+        STATUS[s.name] = { ok: false, ms: 0, state: 'unknown' };
+    });
+    
+    function log() {
+        if (window.__SERVER_STATUS_DEBUG) {
+            var a = Array.prototype.slice.call(arguments);
+            a.unshift('[server-status]');
+            console.log.apply(console, a);
+        }
+    }
+    
+    async function checkOne(server) {
+        var t0 = Date.now();
+        try {
+            var controller = new AbortController();
+            var timer = setTimeout(function() { controller.abort(); }, TIMEOUT);
+            
+            await fetch(server.url, {
+                method: 'GET',
+                mode: 'no-cors',
+                cache: 'no-store',
+                credentials: 'omit',
+                signal: controller.signal
+            });
+            
+            clearTimeout(timer);
+            var ms = Date.now() - t0;
+            var state;
+            if (ms < 1000) state = 'active';
+            else if (ms < 5000) state = 'waking';
+            else state = 'slow';
+            
+            STATUS[server.name] = { ok: true, ms: ms, state: state };
+            log('OK', server.name, ms + 'ms');
+            return STATUS[server.name];
+        } catch(e) {
+            var ms2 = Date.now() - t0;
+            STATUS[server.name] = { 
+                ok: false, 
+                ms: ms2, 
+                state: (e.name === 'AbortError') ? 'slow' : 'error' 
+            };
+            log('FAIL', server.name, e.name, ms2 + 'ms');
+            return STATUS[server.name];
+        }
+    }
+    
+    function formatTime(st) {
+        if (st.state === 'unknown') return '...';
+        if (st.state === 'error') return 'lỗi';
+        if (st.state === 'active') return st.ms + 'ms';
+        return Math.round(st.ms / 1000) + 's';
+    }
+    
+    function renderList() {
+        var listEl = document.getElementById('dssList');
+        if (!listEl) return;
+        
+        var html = '';
+        SERVERS.forEach(function(s) {
+            var st = STATUS[s.name];
+            html += '<div class="dss-item status-' + st.state + '">' +
+                '<span class="dss-dot"></span>' +
+                '<span class="dss-name">' + s.name + '</span>' +
+                '<span class="dss-time">' + formatTime(st) + '</span>' +
+            '</div>';
+        });
+        listEl.innerHTML = html;
+    }
+    
+    async function checkAll() {
+        var refreshBtn = document.getElementById('dssRefreshBtn');
+        if (refreshBtn) refreshBtn.classList.add('spinning');
+        
+        /* Reset về unknown */
+        SERVERS.forEach(function(s) {
+            STATUS[s.name] = { ok: false, ms: 0, state: 'unknown' };
+        });
+        renderList();
+        
+        /* Ping song song */
+        await Promise.all(SERVERS.map(checkOne));
+        
+        renderList();
+        if (refreshBtn) refreshBtn.classList.remove('spinning');
+    }
+    
+    function bindRefresh() {
+        var btn = document.getElementById('dssRefreshBtn');
+        if (btn && !btn._dssBound) {
+            btn._dssBound = true;
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                checkAll();
+            });
+        }
+    }
+    
+    /* ⭐ Hiển thị section khi mở dropdown */
+    function showSection() {
+        var el = document.getElementById('dropdownServerStatus');
+        if (el) el.style.display = 'block';
+    }
+    
+    /* ⭐ Watch dropdown mở/đóng */
+    function watchDropdown() {
+        var dd = document.getElementById('userDropdown');
+        if (!dd) return;
+        
+        /* MutationObserver để detect class 'show' */
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(m) {
+                if (m.attributeName === 'class') {
+                    if (dd.classList.contains('show')) {
+                        showSection();
+                        bindRefresh();
+                        /* Chỉ check lần đầu, sau đó dùng nút refresh */
+                        if (!window.__dssFirstCheck) {
+                            window.__dssFirstCheck = true;
+                            setTimeout(checkAll, 500);
+                        }
+                    }
+                }
+            });
+        });
+        observer.observe(dd, { attributes: true });
+    }
+    
+    /* Init */
+    function init() {
+        bindRefresh();
+        watchDropdown();
+        
+        /* ⭐ Expose để debug */
+        window.__serverStatusCheck = checkAll;
+        window.__serverStatusData = STATUS;
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    
+    /* ⭐ Tự động check khi user login (nhưng không hiện UI) */
+    setTimeout(function() {
+        if (typeof currentUser !== 'undefined' && currentUser) {
+            checkAll();
+        }
+    }, 3000);
+    
+    log('Module loaded — ' + SERVERS.length + ' servers');
+})();
 """
 
     # Inject config
@@ -5388,6 +5705,40 @@ window.testTelegram = function() {
     telegram_chat_id_escaped = str(telegram_chat_id).replace("\\", "\\\\").replace('"', '\\"')
     js = js.replace("__TELEGRAM_BOT_TOKEN__", telegram_token_escaped)
     js = js.replace("__TELEGRAM_CHAT_ID__", telegram_chat_id_escaped)
+    # ⭐ Inject server status config
+    try:
+        import os as _os
+        _sw_config_path = _os.path.join(
+            _os.path.dirname(_os.path.abspath(__file__)),
+            'self_wake_config.json'
+        )
+        with open(_sw_config_path, 'r', encoding='utf-8') as _f:
+            _sw_config = json.load(_f)
+        
+        _sw_servers = []
+        for _s in _sw_config.get('servers', []):
+            if isinstance(_s, dict) and _s.get('url'):
+                _sw_servers.append({
+                    'name': _s.get('name', 'Server'),
+                    'url': _s['url']
+                })
+        
+        _sw_timeout = _sw_config.get('ping_timeout_ms', 15000)
+        
+        js = js.replace(
+            "__SERVER_STATUS_SERVERS__",
+            json.dumps(_sw_servers, ensure_ascii=False)
+        )
+        js = js.replace(
+            "__SERVER_STATUS_TIMEOUT__",
+            str(int(_sw_timeout))
+        )
+        
+        print(f"[accounts] Server status: {len(_sw_servers)} servers injected")
+    except Exception as _e:
+        print(f"[accounts] Lỗi inject server status: {_e}")
+        js = js.replace("__SERVER_STATUS_SERVERS__", "[]")
+        js = js.replace("__SERVER_STATUS_TIMEOUT__", "15000")
     # ⭐ Ẩn banner trùng lặp khi ở tab Từ vựng Premium
     js += r"""
 
