@@ -1793,12 +1793,21 @@ try {
     firebase.initializeApp(FIREBASE_CONFIG);
     auth = firebase.auth();
     db = firebase.firestore();
+    try {
+        db.settings({
+            experimentalForceLongPolling: true,
+            experimentalAutoDetectLongPolling: false,
+            useFetchStreams: false
+        });
+        console.log('[Firestore] Long Polling enabled');
+    } catch(e) {
+        console.warn('[Firestore] Settings error:', e);
+    }
     auth.onAuthStateChanged(handleAuthChange);
 } catch(e) {
     console.error('Firebase init error:', e);
     enterDemoMode();
 }
-
 /* ═══════════════════════════════════════════════════════════════
    👥 RTDB PRESENCE — Track user online MIỄN PHÍ
    ═══════════════════════════════════════════════════════════════ */
