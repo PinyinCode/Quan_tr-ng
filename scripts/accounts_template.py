@@ -93,7 +93,8 @@ def build_accounts_css():
     transition:all .25s ease;font-family:inherit;
     text-transform:uppercase;letter-spacing:.5px;
     box-shadow:0 4px 14px rgba(124,58,237,.35), 0 0 0 0 rgba(139,92,246,.6);
-    position:relative;overflow:hidden;
+    position:relative;
+    overflow:visible;   /* ⭐ FIX: Cho badge VIP nhô ra ngoài khung */
     animation:renewPulse 2.5s infinite;
 }
 .dropdown-renew::before{
@@ -101,6 +102,9 @@ def build_accounts_css():
     width:100%;height:100%;
     background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
     animation:renewShine 3s infinite;
+    border-radius:12px;     /* ⭐ FIX: Bo góc shine để khớp với nút */
+    pointer-events:none;
+    overflow:hidden;
 }
 .dropdown-renew:hover,.dropdown-renew:active{
     transform:translateY(-2px) scale(1.02);
