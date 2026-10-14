@@ -1,19 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-Module SELF-WAKE — Tự động ping Render servers khi user vào trang.
-
-CẤU HÌNH: Đọc từ self_wake_config.json cùng thư mục.
-    - Servers, interval, timeout, jitter, debug... đều từ JSON.
-    - Fallback về default CHỈ KHI JSON không tồn tại/lỗi.
-    - Sửa JSON → chạy lại convert.py → HTML mới có config mới.
-"""
-
 from dataclasses import dataclass, field
 from typing import List, Optional, Union
 from pathlib import Path
 import json
 import sys
-
 
 CONFIG_FILENAME = "self_wake_config.json"
 CONFIG_PATH = Path(__file__).parent / CONFIG_FILENAME
@@ -96,7 +86,7 @@ def load_config(force_reload=False, config_path=None):
     path = Path(config_path) if config_path else CONFIG_PATH
 
     if not path.exists():
-        print(f"[self-wake] Không tìm thấy {path}", file=sys.stderr)
+        print(f"[self-wake] Khong tim thay {path}", file=sys.stderr)
         _config_cache = SelfWakeConfig()
         return _config_cache
 
@@ -104,7 +94,7 @@ def load_config(force_reload=False, config_path=None):
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
-        print(f"[self-wake] Lỗi đọc JSON: {e}", file=sys.stderr)
+        print(f"[self-wake] Loi doc JSON: {e}", file=sys.stderr)
         _config_cache = SelfWakeConfig()
         return _config_cache
 
@@ -119,7 +109,7 @@ def load_config(force_reload=False, config_path=None):
             servers.append(parsed)
 
     if not servers:
-        print("[self-wake] JSON không có server hợp lệ", file=sys.stderr)
+        print("[self-wake] JSON khong co server hop le", file=sys.stderr)
 
     def get_int(key, default, min_val=0):
         val = data.get(key, default)
@@ -188,7 +178,6 @@ def build_self_wake_js(config=None):
     js = r"""
 (function() {
     'use strict';
-
     var CFG = __SELF_WAKE_CONFIG__;
     if (!CFG || !CFG.enabled) return;
     if (!CFG.servers || !CFG.servers.length) return;
@@ -221,10 +210,10 @@ def build_self_wake_js(config=None):
 
     function getLastPing() {
         if (lastPingMemory > 0) return lastPingMemory;
-        var    times = [];
-        if (USE_LS function) {
+        var times = [];
+        if (USE_LS) {
             try {
-                var t1 = ping parseInt(localStorage.getItem(LS_KEY)All || '0', 10);
+                var t1 = parseInt(localStorage.getItem(LS_KEY) || '0', 10);
                 if (t1 > 0) times.push(t1);
             } catch(e) {}
         }
@@ -317,18 +306,20 @@ def build_self_wake_js(config=None):
                     }).catch(function() {
                         results[i] = { ok: false };
                         active--;
-                        completed++;
-                        if (completed === total) resolve(results);
+                        completed {
+++;
+                        if (completed === total)            resolve(results);
                         else startNext();
                     });
-                }
+                return }
             }
             startNext();
         });
-    }
+    {
+ }
 
-() {
-        if (isPinging) { log('locked'); return Promise.resolve(); }
+    function pingAll() {
+        if (               isPinging) { log('locked'); last return Promise.resolve(); }
         if (!shouldPing()) { log('cooldown'); return Promise.resolve(); }
 
         isPinging = true;
@@ -387,9 +378,7 @@ def build_self_wake_js(config=None):
         pingNow: function() { lastPingMemory = 0; return pingAll(); },
         servers: SERVERS,
         config: CFG,
-        getStats: function() {
-            return {
-                lastPing: getLastPing(),
+        getStats: function()Ping: getLastPing(),
                 interval: PING_INTERVAL,
                 servers: SERVERS.length,
                 isPinging: isPinging
