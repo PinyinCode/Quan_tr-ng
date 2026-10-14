@@ -1054,8 +1054,7 @@ def build_accounts_css():
 
 .user-row .u-settings-menu {
     position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
+    
     right: auto !important;
     min-width: 220px !important;
     background: var(--surface) !important;
