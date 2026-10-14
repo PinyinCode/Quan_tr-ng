@@ -30,7 +30,6 @@ def build_accounts_css():
 .user-menu{position:relative}
 .user-avatar{width:38px;height:38px;border-radius:50%;border:2px solid var(--border);cursor:pointer;object-fit:cover;transition:.15s;display:block;}
 .user-avatar:hover{border-color:var(--primary);transform:scale(1.05)}
-
 .user-dropdown{
     position:absolute;
     top:calc(100% + .5rem);
@@ -39,39 +38,12 @@ def build_accounts_css():
     border:1px solid var(--border);
     border-radius:var(--radius);
     box-shadow:0 10px 30px rgba(0,0,0,.15);
-    /* ⭐ Bỏ padding ở cha — chuyển sang .user-dropdown-body */
-    /* ⭐ KHÔNG đặt overflow ở cha — để mũi tên ::before/::after hiện */
-    
-    /* ⭐ GIỚI HẠN KÍCH THƯỚC */
-    width: 310px;
-    min-width: 0;
-    max-width: calc(100vw - 24px);
-    
+    padding:.5rem;
+    min-width:290px;
     display:none;
     z-index:200;
-    padding: 0;
 }
 .user-dropdown.show{display:block}
-
-/* ═══════════════════════════════════════════════════════════════
-   BODY — Phần cuộn nội dung bên trong dropdown
-   ⭐ Thêm mới: giới hạn chiều cao + cuộn + padding
-   ═══════════════════════════════════════════════════════════════ */
-.user-dropdown-body{
-    max-height: 80vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    padding: .5rem;
-    border-radius: var(--radius);
-}
-
-/* Scrollbar mảnh cho body */
-.user-dropdown-body::-webkit-scrollbar{width:5px;}
-.user-dropdown-body::-webkit-scrollbar-track{background:transparent;}
-.user-dropdown-body::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
-.user-dropdown-body::-webkit-scrollbar-thumb:hover{background:var(--text-3);}
-.user-dropdown-body{scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;}
 
 /* ═══════════════════════════════════════════════════════════════
    MŨI TÊN TAM GIÁC — Chỉ lên avatar (nút mở dropdown)
@@ -111,14 +83,6 @@ def build_accounts_css():
 .dropdown-item.danger{color:var(--danger)}
 .dropdown-item.danger:hover{background:var(--danger-light)}
 
-/* Responsive nhỏ hơn */
-@media (max-width: 380px) {
-    .user-dropdown {
-        width: 285px;
-        max-width: calc(100vw - 16px);
-        right: -4px;
-    }
-}
 /* ============ DROPDOWN: NÚT GIA HẠN ============ */
 .dropdown-renew{
     display:flex;align-items:center;justify-content:center;gap:.5rem;
