@@ -4652,38 +4652,39 @@ body.hide-floating .tiktok-bar { display: none !important; }
     border:1px solid var(--border);
     border-radius:var(--radius);
     box-shadow:0 10px 30px rgba(0,0,0,.15);
-    padding:.5rem;
+    /* ⭐ Bỏ padding ở cha — chuyển sang .user-dropdown-body */
+    /* ⭐ KHÔNG đặt overflow ở cha — để mũi tên ::before/::after hiện */
     
     /* ⭐ GIỚI HẠN KÍCH THƯỚC */
-    width: 310px;                 /* Rộng cố định */
+    width: 310px;
     min-width: 0;
-    max-width: calc(100vw - 24px); /* Không tràn màn hình mobile */
-    max-height: 80vh;             /* Cao tối đa 80% màn hình */
-    overflow-y: auto;             /* Cho phép cuộn nội dung dài */
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
+    max-width: calc(100vw - 24px);
     
     display:none;
     z-index:200;
+    padding: 0;
 }
-
-/* Scrollbar mảnh cho dropdown */
-.user-dropdown::-webkit-scrollbar{width:5px;}
-.user-dropdown::-webkit-scrollbar-track{background:transparent;}
-.user-dropdown::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
-.user-dropdown::-webkit-scrollbar-thumb:hover{background:var(--text-3);}
-.user-dropdown{scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;}
-
 .user-dropdown.show{display:block}
 
-/* Responsive nhỏ hơn */
-@media (max-width: 380px) {
-    .user-dropdown {
-        width: 285px;
-        max-width: calc(100vw - 16px);
-        right: -4px;
-    }
+/* ═══════════════════════════════════════════════════════════════
+   BODY — Phần cuộn nội dung bên trong dropdown
+   ⭐ Thêm mới: giới hạn chiều cao + cuộn + padding
+   ═══════════════════════════════════════════════════════════════ */
+.user-dropdown-body{
+    max-height: 80vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: .5rem;
+    border-radius: var(--radius);
 }
+
+/* Scrollbar mảnh cho body */
+.user-dropdown-body::-webkit-scrollbar{width:5px;}
+.user-dropdown-body::-webkit-scrollbar-track{background:transparent;}
+.user-dropdown-body::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
+.user-dropdown-body::-webkit-scrollbar-thumb:hover{background:var(--text-3);}
+.user-dropdown-body{scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;}
 
 /* ═══════════════════════════════════════════════════════════════
    MŨI TÊN TAM GIÁC — Chỉ lên avatar (nút mở dropdown)
@@ -4723,6 +4724,14 @@ body.hide-floating .tiktok-bar { display: none !important; }
 .dropdown-item.danger{color:var(--danger)}
 .dropdown-item.danger:hover{background:var(--danger-light)}
 
+/* Responsive nhỏ hơn */
+@media (max-width: 380px) {
+    .user-dropdown {
+        width: 285px;
+        max-width: calc(100vw - 16px);
+        right: -4px;
+    }
+}
 /* ============ DROPDOWN: NÚT GIA HẠN ============ */
 .dropdown-renew{
     display:flex;align-items:center;justify-content:center;gap:.5rem;
