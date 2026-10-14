@@ -19411,15 +19411,16 @@ function startRTDBPresence() {
     }
 
     try {
-        var emailKey = currentUser.email.toLowerCase().replace(/[.#$\[\]@]/g, '_');
+        var authEmail = (firebase.auth().currentUser || {}).email || currentUser.email;
+        var emailKey = authEmail.toLowerCase().replace(/[.#$\[\]@]/g, '_');
         var ref = firebase.database().ref('presence/' + emailKey);
 
         ref.onDisconnect().remove();
 
         ref.set({
             at: Date.now(),
-            email: currentUser.email,
-            name: currentUser.name || currentUser.email.split('@')[0],
+            email: authEmail,
+            name: currentUser.name || authEmail.split('@')[0],
             role: currentUser.role || 'user'
         }).catch(function(e) { console.warn('RTDB presence set:', e); });
 
@@ -19440,7 +19441,7 @@ function startRTDBPresence() {
         }
 
         window.__presenceRef = ref;
-        console.log('👥 RTDB presence started for:', currentUser.email);
+        console.log('👥 RTDB presence started for:', authEmail);
     } catch(e) {
         console.warn('startRTDBPresence error:', e);
     }
