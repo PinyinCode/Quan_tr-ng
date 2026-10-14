@@ -5605,21 +5605,27 @@ window.testTelegram = function() {
     }
     
     async function checkAll() {
-        var refreshBtn = document.getElementById('dssRefreshBtn');
-        if (refreshBtn) refreshBtn.classList.add('spinning');
-        
-        /* Reset về unknown */
-        SERVERS.forEach(function(s) {
-            STATUS[s.name] = { ok: false, ms: 0, state: 'unknown' };
-        });
-        renderList();
-        
-        /* Ping song song */
-        await Promise.all(SERVERS.map(checkOne));
-        
-        renderList();
-        if (refreshBtn) refreshBtn.classList.remove('spinning');
-    }
+    /* ⭐ Cập nhật timestamp — cache 1 phút */
+    window.__dssLastCheck = Date.now();
+    
+    var refreshBtn = document.getElementById('dssRefreshBtn');
+    if (refreshBtn) refreshBtn.classList.add('spinning');
+    
+    /* Reset về unknown */
+    SERVERS.forEach(function(s) {
+        STATUS[s.name] = { ok: false, ms: 0, state: 'unknown' };
+    });
+    renderList();
+    
+    /* Ping song song */
+    await Promise.all(SERVERS.map(checkOne));
+    
+    renderList();
+    if (refreshBtn) refreshBtn.classList.remove('spinning');
+    
+    /* ⭐ Cập nhật timestamp sau khi xong */
+    window.__dssLastCheck = Date.now();
+}
     
     function bindRefresh() {
         var btn = document.getElementById('dssRefreshBtn');
