@@ -5638,29 +5638,39 @@ window.testTelegram = function() {
         if (el) el.style.display = 'block';
     }
     
-    /* ⭐ Watch dropdown mở/đóng */
     function watchDropdown() {
-        var dd = document.getElementById('userDropdown');
-        if (!dd) return;
-        
-        /* MutationObserver để detect class 'show' */
-        var observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(m) {
-                if (m.attributeName === 'class') {
-                    if (dd.classList.contains('show')) {
-                        showSection();
-                        bindRefresh();
-                        /* Chỉ check lần đầu, sau đó dùng nút refresh */
-                        if (!window.__dssFirstCheck) {
-                            window.__dssFirstCheck = true;
-                            setTimeout(checkAll, 500);
+    var dd = document.getElementById('userDropdown');
+    if (!dd) return;
+    
+    var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+            if (m.attributeName === 'class') {
+                if (dd.classList.contains('show')) {
+                    showSection();
+                    bindRefresh();
+                    
+                    /* ⭐ Cache 1 phút — chỉ check nếu kết quả cũ > 60s */
+                    var lastCheck = window.__dssLastCheck || 0;
+                    var elapsed = Date.now() - lastCheck;
+                    
+                    if (elapsed > 60 * 1000) {
+                        if (!window.__dssIsChecking) {
+                            window.__dssIsChecking = true;
+                            setTimeout(function() {
+                                checkAll().finally(function() {
+                                    window.__dssIsChecking = false;
+                                });
+                            }, 500);
                         }
+                    } else {
+                        log('Skip auto-check — cache còn mới (' + Math.round(elapsed / 1000) + 's)');
                     }
                 }
-            });
+            }
         });
-        observer.observe(dd, { attributes: true });
-    }
+    });
+    observer.observe(dd, { attributes: true });
+}
     
     /* Init */
     function init() {
