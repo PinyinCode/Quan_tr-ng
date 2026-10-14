@@ -4643,6 +4643,7 @@ body.hide-floating .tiktok-bar { display: none !important; }
 .user-menu{position:relative}
 .user-avatar{width:38px;height:38px;border-radius:50%;border:2px solid var(--border);cursor:pointer;object-fit:cover;transition:.15s;display:block;}
 .user-avatar:hover{border-color:var(--primary);transform:scale(1.05)}
+
 .user-dropdown{
     position:absolute;
     top:calc(100% + .5rem);
@@ -4652,11 +4653,37 @@ body.hide-floating .tiktok-bar { display: none !important; }
     border-radius:var(--radius);
     box-shadow:0 10px 30px rgba(0,0,0,.15);
     padding:.5rem;
-    min-width:290px;
+    
+    /* ⭐ GIỚI HẠN KÍCH THƯỚC */
+    width: 310px;                 /* Rộng cố định */
+    min-width: 0;
+    max-width: calc(100vw - 24px); /* Không tràn màn hình mobile */
+    max-height: 80vh;             /* Cao tối đa 80% màn hình */
+    overflow-y: auto;             /* Cho phép cuộn nội dung dài */
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    
     display:none;
     z-index:200;
 }
+
+/* Scrollbar mảnh cho dropdown */
+.user-dropdown::-webkit-scrollbar{width:5px;}
+.user-dropdown::-webkit-scrollbar-track{background:transparent;}
+.user-dropdown::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
+.user-dropdown::-webkit-scrollbar-thumb:hover{background:var(--text-3);}
+.user-dropdown{scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;}
+
 .user-dropdown.show{display:block}
+
+/* Responsive nhỏ hơn */
+@media (max-width: 380px) {
+    .user-dropdown {
+        width: 285px;
+        max-width: calc(100vw - 16px);
+        right: -4px;
+    }
+}
 
 /* ═══════════════════════════════════════════════════════════════
    MŨI TÊN TAM GIÁC — Chỉ lên avatar (nút mở dropdown)
