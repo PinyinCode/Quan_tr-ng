@@ -5485,20 +5485,7 @@ document.addEventListener('click', function(e) {
     });
 });
 
-/* ─────────────────────────────────────────────────────────────
-   Đóng menu khi scroll (bất kỳ container nào)
-   → tránh menu bị "trôi" khỏi nút
-   ───────────────────────────────────────────────────────────── */
-document.addEventListener('scroll', function() {
-    document.querySelectorAll('.user-row .u-settings-menu.show').forEach(function(m) {
-        m.classList.remove('show');
-        m.style.top = '';
-        m.style.left = '';
-    });
-    document.querySelectorAll('.user-row .u-settings-btn.active').forEach(function(b) {
-        b.classList.remove('active');
-    });
-}, true);
+
 
 /* ─────────────────────────────────────────────────────────────
    Đóng menu khi resize cửa sổ
