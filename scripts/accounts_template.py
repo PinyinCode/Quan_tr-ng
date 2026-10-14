@@ -1810,7 +1810,7 @@ function startRTDBPresence() {
     }
 
     try {
-        var emailKey = encodeURIComponent(currentUser.email.toLowerCase());
+        var emailKey = currentUser.email.toLowerCase().replace(/[.#$\[\]@]/g, '_');
         var ref = firebase.database().ref('presence/' + emailKey);
 
         ref.onDisconnect().remove();
