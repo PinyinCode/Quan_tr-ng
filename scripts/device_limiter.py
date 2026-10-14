@@ -10,7 +10,7 @@
 """
 
 # ⚠️ SỬA URL SERVER CỦA BẠN
-SERVER_URL = 'https://apigmail-n8bp.onrender.com'
+SERVER_URL = 'https://gmail-otp-gdsr.onrender.com'
 
 
 def build_device_css():
