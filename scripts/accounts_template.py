@@ -5419,12 +5419,14 @@ window.toggleUserSettings = function(btn) {
     if (isOpen) return;
 
     /* ── Mở menu ── */
-    menu.classList.add('show');
-    btn.classList.add('active');
+menu.classList.add('show');
+btn.classList.add('active');
 
-    /* ── Định vị menu theo nút bằng position:fixed ── */
-    /* Dùng requestAnimationFrame để chờ browser render xong kích thước menu */
-    requestAnimationFrame(function() {
+/* ⭐ Ép browser flush layout để đo chính xác kích thước menu */
+void menu.offsetHeight;
+
+/* ── Định vị menu theo nút bằng position:fixed ── */
+requestAnimationFrame(function() {
         var rect = btn.getBoundingClientRect();
         var menuRect = menu.getBoundingClientRect();
         var menuW = menuRect.width || 220;
@@ -5505,26 +5507,7 @@ window.addEventListener('resize', function() {
     });
 });
 
-/* Đóng menu khi click ra ngoài */
-document.addEventListener('click', function(e) {
-    if (e.target.closest('.u-settings-wrap')) return;
-    document.querySelectorAll('.user-row .u-settings-menu.show').forEach(function(m) {
-        m.classList.remove('show');
-    });
-    document.querySelectorAll('.user-row .u-settings-btn.active').forEach(function(b) {
-        b.classList.remove('active');
-    });
-});
 
-/* Đóng menu khi scroll */
-document.addEventListener('scroll', function() {
-    document.querySelectorAll('.user-row .u-settings-menu.show').forEach(function(m) {
-        m.classList.remove('show');
-    });
-    document.querySelectorAll('.user-row .u-settings-btn.active').forEach(function(b) {
-        b.classList.remove('active');
-    });
-}, true);
 
 """
 
