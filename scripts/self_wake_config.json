@@ -6,7 +6,7 @@
     "servers": [
         {
             "name": "OTP Server",
-            "url": "https://gmail-otp-gdsr.onrender.com/ping"
+            "url": "https://gmail-otp-gdsr.onrender.com/"
         },
         {
             "name": "Grading Server",
