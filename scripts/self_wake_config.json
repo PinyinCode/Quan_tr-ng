@@ -10,11 +10,11 @@
         },
         {
             "name": "Grading Server",
-            "url": "https://chinese-grading.onrender.com/ping"
+            "url": "https://chinese-grading.onrender.com/"
         },
         {
             "name": "Vocab API",
-            "url": "https://chinese-vocab-api.onrender.com/ping"
+            "url": "https://chinese-vocab-api.onrender.com/"
         }
     ],
     
