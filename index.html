@@ -33962,6 +33962,8 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     function showVerifyModal(email, expireAt) {
         var modal = $('dvlVerifyModal');
         if (!modal) return;
+
+        /* Reset UI */
         if ($('dvlVerifyEmail')) $('dvlVerifyEmail').textContent = email;
         if ($('dvlOtpInput')) { $('dvlOtpInput').value = ''; $('dvlOtpInput').classList.remove('error'); }
         if ($('dvlOtpError')) $('dvlOtpError').style.display = 'none';
@@ -33972,11 +33974,37 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
         modal.classList.add('show');
         _verifyExpireAt = expireAt || (Date.now() + VERIFY_TIMEOUT);
-        startTimer();
+        startTimer(email);
 
+        /* ═══ Helper: Kiểm tra admin đã duyệt chưa ═══ */
+        async function checkAdminApproved() {
+            try {
+                var deviceId = getDeviceId();
+                var pendingDoc = await db.collection('allowed_users').doc(email.toLowerCase())
+                    .collection('pending_devices').doc(deviceId).get();
+
+                return pendingDoc.exists && pendingDoc.data().status === 'confirmed';
+            } catch(e) {
+                console.warn('[DVL] Check admin approve error:', e);
+                return false;
+            }
+        }
+
+        /* ═══ Helper: Chuyển user vào app ═══ */
+        async function enterApp() {
+            stopTimer();
+            try {
+                await completeVerification(email);
+                modal.classList.remove('show');
+                showSuccessModal();
+            } catch(e) {
+                console.warn('[DVL] enterApp error:', e);
+            }
+        }
+
+        /* ═══ Nút gửi OTP ═══ */
         var sendBtn = $('dvlSendOtpBtn');
-        if (sendBtn && !sendBtn.__dvlBound) {
-            sendBtn.__dvlBound = true;
+        if (sendBtn) {
             sendBtn.onclick = async function() {
                 var orig = sendBtn.innerHTML;
                 sendBtn.disabled = true;
@@ -34001,6 +34029,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             };
         }
 
+        /* ═══ Auto-submit khi đủ 6 số ═══ */
         var otpInput = $('dvlOtpInput');
         if (otpInput && !otpInput.__dvlBound) {
             otpInput.__dvlBound = true;
@@ -34017,6 +34046,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             });
         }
 
+        /* ═══ Nút Hủy ═══ */
         var cancelBtn = $('dvlVerifyCancelBtn');
         if (cancelBtn) {
             cancelBtn.onclick = function() {
@@ -34026,28 +34056,42 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             };
         }
 
+        /* ═══ Nút Xác nhận ═══ */
         var checkBtn = $('dvlVerifyCheckBtn');
         if (checkBtn) {
             checkBtn.onclick = async function() {
+                var orig = checkBtn.innerHTML;
+                checkBtn.disabled = true;
+                checkBtn.innerHTML = '<span class="dvl-spinner"></span> Đang kiểm tra...';
+
+                /* ⭐ CÁCH 1: Kiểm tra admin đã duyệt chưa trước */
+                var approved = await checkAdminApproved();
+                if (approved) {
+                    checkBtn.innerHTML = '<i class="fas fa-check"></i> Đã duyệt!';
+                    if ($('dvlSendMsg')) {
+                        $('dvlSendMsg').innerHTML = '<span style="color:#16a34a">✅ Admin đã duyệt! Đang vào...</span>';
+                    }
+                    setTimeout(enterApp, 500);
+                    return;
+                }
+
+                /* Nếu chưa duyệt → verify OTP như cũ */
                 var otp = ($('dvlOtpInput') ? $('dvlOtpInput').value : '').trim();
                 if (!/^\d{6}$/.test(otp)) {
                     if ($('dvlOtpError')) {
                         $('dvlOtpError').style.display = 'block';
-                        $('dvlOtpError').textContent = 'Vui lòng nhập đủ 6 số';
+                        $('dvlOtpError').textContent = 'Nhập đủ 6 số OTP hoặc chờ admin duyệt';
                     }
                     if ($('dvlOtpInput')) $('dvlOtpInput').classList.add('error');
+                    checkBtn.disabled = false;
+                    checkBtn.innerHTML = orig;
                     return;
                 }
-                var orig = checkBtn.innerHTML;
-                checkBtn.disabled = true;
-                checkBtn.innerHTML = '<span class="dvl-spinner"></span> Đang xác thực...';
+
                 var result = await verifyOtpWithServer(email, otp);
                 if (result && result.ok) {
                     checkBtn.innerHTML = '<i class="fas fa-check"></i> Thành công!';
-                    stopTimer();
-                    await completeVerification(email);
-                    modal.classList.remove('show');
-                    showSuccessModal();
+                    await enterApp();
                 } else {
                     if ($('dvlOtpError')) {
                         $('dvlOtpError').style.display = 'block';
@@ -34059,8 +34103,11 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                 }
             };
         }
-    }
 
+        /* ⭐ LƯU các hàm vào modal để timer dùng được */
+        modal.__checkAdminApproved = checkAdminApproved;
+        modal.__enterApp = enterApp;
+    }
     function showSuccessModal() {
         var m = $('dvlVerifySuccessModal');
         if (!m) return;
@@ -34074,18 +34121,46 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         }
     }
 
-    function startTimer() {
+    function startTimer(email) {
         stopTimer();
         updateTimerDisplay();
-        _timerInterval = setInterval(function() {
+        _timerInterval = setInterval(async function() {
             var remain = _verifyExpireAt - Date.now();
+
             if (remain <= 0) {
                 stopTimer();
                 var modal = $('dvlVerifyModal');
-                if (modal) modal.classList.remove('show');
+                if (!modal) return;
+
+                /* ⭐ TRƯỚC KHI ĐĂNG XUẤT — kiểm tra admin đã duyệt chưa */
+                if (modal.__checkAdminApproved) {
+                    if ($('dvlSendMsg')) {
+                        $('dvlSendMsg').innerHTML = '<span style="color:#2563eb">⏳ Hết giờ, đang kiểm tra...</span>';
+                    }
+
+                    var approved = await modal.__checkAdminApproved();
+
+                    if (approved) {
+                        /* ✅ Admin đã duyệt → tự động vào app */
+                        if ($('dvlSendMsg')) {
+                            $('dvlSendMsg').innerHTML = '<span style="color:#16a34a">✅ Admin đã duyệt! Đang vào...</span>';
+                        }
+                        setTimeout(function() {
+                            if (modal.__enterApp) modal.__enterApp();
+                        }, 800);
+                        return;
+                    }
+                }
+
+                /* ❌ Chưa duyệt → đăng xuất */
+                if ($('dvlSendMsg')) {
+                    $('dvlSendMsg').innerHTML = '<span style="color:#dc2626">❌ Hết thời gian xác nhận</span>';
+                }
+                modal.classList.remove('show');
                 if (typeof auth !== 'undefined' && auth) auth.signOut();
                 return;
             }
+
             updateTimerDisplay();
         }, 1000);
     }
