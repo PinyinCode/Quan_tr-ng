@@ -4812,7 +4812,25 @@ body.hide-floating .tiktok-bar { display: none !important; }
 /* ============ ADMIN MODAL ============ */
 .admin-modal{position:fixed;inset:0;background:rgba(15,23,42,.75);backdrop-filter:blur(4px);z-index:3000;display:none;align-items:center;justify-content:center;padding:1rem;animation:fadeIn .2s;}
 .admin-modal.show{display:flex}
-.admin-box{background:var(--surface);border-radius:20px;width:100%;max-width:960px;max-height:calc(100vh - 2rem);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);display:flex;flex-direction:column;}
+.admin-box{
+    background:var(--surface);
+    border-radius:20px;
+    width:100%;
+    max-width:960px;
+    max-height:calc(100vh - 2rem);
+    overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.3);
+    display:flex;
+    flex-direction:column;
+    transform:none !important;
+}
+.admin-modal .admin-box{
+    animation:adminFadeIn .25s ease-out;
+}
+@keyframes adminFadeIn{
+    from{opacity:0;}
+    to{opacity:1;}
+}
 .admin-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
 .admin-header h2{font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:.5rem;font-weight:700}
 .admin-header h2 i{color:var(--amber)}
