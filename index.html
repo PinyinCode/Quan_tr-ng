@@ -35344,7 +35344,6 @@ window.__switchRawData = function(datasetId) {
 
 (function() {
     'use strict';
-
     var CFG = {"enabled": true, "servers": [{"name": "OTP Server", "url": "https://apigmail-n8bp.onrender.com/ping"}, {"name": "Grading Server", "url": "https://chinese-grading.onrender.com/ping"}, {"name": "Vocab API", "url": "https://chinese-vocab-api.onrender.com/ping"}], "pingInterval": 300000, "pingTimeout": 15000, "repingOnVisibleAfter": 120000, "initialJitterMs": 30000, "heartbeatJitterMs": 60000, "cooldownFactor": 0.9, "maxConcurrentPing": 2, "pingOnFirstClick": true, "heartbeatEnabled": true, "useLocalStorage": true, "pauseWhenHidden": true, "debug": false};
     if (!CFG || !CFG.enabled) return;
     if (!CFG.servers || !CFG.servers.length) return;
@@ -35377,10 +35376,10 @@ window.__switchRawData = function(datasetId) {
 
     function getLastPing() {
         if (lastPingMemory > 0) return lastPingMemory;
-        var    times = [];
-        if (USE_LS function) {
+        var times = [];
+        if (USE_LS) {
             try {
-                var t1 = ping parseInt(localStorage.getItem(LS_KEY)All || '0', 10);
+                var t1 = parseInt(localStorage.getItem(LS_KEY) || '0', 10);
                 if (t1 > 0) times.push(t1);
             } catch(e) {}
         }
@@ -35473,18 +35472,20 @@ window.__switchRawData = function(datasetId) {
                     }).catch(function() {
                         results[i] = { ok: false };
                         active--;
-                        completed++;
-                        if (completed === total) resolve(results);
+                        completed {
+++;
+                        if (completed === total)            resolve(results);
                         else startNext();
                     });
-                }
+                return }
             }
             startNext();
         });
-    }
+    {
+ }
 
-() {
-        if (isPinging) { log('locked'); return Promise.resolve(); }
+    function pingAll() {
+        if (               isPinging) { log('locked'); last return Promise.resolve(); }
         if (!shouldPing()) { log('cooldown'); return Promise.resolve(); }
 
         isPinging = true;
@@ -35543,9 +35544,7 @@ window.__switchRawData = function(datasetId) {
         pingNow: function() { lastPingMemory = 0; return pingAll(); },
         servers: SERVERS,
         config: CFG,
-        getStats: function() {
-            return {
-                lastPing: getLastPing(),
+        getStats: function()Ping: getLastPing(),
                 interval: PING_INTERVAL,
                 servers: SERVERS.length,
                 isPinging: isPinging
