@@ -39,38 +39,39 @@ def build_accounts_css():
     border:1px solid var(--border);
     border-radius:var(--radius);
     box-shadow:0 10px 30px rgba(0,0,0,.15);
-    padding:.5rem;
+    /* ⭐ Bỏ padding ở cha — chuyển sang .user-dropdown-body */
+    /* ⭐ KHÔNG đặt overflow ở cha — để mũi tên ::before/::after hiện */
     
     /* ⭐ GIỚI HẠN KÍCH THƯỚC */
-    width: 310px;                 /* Rộng cố định */
+    width: 310px;
     min-width: 0;
-    max-width: calc(100vw - 24px); /* Không tràn màn hình mobile */
-    max-height: 80vh;             /* Cao tối đa 80% màn hình */
-    overflow-y: auto;             /* Cho phép cuộn nội dung dài */
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
+    max-width: calc(100vw - 24px);
     
     display:none;
     z-index:200;
+    padding: 0;
 }
-
-/* Scrollbar mảnh cho dropdown */
-.user-dropdown::-webkit-scrollbar{width:5px;}
-.user-dropdown::-webkit-scrollbar-track{background:transparent;}
-.user-dropdown::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
-.user-dropdown::-webkit-scrollbar-thumb:hover{background:var(--text-3);}
-.user-dropdown{scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;}
-
 .user-dropdown.show{display:block}
 
-/* Responsive nhỏ hơn */
-@media (max-width: 380px) {
-    .user-dropdown {
-        width: 285px;
-        max-width: calc(100vw - 16px);
-        right: -4px;
-    }
+/* ═══════════════════════════════════════════════════════════════
+   BODY — Phần cuộn nội dung bên trong dropdown
+   ⭐ Thêm mới: giới hạn chiều cao + cuộn + padding
+   ═══════════════════════════════════════════════════════════════ */
+.user-dropdown-body{
+    max-height: 80vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: .5rem;
+    border-radius: var(--radius);
 }
+
+/* Scrollbar mảnh cho body */
+.user-dropdown-body::-webkit-scrollbar{width:5px;}
+.user-dropdown-body::-webkit-scrollbar-track{background:transparent;}
+.user-dropdown-body::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
+.user-dropdown-body::-webkit-scrollbar-thumb:hover{background:var(--text-3);}
+.user-dropdown-body{scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;}
 
 /* ═══════════════════════════════════════════════════════════════
    MŨI TÊN TAM GIÁC — Chỉ lên avatar (nút mở dropdown)
@@ -110,6 +111,14 @@ def build_accounts_css():
 .dropdown-item.danger{color:var(--danger)}
 .dropdown-item.danger:hover{background:var(--danger-light)}
 
+/* Responsive nhỏ hơn */
+@media (max-width: 380px) {
+    .user-dropdown {
+        width: 285px;
+        max-width: calc(100vw - 16px);
+        right: -4px;
+    }
+}
 /* ============ DROPDOWN: NÚT GIA HẠN ============ */
 .dropdown-renew{
     display:flex;align-items:center;justify-content:center;gap:.5rem;
@@ -1683,93 +1692,94 @@ def build_accounts_html():
 def build_user_dropdown_html():
     return r"""
 <div class="user-dropdown show" id="userDropdown">
-    <div class="user-info">
-        <div class="name" id="userName">-</div>
-        <div class="email" id="userEmail">-</div>
-        <span class="role" id="userRole">user</span>
-    </div>
-    <div class="user-details" id="userDetails" style="display:none">
-        <div class="detail-row" id="expiryRow">
-            <div class="detail-icon" id="expiryIconWrap">
-                <i class="fas fa-calendar-check" id="expiryIcon"></i>
+    <div class="user-dropdown-body">
+        <div class="user-info">
+            <div class="name" id="userName">-</div>
+            <div class="email" id="userEmail">-</div>
+            <span class="role" id="userRole">user</span>
+        </div>
+        <div class="user-details" id="userDetails" style="display:none">
+            <div class="detail-row" id="expiryRow">
+                <div class="detail-icon" id="expiryIconWrap">
+                    <i class="fas fa-calendar-check" id="expiryIcon"></i>
+                </div>
+                <div class="detail-content">
+                    <div class="detail-label">Hạn sử dụng</div>
+                    <div class="detail-value" id="expiryValue">-</div>
+                    <div class="detail-sub" id="expirySub"></div>
+                </div>
             </div>
-            <div class="detail-content">
-                <div class="detail-label">Hạn sử dụng</div>
-                <div class="detail-value" id="expiryValue">-</div>
-                <div class="detail-sub" id="expirySub"></div>
+            <div class="detail-progress" id="expiryProgressWrap" style="display:none">
+                <div class="progress-track">
+                    <div class="progress-bar" id="expiryProgressBar"></div>
+                </div>
             </div>
         </div>
-        <div class="detail-progress" id="expiryProgressWrap" style="display:none">
-            <div class="progress-track">
-                <div class="progress-bar" id="expiryProgressBar"></div>
+        <button class="dropdown-item" id="changeNameBtn">
+            <i class="fas fa-user-edit"></i> Đổi tên hiển thị
+        </button>
+        <button class="dropdown-item" id="openAdminBtn" style="display:none">
+            <i class="fas fa-shield-alt"></i> Quản lý tài khoản
+        </button>
+        <!-- ⚡ Server Status -->
+        <div class="dropdown-server-status" id="dropdownServerStatus" style="display:none">
+            <div class="dss-header">
+                <div class="dss-title">
+                    <i class="fas fa-server"></i> Trạng thái server
+                </div>
+                <button class="dss-refresh" id="dssRefreshBtn" title="Kiểm tra lại" type="button">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <div class="dss-list" id="dssList">
+                <div class="dss-item status-unknown">
+                    <span class="dss-dot"></span>
+                    <span class="dss-name">Đang tải...</span>
+                    <span class="dss-time">...</span>
+                </div>
             </div>
         </div>
-    </div>
-    <button class="dropdown-item" id="changeNameBtn">
-        <i class="fas fa-user-edit"></i> Đổi tên hiển thị
-    </button>
-    <button class="dropdown-item" id="openAdminBtn" style="display:none">
-        <i class="fas fa-shield-alt"></i> Quản lý tài khoản
-    </button>
-    <!-- ⚡ Server Status -->
-    <div class="dropdown-server-status" id="dropdownServerStatus" style="display:none">
-        <div class="dss-header">
-            <div class="dss-title">
-                <i class="fas fa-server"></i> Trạng thái server
-            </div>
-            <button class="dss-refresh" id="dssRefreshBtn" title="Kiểm tra lại" type="button">
-                <i class="fas fa-sync-alt"></i>
-            </button>
-        </div>
-        <div class="dss-list" id="dssList">
-            <div class="dss-item status-unknown">
-                <span class="dss-dot"></span>
-                <span class="dss-name">Đang tải...</span>
-                <span class="dss-time">...</span>
-            </div>
-        </div>
-    </div>
-    <button class="dropdown-item" id="renewalPendingBtn" style="display:none">
-    <i class="fas fa-hourglass-half" style="color:#f59e0b"></i> Lệnh đang chờ
-    <span id="renewalPendingCount" style="margin-left:auto;background:#f59e0b;color:#fff;font-size:.65rem;font-weight:800;padding:.15rem .45rem;border-radius:50px;min-width:20px;text-align:center;">1</span>
-</button>
-<button class="dropdown-item" id="renewalHistoryBtn">
-    <i class="fas fa-history"></i> Lịch sử gia hạn
-</button>
+        <button class="dropdown-item" id="renewalPendingBtn" style="display:none">
+            <i class="fas fa-hourglass-half" style="color:#f59e0b"></i> Lệnh đang chờ
+            <span id="renewalPendingCount" style="margin-left:auto;background:#f59e0b;color:#fff;font-size:.65rem;font-weight:800;padding:.15rem .45rem;border-radius:50px;min-width:20px;text-align:center;">1</span>
+        </button>
+        <button class="dropdown-item" id="renewalHistoryBtn">
+            <i class="fas fa-history"></i> Lịch sử gia hạn
+        </button>
 
-    <!-- 💬 Preview chat gần nhất -->
-    <div class="dropdown-chat-preview" id="dropdownChatPreview" onclick="window.__chatOpen && window.__chatOpen()">
-        <div class="dcp-head">
-            <div class="dcp-title">
-                <i class="fas fa-comments"></i> Tin nhắn gần nhất
-                <span class="dcp-badge" id="dcpBadge" style="display:none">0</span>
+        <!-- 💬 Preview chat gần nhất -->
+        <div class="dropdown-chat-preview" id="dropdownChatPreview" onclick="window.__chatOpen && window.__chatOpen()">
+            <div class="dcp-head">
+                <div class="dcp-title">
+                    <i class="fas fa-comments"></i> Tin nhắn gần nhất
+                    <span class="dcp-badge" id="dcpBadge" style="display:none">0</span>
+                </div>
+                <div class="dcp-time" id="dcpTime"></div>
             </div>
-            <div class="dcp-time" id="dcpTime"></div>
+            <div class="dcp-msg" id="dcpMsg">Chưa có tin nhắn. Bấm để bắt đầu chat với Admin.</div>
         </div>
-        <div class="dcp-msg" id="dcpMsg">Chưa có tin nhắn. Bấm để bắt đầu chat với Admin.</div>
+
+        <!-- 💬 Nút Chat -->
+        <button class="dropdown-item" id="chatSupportBtn" onclick="window.__chatOpen && window.__chatOpen()">
+            <i class="fas fa-comments" style="color:#4f46e5;"></i> Chat với Admin
+        </button>
+
+        <button class="dropdown-renew" id="dropdownRenewBtn" style="display:none">
+            <i class="fas fa-gem"></i>
+            <span>Gia hạn tài khoản</span>
+            <span class="renew-badge">VIP</span>
+        </button>
+        <button class="dropdown-renew dropdown-forever" id="dropdownForeverBtn" style="display:none">
+            <i class="fas fa-crown"></i>
+            <span>Sở hữu vĩnh viễn</span>
+            <span class="renew-badge" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">HOT</span>
+        </button>
+        <button class="dropdown-item danger" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </button>
     </div>
-
-    <!-- 💬 Nút Chat -->
-    <button class="dropdown-item" id="chatSupportBtn" onclick="window.__chatOpen && window.__chatOpen()">
-        <i class="fas fa-comments" style="color:#4f46e5;"></i> Chat với Admin
-    </button>
-
-    <button class="dropdown-renew" id="dropdownRenewBtn" style="display:none">
-        <i class="fas fa-gem"></i>
-        <span>Gia hạn tài khoản</span>
-        <span class="renew-badge">VIP</span>
-    </button>
-    <button class="dropdown-renew dropdown-forever" id="dropdownForeverBtn" style="display:none">
-        <i class="fas fa-crown"></i>
-        <span>Sở hữu vĩnh viễn</span>
-        <span class="renew-badge" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">HOT</span>
-    </button>
-    <button class="dropdown-item danger" id="logoutBtn">
-        <i class="fas fa-sign-out-alt"></i> Đăng xuất
-    </button>
 </div>
 """
-
 
 def build_renewal_html():
     return ""
