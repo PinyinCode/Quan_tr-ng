@@ -68,12 +68,16 @@ def _parse_server(entry):
         url = str(entry.get("url", "")).strip()
         if not url:
             return None
+        if not url.startswith(("http://", "https://")):
+            url = "https://" + url
         name = str(entry.get("name", "")).strip() or _name_from_url(url)
         return ServerEntry(name=name, url=url)
     if isinstance(entry, str):
         url = entry.strip()
         if not url:
             return None
+        if not url.startswith(("http://", "https://")):
+            url = "https://" + url
         return ServerEntry(name=_name_from_url(url), url=url)
     return None
 
@@ -140,8 +144,8 @@ def load_config(force_reload=False, config_path=None):
         servers=servers,
         ping_interval=get_int("ping_interval_ms", 300000, min_val=60000),
         ping_timeout=get_int("ping_timeout_ms", 15000, min_val=1000),
-        reping_on_visible_after=get_int("reping_on_visible_after_ms", 120000, min_val=0),  # Đã sửa _j0 thành 0
-        initial_jitter_ms=get_int("initial_jitter_ms", 30000, min_val=0),  # Đã sửa lỗi chính tả initialitter_ms
+        reping_on_visible_after=get_int("reping_on_visible_after_ms", 120000, min_val=0),
+        initial_jitter_ms=get_int("initial_jitter_ms", 30000, min_val=0),
         heartbeat_jitter_ms=get_int("heartbeat_jitter_ms", 60000, min_val=0),
         cooldown_factor=get_float("cooldown_factor", 0.9, min_val=0.1),
         max_concurrent_ping=get_int("max_concurrent_ping", 2, min_val=1),
