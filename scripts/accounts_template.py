@@ -5718,10 +5718,47 @@ window.testTelegram = function() {
         return Math.round(st.ms / 1000) + 's';
     }
     
-    function renderList() {
+        function renderList() {
         var listEl = document.getElementById('dssList');
         if (!listEl) return;
         
+        // 👑 Chỉ Super Admin mới xem được chi tiết từng server
+        var isSuper = (typeof isSuperAdmin === 'function' && isSuperAdmin());
+        
+        if (!isSuper) {
+            // 📊 Tính toán tỷ lệ phần trăm server hoạt động
+            var totalServers = SERVERS.length;
+            var activeCount = 0;
+            var totalMs = 0;
+            
+            SERVERS.forEach(function(s) {
+                var st = STATUS[s.name];
+                if (st.state === 'active' || st.state === 'slow' || st.ok === true) {
+                    activeCount++;
+                    totalMs += (st.ms || 0);
+                }
+            });
+            
+            var percent = totalServers > 0 ? Math.round((activeCount / totalServers) * 100) : 0;
+            var avgMs = activeCount > 0 ? Math.round(totalMs / activeCount) : 0;
+            
+            // Màu sắc và icon theo % hoạt động
+            var color = '#16a34a'; // Xanh lá
+            var icon = '🟢';
+            if (percent === 0) { color = '#dc2626'; icon = '🔴'; }
+            else if (percent < 100) { color = '#f59e0b'; icon = '🟡'; }
+            
+            // Hiển thị dạng phần trăm kèm tốc độ trung bình
+            var shortState = '<span style="color:' + color + '; font-weight:700;">' + icon + ' ' + percent + '%</span> <span style="font-size:0.7em; color:var(--text-3);">(' + (avgMs > 0 ? avgMs + 'ms' : '...ο') + ')</span>';
+            
+            listEl.innerHTML = '<div class="dss-item" style="justify-content: space-between; padding: 6px 8px;">' +
+                '<span class="dss-name"><i class="fas fa-server"></i> Trạng thái hệ thống</span>' +
+                '<span class="dss-time">' + shortState + '</span>' +
+            '</div>';
+            return;
+        }
+
+        // 👑 Nếu là Super Admin -> Giữ nguyên hiển thị chi tiết từng server của bạn
         var html = '';
         SERVERS.forEach(function(s) {
             var st = STATUS[s.name];
@@ -5733,7 +5770,7 @@ window.testTelegram = function() {
         });
         listEl.innerHTML = html;
     }
-    
+
     async function checkAll() {
     /* ⭐ Cập nhật timestamp — cache 1 phút */
     window.__dssLastCheck = Date.now();
