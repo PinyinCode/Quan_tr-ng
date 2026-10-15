@@ -32865,8 +32865,8 @@ isTransitioning:function(){ return pfTransitioning; }
 
 /* GRADING */
 
-var GRADING_API_URL = '__GRADING_API__';
-var VOCAB_API_URL = '__VOCAB_API__';
+var GRADING_API_URL = 'https://chinese-grading.onrender.com/check';
+var VOCAB_API_URL = 'https://chinese-vocab-api.onrender.com';
 var _GRADING_FALLBACK_MESSAGES = {
     'correct': 'Đúng hoàn toàn',
     'partial': 'Gần đúng',
@@ -33509,8 +33509,7 @@ document.addEventListener('keydown', function(e) {
 _loadMnemonicCache();
 
 console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
-js = js.replace("__GRADING_API__", _grading_api)
-js = js.replace("__VOCAB_API__", _vocab_api)
+
 
 /* LOGIN FALLBACK */
 
