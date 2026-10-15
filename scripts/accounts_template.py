@@ -4530,47 +4530,35 @@ window.deleteUser = async function(email) {
     var isAdmin = target.role === 'admin';
     var superAdmin = isSuperAdmin();
     var targetIsSuper = (email || '').toLowerCase() === SUPER_ADMIN.toLowerCase();
+    
     if (isMe) return alert('⚠️ Không thể tự xóa!');
     if (targetIsSuper) return alert('⚠️ Không thể xóa Super Admin!');
     if (isAdmin && !superAdmin) return alert('⚠️ Chỉ Super Admin!');
-    if (!confirm('⚠️ XÓA\n\n' + email + '\n\nNgười này sẽ không đăng nhập được nữa.\n\nTiếp tục?')) return;
+    
+    if (!confirm('⚠️ XÓA NGAY (Thủ công qua Firestore)\n\n' + email + '\n\nNgười này sẽ mất quyền truy cập.\n\nTiếp tục?')) return;
+    
     try {
-        // ⭐ Lấy động URL của "Delete API" từ danh sách server trong file JSON (SERVERS)
-        var deleteServerUrl = '';
-        if (typeof SERVERS !== 'undefined' && Array.isArray(SERVERS)) {
-            var foundServer = SERVERS.find(function(s) {
-                return s.name === 'Delete API' || (s.url && s.url.indexOf('deleteaccount') !== -1);
-            });
-            if (foundServer) {
-                deleteServerUrl = foundServer.url;
-            }
+        // Tự động tìm biến kết nối db (Firestore) đang sẵn có trên trang admin của bạn
+        var activeDb = window.db || window.firestore || (typeof db !== 'undefined' ? db : null);
+        if (!activeDb && typeof firebase !== 'undefined' && firebase.firestore) {
+            activeDb = firebase.firestore();
         }
         
-        // Fallback an toàn nếu chưa tìm thấy trong mảng SERVERS
-        if (!deleteServerUrl) {
-            deleteServerUrl = 'https://deleteaccount-np60.onrender.com/';
+        if (!activeDb) {
+            throw new Error("Không tìm thấy kết nối Firestore trên trang.");
         }
 
-        var endpoint = deleteServerUrl.replace(/\/+$/, '') + '/api/delete-user';
-
-        // Gọi API lên Render để xóa cả Firebase Auth và Firestore
-        var response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email })
-        });
+        // Xóa trực tiếp document trong allowed_users bằng Client SDK (tránh hoàn toàn lỗi 429 trên Render)
+        await activeDb.collection('allowed_users').doc(email).delete();
         
-        var result = await response.json();
-        if (!result.success) {
-            throw new Error(result.error || 'Lỗi không xác định từ server');
-        }
-
         try { localStorage.removeItem('user_cache_' + email); } catch(e) {}
         try { localStorage.removeItem('admin_users_cache'); } catch(e) {}
         
-        alert('✅ Đã xóa hoàn toàn tài khoản ' + email);
+        alert('✅ Đã xóa thành công user ' + email + ' khỏi Firestore!');
         loadUsers(true);
-    } catch(e) { alert('Lỗi: ' + e.message); }
+    } catch(e) { 
+        alert('Lỗi: ' + e.message); 
+    }
 };
 
 
