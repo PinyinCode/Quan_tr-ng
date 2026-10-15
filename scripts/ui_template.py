@@ -781,8 +781,12 @@ body.show-practice .card-body{background:linear-gradient(135deg,var(--surface-2)
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.6)}50%{box-shadow:0 0 0 10px rgba(220,38,38,0)}}
 .write-btn{width:clamp(28px,2.8vw,32px);height:clamp(28px,2.8vw,32px);border-radius:50%;border:none;background:var(--amber-light);color:#92400e;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:clamp(.7rem,.85vw,.8rem);transition:.15s}
 .write-btn:hover,.write-btn:active{background:var(--amber);color:#fff;transform:scale(1.08)}
-.practice-full-btn{width:clamp(28px,2.8vw,32px);height:clamp(28px,2.8vw,32px);border-radius:50%;border:none;background:var(--primary-light);color:var(--primary-dark);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:clamp(.7rem,.85vw,.8rem);transition:.15s}
+[data-theme="dark"] .write-btn{background:rgba(245,158,11,.25);color:#fcd34d;border:1px solid rgba(245,158,11,.4)}
+[data-theme="dark"] .write-btn:hover,[data-theme="dark"] .write-btn:active{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(245,158,11,.5)}
+.practice-full-btn{width:clamp(28px,2.8vw,32px);height:clamp(28px,2.8writevw,32px);border-radius:50%;border:none;background:var(--primary-light);color:var(--primary-dark);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:clamp(.7rem,.85vw,.8rem);transition:.15s}
 .practice-full-btn:hover,.practice-full-btn:active{background:var(--primary);color:#fff;transform:scale(1.08)}
+[data-theme="dark"] .practice-full-btn{background:rgba(59,130,246,.25);color:#93c5fd;border:1px solid rgba(96,165,250,.4)}
+[data-theme="dark"] .practice-full-btn:hover,[data-theme="dark"] .practice-full-btn:active{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(59,130,246,.5)}
 .toggle-check-btn{width:clamp(28px,2.8vw,32px);height:clamp(28px,2.8vw,32px);border-radius:50%;border:1px solid var(--border);background:var(--surface-2);color:var(--text-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:clamp(.7rem,.85vw,.8rem);transition:.15s;flex-shrink:0}
 .toggle-check-btn:hover{background:var(--primary-light);color:var(--primary-dark);border-color:var(--primary)}
 .toggle-check-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
