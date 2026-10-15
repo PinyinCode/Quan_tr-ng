@@ -38,11 +38,13 @@ def build_accounts_css():
     border:1px solid var(--border);
     border-radius:var(--radius);
     box-shadow:0 10px 30px rgba(0,0,0,.15);
-    padding:.5rem;
-    min-width:290px;
+    padding:.4rem;                  /* ⭐ Giảm padding từ .5rem xuống .4rem cho gọn */
+    min-width:260px;                /* ⭐ Giảm min-width từ 290px xuống 260px */
+    max-width:300px;                /* ⭐ Giới hạn chiều rộng tối đa để không bị to bè trên PC */
     display:none;
     z-index:200;
 }
+
 .user-dropdown.show{display:block}
 
 /* ═══════════════════════════════════════════════════════════════
