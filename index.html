@@ -21337,22 +21337,50 @@ window.cancelRenewalAndRestart = async function() {
 };
 
 function listenRenewalRequest(reqId) {
-    if (renewalListener) { try { renewalListener(); } catch(e) {} }
-    renewalListener = db.collection('renewal_requests').doc(reqId).onSnapshot(function(doc) {
-        if (!doc.exists) return;
-        var data = doc.data();
-        if (data.status === 'confirmed') {
-            showRenewalSuccess(data);
-            if (renewalListener) { try { renewalListener(); } catch(e) {} renewalListener = null; }
-            refreshCurrentUser();
-        } else if (data.status === 'expired') {
-            showRenewalExpired();
-            if (renewalListener) { try { renewalListener(); } catch(e) {} renewalListener = null; }
-        } else if (data.status === 'cancelled') {
-            if (renewalListener) { try { renewalListener(); } catch(e) {} renewalListener = null; }
-        }
-    });
+    if (!reqId || !db) return;
+
+    var checkCount = 0;
+    var maxChecks = 30; // Kiểm tra tối đa 30 lần (ví dụ mỗi 3 giây là 90 giây)
+    
+    // Hủy bỏ tiến trình cũ nếu đang chạy
+    if (window._renewalTimer) {
+        clearInterval(window._renewalTimer);
+        window._renewalTimer = null;
+    }
+
+    window._renewalTimer = setInterval(function() {
+        checkCount++;
+        
+        db.collection('renewal_requests').doc(reqId).get().then(function(doc) {
+            if (!doc.exists) return;
+            var data = doc.data();
+            if (!data) return;
+
+            if (data.status === 'confirmed') {
+                showRenewalSuccess(data);
+                clearInterval(window._renewalTimer);
+                window._renewalTimer = null;
+                refreshCurrentUser();
+            } else if (data.status === 'expired') {
+                showRenewalExpired();
+                clearInterval(window._renewalTimer);
+                window._renewalTimer = null;
+            } else if (data.status === 'cancelled') {
+                clearInterval(window._renewalTimer);
+                window._renewalTimer = null;
+            }
+
+            // Quá thời gian (ví dụ sau 30 lần check) thì tự ngắt để tiết kiệm tài nguyên
+            if (checkCount >= maxChecks) {
+                clearInterval(window._renewalTimer);
+                window._renewalTimer = null;
+            }
+        }).catch(function(err) {
+            console.warn('Renewal check error:', err);
+        });
+    }, 3000); // Kiểm tra mỗi 3 giây thay vì mở stream realtime liên tục
 }
+
 
 function showRenewalExpired() {
     $('renewalBody').innerHTML =
