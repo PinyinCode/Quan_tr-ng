@@ -1,7 +1,7 @@
 {
-    "_comment": "Đã vô hiệu hóa tự động ping để tiết kiệm quota Firestore/Render. Chỉ giữ lại cấu hình gốc.",
+    "_comment": "Đã bật lại tự động ping để giữ các server Render thức giấc.",
     
-    "enabled": false,
+    "enabled": true,
     
     "servers": [
         {
