@@ -38,14 +38,30 @@ def build_accounts_css():
     border:1px solid var(--border);
     border-radius:var(--radius);
     box-shadow:0 10px 30px rgba(0,0,0,.15);
-    padding:.4rem;                  /* ⭐ Giảm padding từ .5rem xuống .4rem cho gọn */
-    min-width:260px;                /* ⭐ Giảm min-width từ 290px xuống 260px */
-    max-width:300px;                /* ⭐ Giới hạn chiều rộng tối đa để không bị to bè trên PC */
+    padding:.4rem;                  
+    min-width:260px;                
+    max-width:300px;                
     display:none;
     z-index:200;
 }
 
 .user-dropdown.show{display:block}
+
+/* ⭐ BỔ SUNG CÁC ĐOẠN THU GỌN LỀ Ở ĐÂY CHO KHỚP KHUNG DROPDOWN: */
+
+/* Thu gọn lề bên trong thông tin user */
+.user-info{padding:.6rem .65rem;border-bottom:1px solid var(--border);margin-bottom:.4rem}
+
+/* Thu gọn khối chi tiết hạn sử dụng bên trong */
+.user-details{padding:.5rem .65rem .65rem;border-bottom:1px solid var(--border);margin-bottom:.4rem;display:flex;flex-direction:column;gap:.5rem;}
+
+/* Thu gọn các mục item trong dropdown */
+.dropdown-item{display:flex;align-items:center;gap:.5rem;width:100%;padding:.55rem .65rem;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--text);font-size:.82rem;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit;text-align:left;text-decoration:none;}
+.dropdown-item:hover{background:var(--surface-2)}
+.dropdown-item.danger{color:var(--danger)}
+.dropdown-item.danger:hover{background:var(--danger-light)}
+
+
 
 /* ═══════════════════════════════════════════════════════════════
    MŨI TÊN TAM GIÁC — Chỉ lên avatar (nút mở dropdown)
@@ -86,17 +102,18 @@ def build_accounts_css():
 .dropdown-item.danger:hover{background:var(--danger-light)}
 
 /* ============ DROPDOWN: NÚT GIA HẠN ============ */
+/* Thu gọn nút gia hạn cho vừa khít khung dropdown mới */
 .dropdown-renew{
-    display:flex;align-items:center;justify-content:center;gap:.5rem;
-    width:100%;padding:.75rem 1rem;margin:.4rem 0;
-    border:none;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;gap:.4rem;
+    width:100%;padding:.65rem .85rem;margin:.3rem 0;
+    border:none;border-radius:10px;
     background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#a855f7 100%);
-    color:#fff;font-size:.9rem;font-weight:800;cursor:pointer;
+    color:#fff;font-size:.85rem;font-weight:800;cursor:pointer;
     transition:all .25s ease;font-family:inherit;
     text-transform:uppercase;letter-spacing:.5px;
     box-shadow:0 4px 14px rgba(124,58,237,.35), 0 0 0 0 rgba(139,92,246,.6);
     position:relative;
-    overflow:visible;   /* ⭐ FIX: Cho badge VIP nhô ra ngoài khung */
+    overflow:visible;
     animation:renewPulse 2.5s infinite;
 }
 .dropdown-renew::before{
