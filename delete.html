@@ -47,29 +47,41 @@
     */
 
     async function manualDeleteUser() {
-        var emailInput = document.getElementById('userEmail').value.trim().toLowerCase();
-        if (!emailInput) {
-            alert('⚠️ Vui lòng nhập email cần xóa!');
-            return;
-        }
-
-        if (!confirm('⚠️ Bạn có chắc chắn muốn xóa user:\n\n' + emailInput + '\n\nKhỏi collection allowed_users?')) {
-            return;
-        }
-
-        try {
-            // Sử dụng trực tiếp client db để xóa document trong allowed_users
-            await db.collection('allowed_users').doc(emailInput).delete();
-            
-            // Xóa cache cục bộ nếu có
-            try { localStorage.removeItem('user_cache_' + emailInput); } catch(e) {}
-            
-            alert('✅ Đã xóa thành công user ' + emailInput + ' khỏi Firestore!');
-            document.getElementById('userEmail').value = '';
-        } catch (error) {
-            alert('❌ Lỗi khi xóa: ' + error.message);
-        }
+    var emailInput = document.getElementById('userEmail').value.trim().toLowerCase();
+    if (!emailInput) {
+        alert('⚠️ Vui lòng nhập email cần xóa!');
+        return;
     }
+
+    if (!confirm('⚠️ Bạn có chắc chắn muốn xóa user:\n\n' + emailInput + '\n\nKhỏi collection allowed_users?')) {
+        return;
+    }
+
+    try {
+        // Tự động tìm biến kết nối Firestore đang có sẵn trên trang
+        var activeDb = window.db || window.firestore || (typeof db !== 'undefined' ? db : null);
+        
+        if (!activeDb && typeof firebase !== 'undefined' && firebase.firestore) {
+            activeDb = firebase.firestore();
+        }
+
+        if (!activeDb) {
+            throw new Error("Không tìm thấy kết nối Firestore (db) trong trang web.");
+        }
+
+        // Xóa document trong allowed_users
+        await activeDb.collection('allowed_users').doc(emailInput).delete();
+        
+        // Xóa cache cục bộ nếu có
+        try { localStorage.removeItem('user_cache_' + emailInput); } catch(e) {}
+        
+        alert('✅ Đã xóa thành công user ' + emailInput + ' khỏi Firestore!');
+        document.getElementById('userEmail').value = '';
+    } catch (error) {
+        alert('❌ Lỗi khi xóa: ' + error.message);
+    }
+}
+
 </script>
 
 </body>
