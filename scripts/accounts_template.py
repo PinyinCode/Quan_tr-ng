@@ -4535,12 +4535,44 @@ window.deleteUser = async function(email) {
     if (isAdmin && !superAdmin) return alert('⚠️ Chỉ Super Admin!');
     if (!confirm('⚠️ XÓA\n\n' + email + '\n\nNgười này sẽ không đăng nhập được nữa.\n\nTiếp tục?')) return;
     try {
-        await db.collection('allowed_users').doc(email).delete();
+        // ⭐ Lấy động URL của "Delete API" từ danh sách server trong file JSON (SERVERS)
+        var deleteServerUrl = '';
+        if (typeof SERVERS !== 'undefined' && Array.isArray(SERVERS)) {
+            var foundServer = SERVERS.find(function(s) {
+                return s.name === 'Delete API' || (s.url && s.url.indexOf('deleteaccount') !== -1);
+            });
+            if (foundServer) {
+                deleteServerUrl = foundServer.url;
+            }
+        }
+        
+        // Fallback an toàn nếu chưa tìm thấy trong mảng SERVERS
+        if (!deleteServerUrl) {
+            deleteServerUrl = 'https://deleteaccount-np60.onrender.com/';
+        }
+
+        var endpoint = deleteServerUrl.replace(/\/+$/, '') + '/api/delete-user';
+
+        // Gọi API lên Render để xóa cả Firebase Auth và Firestore
+        var response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })
+        });
+        
+        var result = await response.json();
+        if (!result.success) {
+            throw new Error(result.error || 'Lỗi không xác định từ server');
+        }
+
         try { localStorage.removeItem('user_cache_' + email); } catch(e) {}
         try { localStorage.removeItem('admin_users_cache'); } catch(e) {}
+        
+        alert('✅ Đã xóa hoàn toàn tài khoản ' + email);
         loadUsers(true);
     } catch(e) { alert('Lỗi: ' + e.message); }
 };
+
 
 function loadLogs() {
     if (!isSuperAdmin() && !hasPermission('canViewLogs')) {
