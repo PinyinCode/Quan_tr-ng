@@ -2716,13 +2716,18 @@ function applyUserUI() {
         return;
     }
 
-    /* ⭐ Update nút gia hạn trong dropdown */
+       /* ⭐ Update nút gia hạn trong dropdown */
     var renewBtn = $('dropdownRenewBtn');
     if (renewBtn) {
+        var role = (currentUser && currentUser.role || '').toLowerCase();
+        var tier = (currentUser && currentUser.tier || '').toLowerCase();
+        
+        // Cho phép hiển thị nếu không phải admin và không phải tài khoản vĩnh viễn (bao gồm cả user và trial)
         var showRenew = currentUser
-                        && currentUser.role !== 'admin'
-                        && !currentUser.isPermanent
-                        && currentUser.tier !== 'trial';
+                        && role !== 'admin'
+                        && role !== 'super_admin'
+                        && !currentUser.isPermanent;
+                        
         renewBtn.style.display = showRenew ? 'flex' : 'none';
         if (showRenew) {
             var rDaysLeft = getDaysRemaining(currentUser);
