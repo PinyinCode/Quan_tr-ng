@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Xóa User Thủ Công (Firestore)</title>
+    <!-- Firebase App (vần phải khớp với phiên bản Firebase SDK đang dùng trong hệ thống của bạn) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; padding: 20px; }
+        .card { max-width: 500px; margin: 40px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { color: #d9534f; margin-top: 0; }
+        input[type="email"] { width: 100%; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #d9534f; color: white; border: none; padding: 12px 20px; width: 100%; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #c9302c; }
+        .note { font-size: 13px; color: #666; margin-top: 15px; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🗑️ Xóa User Thủ Công (Firestore)</h2>
+    <p>Công cụ này giúp xóa nhanh quyền truy cập của user trong Firestore mà không gọi qua Server API (tránh lỗi 429).</p>
+    
+    <input type="id" id="userEmail" placeholder="Nhập chính xác email cần xóa...">
+    <button onclick="manualDeleteUser()">Xóa ngay khỏi Firestore</button>
+    
+    <div class="note">
+        <b>Lưu ý:</b> Sau khi xóa bằng công cụ này, user sẽ mất quyền truy cập vào hệ thống. Để xóa sạch hoàn toàn trên Firebase Auth (tránh lỗi email-already-in-use khi đăng ký lại), bạn có thể vào xóa thủ công trên giao diện <a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a>.
+    </div>
+</div>
+
+<script>
+    // ⚠️ Đảm bảo bạn đã cấu hình khởi tạo Firebase Client tương ứng với dự án của bạn ở đây
+    // Nếu trang admin của bạn đã khởi tạo sẵn 'db', bạn có thể dùng trực tiếp mà không cần cấu hình lại đoạn dưới:
+    /*
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        ...
+    };
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    */
+
+    async function manualDeleteUser() {
+        var emailInput = document.getElementById('userEmail').value.trim().toLowerCase();
+        if (!emailInput) {
+            alert('⚠️ Vui lòng nhập email cần xóa!');
+            return;
+        }
+
+        if (!confirm('⚠️ Bạn có chắc chắn muốn xóa user:\n\n' + emailInput + '\n\nKhỏi collection allowed_users?')) {
+            return;
+        }
+
+        try {
+            // Sử dụng trực tiếp client db để xóa document trong allowed_users
+            await db.collection('allowed_users').doc(emailInput).delete();
+            
+            // Xóa cache cục bộ nếu có
+            try { localStorage.removeItem('user_cache_' + emailInput); } catch(e) {}
+            
+            alert('✅ Đã xóa thành công user ' + emailInput + ' khỏi Firestore!');
+            document.getElementById('userEmail').value = '';
+        } catch (error) {
+            alert('❌ Lỗi khi xóa: ' + error.message);
+        }
+    }
+</script>
+
+</body>
+</html>
