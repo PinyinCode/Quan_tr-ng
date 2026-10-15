@@ -1,7 +1,7 @@
 {
-    "_comment": "Cấu hình Self-Wake tối ưu cho ~500 user. Sửa file này, không cần sửa code.",
+    "_comment": "Đã vô hiệu hóa tự động ping để tiết kiệm quota Firestore/Render. Chỉ giữ lại cấu hình gốc.",
     
-    "enabled": true,
+    "enabled": false,
     
     "servers": [
         {
@@ -26,34 +26,34 @@
     "_ping_interval_comment": "5 phút. Tối thiểu 60000 (1 phút).",
     
     "ping_timeout_ms": 15000,
-    "_ping_timeout_comment": "Timeout mỗi request. 15000ms = 15s (đủ cho Render cold start).",
+    "_ping_timeout_comment": "Timeout mỗi request. 15000ms = 15s.",
     
     "reping_on_visible_after_ms": 120000,
     "_reping_comment": "Ping lại khi user quay lại tab sau 2 phút.",
     
     "initial_jitter_ms": 30000,
-    "_initial_jitter_comment": "⭐ QUAN TRỌNG: Jitter 0-30s khi load trang. Rải đều 500 user, tránh spike.",
+    "_initial_jitter_comment": "Jitter khi load trang.",
     
     "heartbeat_jitter_ms": 60000,
-    "_heartbeat_jitter_comment": "⭐ Jitter 0-60s mỗi heartbeat. Tránh ping cùng lúc.",
+    "_heartbeat_comment": "Jitter mỗi heartbeat.",
     
     "cooldown_factor": 0.9,
-    "_cooldown_comment": "Cho phép ping nếu quá 90% interval. 0.9 = 4.5 phút.",
+    "_cooldown_comment": "Cho phép ping nếu quá 90% interval.",
     
     "max_concurrent_ping": 2,
-    "_concurrent_comment": "Ping tối đa 2 server cùng lúc. Tránh nghẽn connection pool.",
+    "_concurrent_comment": "Ping tối đa 2 server cùng lúc.",
     
-    "ping_on_first_click": true,
-    "_click_comment": "Ping khi user click lần đầu (đảm bảo browser cho phép).",
+    "ping_on_first_click": false,
+    "_click_comment": "Đã tắt ping khi click lần đầu.",
     
-    "heartbeat_enabled": true,
-    "_heartbeat_comment": "Ping định kỳ khi tab visible.",
+    "heartbeat_enabled": false,
+    "_heartbeat_comment": "Đã tắt ping định kỳ khi tab visible.",
     
     "use_localstorage": true,
-    "_ls_comment": "Dùng localStorage để nhớ lần ping cuối. Tránh user F5 spam.",
+    "_ls_comment": "Dùng localStorage để nhớ lần ping cuối.",
     
     "pause_when_hidden": true,
-    "_pause_comment": "Không ping khi tab ẩn. Tiết kiệm pin mobile.",
+    "_pause_comment": "Không ping khi tab ẩn.",
     
     "debug": false,
     "_debug_comment": "Bật true để xem log [self-wake] trong Console."
