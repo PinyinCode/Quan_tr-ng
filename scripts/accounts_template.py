@@ -5757,16 +5757,30 @@ window.testTelegram = function() {
     window.__dssLastCheck = Date.now();
 }
     
-    function bindRefresh() {
+        function bindRefresh() {
         var btn = document.getElementById('dssRefreshBtn');
         if (btn && !btn._dssBound) {
             btn._dssBound = true;
+            
+            // ⭐ Thêm biến lưu thời gian bấm lần cuối để chống spam
+            var lastClickTime = 0;
+            
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
+                
+                var now = Date.now();
+                // 🛑 Nếu bấm chưa qua 3 giây thì chặn lại ngay
+                if (now - lastClickTime < 3000) {
+                    console.log('[server-status] Bấm quá nhanh, vui lòng đợi vài giây!');
+                    return; 
+                }
+                lastClickTime = now;
+                
                 checkAll();
             });
         }
     }
+
     
     /* ⭐ Hiển thị section khi mở dropdown */
     function showSection() {
