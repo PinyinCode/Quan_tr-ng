@@ -3781,6 +3781,60 @@ function listenRenewalRequest(reqId) {
     }, 3000); // Kiểm tra mỗi 3 giây thay vì mở stream realtime liên tục
 }
 
+// Biến lưu mã giao dịch hiện tại đang chờ
+var currentWaitingReqId = null;
+
+// Hàm xử lý khi người dùng bấm nút kiểm tra thủ công
+function manualCheckRenewal() {
+    if (!currentWaitingReqId || !db) {
+        alert("Không tìm thấy mã giao dịch để kiểm tra!");
+        return;
+    }
+
+    var btn = document.getElementById('btnCheckRenewal');
+    if (btn) {
+        btn.innerText = "Đang kiểm tra...";
+        btn.disabled = true;
+    }
+
+    // Đọc tĩnh 1 lần (.get()) cực kỳ tiết kiệm quota Firestore
+    db.collection('renewal_requests').doc(currentWaitingReqId).get().then(function(doc) {
+        if (btn) {
+            btn.innerText = "🔄 Kiểm tra lại ngay";
+            btn.disabled = false;
+        }
+
+        if (!doc.exists) {
+            alert("Không tìm thấy thông tin yêu cầu gia hạn này.");
+            return;
+        }
+
+        var data = doc.data();
+        if (!data) return;
+
+        if (data.status === 'confirmed') {
+            showRenewalSuccess(data);
+            if (typeof refreshCurrentUser === 'function') refreshCurrentUser();
+            // Ẩn hộp chờ khi đã thành công
+            var box = document.getElementById('renewal-waiting-box');
+            if (box) box.style.display = 'none';
+        } else if (data.status === 'expired') {
+            showRenewalExpired();
+        } else if (data.status === 'cancelled') {
+            alert("Yêu cầu gia hạn này đã bị hủy.");
+        } else {
+            alert("Admin chưa xác nhận, vui lòng thử lại sau ít phút!");
+        }
+
+    }).catch(function(err) {
+        if (btn) {
+            btn.innerText = "🔄 Kiểm tra lại ngay";
+            btn.disabled = false;
+        }
+        console.error("Lỗi kiểm tra gia hạn:", err);
+        alert("Có lỗi xảy ra khi kết nối tới hệ thống.");
+    });
+}
 
 function showRenewalExpired() {
     $('renewalBody').innerHTML =
