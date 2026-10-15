@@ -3641,6 +3641,10 @@ function renderPendingConfirm() {
     var pkg = renewalSelectedPkg;
     var code = renewalCurrentReq ? renewalCurrentReq.code : '';
     var reqId = renewalCurrentReq ? renewalCurrentReq.id : '';
+    
+    // ⬇️ BỔ SUNG DÒNG NÀY ĐỂ GÁN MÃ GIAO DỊCH CHO NÚT KIỂM TRA ⬇️
+    currentWaitingReqId = reqId;
+
     var amount = pkg ? pkg.amount : 0;
     var durationText = (pkg && pkg.permanent)
         ? '<b style="color:#dc2626">💎 VĨNH VIỄN</b>'
@@ -3686,6 +3690,15 @@ function renderPendingConfirm() {
                 '<i class="fas fa-hourglass-half"></i></div>' +
             '<h3>Đang chờ xác nhận</h3>' +
             '<p>Admin sẽ kiểm tra và xác nhận trong <b>1-5 phút</b>.</p>' +
+            
+            // ⬇️ CHÈN NÚT KIỂM TRA LẠI THỦ CÔNG VÀO ĐÂY ⬇️
+            '<div id="renewal-waiting-box" style="margin: 10px 0;">' +
+                '<button id="btnCheckRenewal" onclick="manualCheckRenewal()" class="renewal-btn primary" style="background: #16a34a; border-color: #16a34a; width: 100%; justify-content: center;">' +
+                    '🔄 Kiểm tra lại ngay (Xem Admin đã duyệt chưa)' +
+                '</button>' +
+            '</div>' +
+            // ⬆️ HẾT ĐOẠN CHÈN ⬆️
+
             '<div class="info-box" style="border-color:#dc2626;background:rgba(220,38,38,.08)">' +
                 '<i class="fas fa-exclamation-triangle" style="color:#dc2626"></i>' +
                 '<div><b>Lưu ý:</b> Nếu admin không xác nhận trong <b>24 giờ</b>, lệnh sẽ tự động bị hủy.</div></div>' +
@@ -3698,6 +3711,7 @@ function renderPendingConfirm() {
             qrHtml +
         '</div>';
 }
+
 window.cancelRenewalAndRestart = async function() {
     if (!renewalCurrentReq || !renewalCurrentReq.id) {
         alert('Không tìm thấy lệnh để hủy.');
