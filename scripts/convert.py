@@ -1119,9 +1119,10 @@ document.addEventListener('keydown', function(e) {
 _loadMnemonicCache();
 
 console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
-js = js.replace("__GRADING_API__", _grading_api)
-js = js.replace("__VOCAB_API__", _vocab_api)
+
 """
+    js = js.replace("__GRADING_API__", _grading_api)
+    js = js.replace("__VOCAB_API__", _vocab_api)
     return patch_grading_js(js)
 
 
