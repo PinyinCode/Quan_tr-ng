@@ -19930,17 +19930,13 @@ async function handleAuthChange(user) {
 function watchCurrentUser() {
     if (!currentUser || !db) return;
 
-    if (userWatcher) {
-        try { userWatcher(); } catch(e) {}
-        userWatcher = null;
-    }
-
     var email = currentUser.email;
     if (!email) return;
 
-    console.log('👁 Watching user changes for:', email);
+    console.log('🔍 Checking user changes for (Static Get):', email);
 
-    userWatcher = db.collection('allowed_users').doc(email).onSnapshot(function(doc) {
+    // Thay thế onSnapshot bằng .get() đọc 1 lần duy nhất để tiết kiệm tối đa quota Firestore
+    db.collection('allowed_users').doc(email).get().then(function(doc) {
         if (!doc.exists) return;
         var data = doc.data();
         if (!data) return;
@@ -20023,10 +20019,11 @@ function watchCurrentUser() {
             showUserChangedToast('ℹ️ Vai trò đã đổi thành: ' + newRole, 'info');
         }
 
-    }, function(err) {
-        console.warn('User watcher error:', err);
+    }).catch(function(err) {
+        console.warn('User check error:', err);
     });
 }
+
 /* ═══════════════════════════════════════════════════════════════
    🔍 VERIFY BACKGROUND — Fetch server sau 2s
    ═══════════════════════════════════════════════════════════════ */
