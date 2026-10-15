@@ -64,6 +64,35 @@ from device_account_monitor import (
     build_dam_js,
 )
 from auto_scale import build_auto_scale_css, build_auto_scale_js
+# ⭐ Đọc URL API từ self_wake_config.json
+def _get_api_urls_from_self_wake():
+    """Trả về dict {grading_api, vocab_api} đọc từ self_wake_config.json."""
+    defaults = {
+        "grading_api": "https://chinese-grading.onrender.com/check",
+        "vocab_api": "https://chinese-vocab-api.onrender.com",
+    }
+    cfg_path = "self_wake_config.json"
+    if not os.path.isfile(cfg_path):
+        print(f"⚠️  Không có {cfg_path} — dùng URL mặc định")
+        return defaults
+    try:
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            sw_cfg = json.load(f)
+    except Exception as e:
+        print(f"⚠️  Lỗi đọc {cfg_path}: {e}")
+        return defaults
+    servers = sw_cfg.get("servers", [])
+    result = dict(defaults)
+    for srv in servers:
+        name = (srv.get("name") or "").strip().lower()
+        url = (srv.get("url") or "").strip().rstrip("/")
+        if not url:
+            continue
+        if "grading" in name:
+            result["grading_api"] = url if url.endswith("/check") else url + "/check"
+        elif "vocab" in name:
+            result["vocab_api"] = url
+    return result
 
 # ⭐ SELF-WAKE — tự động ping Render servers
 try:
@@ -440,9 +469,14 @@ full_body = (
 )
 
 def _build_grading_js():
+    api_urls = _get_api_urls_from_self_wake()
+    _grading_api = api_urls["grading_api"]
+    _vocab_api = api_urls["vocab_api"]
+    print(f"🔗 Grading API: {_grading_api}")
+    print(f"🔗 Vocab API:   {_vocab_api}")
     js = r"""
-var GRADING_API_URL = 'https://chinese-grading.onrender.com/check';
-
+var GRADING_API_URL = '__GRADING_API__';
+var VOCAB_API_URL = '__VOCAB_API__';
 var _GRADING_FALLBACK_MESSAGES = {
     'correct': 'Đúng hoàn toàn',
     'partial': 'Gần đúng',
@@ -740,7 +774,7 @@ window.gradeWithAPI = gradeWithAPI;
     console.log('[Grading] fixCharAt override OK');
 })();
 
-var VOCAB_API_URL = 'https://chinese-vocab-api.onrender.com';
+
 var _mnemonicCache = {};
 
 function _loadMnemonicCache() {
@@ -1085,6 +1119,8 @@ document.addEventListener('keydown', function(e) {
 _loadMnemonicCache();
 
 console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
+js = js.replace("__GRADING_API__", _grading_api)
+js = js.replace("__VOCAB_API__", _vocab_api)
 """
     return patch_grading_js(js)
 
