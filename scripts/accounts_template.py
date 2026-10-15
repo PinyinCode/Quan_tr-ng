@@ -388,6 +388,10 @@ def build_accounts_css():
 .admin-section-head .ash-subtitle .chip.warn{background:var(--amber-light);color:#92400e;}
 .admin-section-head .ash-subtitle .chip.danger{background:var(--danger-light);color:var(--danger);}
 .admin-section-head .ash-subtitle .chip.ok{background:rgba(22,163,74,.12);color:var(--success);}
+[data-theme="dark"] .admin-section-head .ash-subtitle .chip.primary{background:rgba(59,130,246,.3);color:#93c5fd;}
+[data-theme="dark"] .admin-section-head .ash-subtitle .chip.warn{background:rgba(245,158,11,.3);color:#fdba74;}
+[data-theme="dark"] .admin-section-head .ash-subtitle .chip.danger{background:rgba(220,38,38,.3);color:#fca5a5;}
+[data-theme="dark"] .admin-section-head .ash-subtitle .chip.ok{background:rgba(22,163,74,.25);color:#86efac;}
 .admin-section-head .ash-actions{
     display:flex;
     align-items:center;
