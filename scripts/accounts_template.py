@@ -96,6 +96,7 @@ def build_accounts_css():
 .user-info .role{display:inline-block;margin-top:.4rem;padding:.15rem .5rem;background:var(--primary-light);color:var(--primary-dark);border-radius:50px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
 .user-info .role.admin{background:var(--amber-light);color:#92400e}
 .user-info .role.subadmin{background:linear-gradient(135deg,#06b6d4,#0891b2);color:#fff}
+[data-theme="dark"] .user-info .role.admin{background:rgba(251,146,60,.3);color:#fdba74}
 .dropdown-item{display:flex;align-items:center;gap:.5rem;width:100%;padding:.65rem .75rem;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit;text-align:left;text-decoration:none;}
 .dropdown-item:hover{background:var(--surface-2)}
 .dropdown-item.danger{color:var(--danger)}
