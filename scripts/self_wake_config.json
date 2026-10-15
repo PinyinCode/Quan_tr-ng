@@ -15,6 +15,10 @@
         {
             "name": "Vocab API",
             "url": "https://chinese-vocab-api.onrender.com/"
+        },
+        {
+            "name": "Delete API",
+            "url": "https://deleteaccount-np60.onrender.com/"
         }
     ],
     
