@@ -6658,20 +6658,60 @@ function __isSuperAdminNow() {
 
 window.batKhanCap = function() {
     console.log('%c🎮 batKhanCap() được gọi', 'color:#94a3b8;font-style:italic');
+    
     if (!currentUser || !currentUser.email) {
         console.error('%c❌ Chưa đăng nhập!', 'color:#dc2626;font-weight:bold');
         return;
     }
     if (!__isSuperAdminNow()) {
-        console.error('%c🚫 CHỈ SUPER ADMIN mới dùng được lệnh này!', 'color:#dc2626;font-weight:bold;font-size:14px');
+        console.error('%c🚫 CHỈ SUPER ADMIN mới dùng được lệnh này!', 
+                     'color:#dc2626;font-weight:bold;font-size:14px');
         console.error('Email của bạn:', currentUser.email);
         return;
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       ⭐ XÓA TẤT CẢ syncKey CŨ
+       Để lần tắt sau sẽ sync lại tất cả user (không bỏ sót)
+       ═══════════════════════════════════════════════════════════ */
+    var syncKeysRemoved = 0;
+    var keysToRemove = [];
+    
+    try {
+        for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && k.indexOf('synced_emergency_') === 0) {
+                keysToRemove.push(k);
+            }
+        }
+        
+        keysToRemove.forEach(function(k) {
+            localStorage.removeItem(k);
+            syncKeysRemoved++;
+        });
+        
+        if (syncKeysRemoved > 0) {
+            console.log('%c🧹 Đã xóa ' + syncKeysRemoved + ' syncKeys cũ', 
+                        'color:#f59e0b;font-weight:bold');
+        } else {
+            console.log('%c🧹 Không có syncKey cũ nào', 'color:#94a3b8');
+        }
+    } catch(e) {
+        console.warn('Lỗi xóa syncKey:', e);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       BẬT EMERGENCY MODE
+       ═══════════════════════════════════════════════════════════ */
     localStorage.setItem('EMERGENCY_QUOTA_MODE', 'true');
-    console.log('%c🚨 ĐÃ BẬT CHẾ ĐỘ KHẨN CẤP', 'color:#dc2626;font-weight:bold;font-size:16px');
+    
+    console.log('%c🚨 ĐÃ BẬT CHẾ ĐỘ KHẨN CẤP', 
+                'color:#dc2626;font-weight:bold;font-size:16px');
+    console.log('%c→ Lần tắt sau sẽ sync lại tất cả user', 'color:#666');
+    console.log('%c→ Reload trang sau 1 giây...', 'color:#f59e0b');
+    
     setTimeout(function() { location.reload(); }, 1000);
 };
-
 window.tatKhanCap = async function() {
     console.log('%c🎮 tatKhanCap() được gọi', 'color:#94a3b8;font-style:italic');
     
