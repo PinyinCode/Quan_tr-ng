@@ -5,8 +5,7 @@
       "has": [
         {
           "type": "host",
-          "value": "tuhoctiengtrung.org",
-          "operator": "not"
+          "value": "hoctiengtrung.ddns.net"
         }
       ],
       "destination": "https://tuhoctiengtrung.org/$1",
