@@ -2774,6 +2774,12 @@ function renderExpiryBanner() {
     if (!banner) return;
 
     try {
+        /* ═══ 🚨 KIỂM TRA CHẾ ĐỘ KHẨN CẤP — ẨN BANNER KHI BẬT ═══ */
+        if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+            banner.style.display = 'none';
+            return;
+        }
+
         if (!currentUser) {
             banner.style.display = 'none';
             return;
@@ -2874,7 +2880,6 @@ function renderExpiryBanner() {
 
     } catch (err) {
         console.warn('⚠️ Lỗi render expiry banner (Fallback active):', err);
-        // Trường hợp ngoại lệ xảy ra, ẩn banner đi hoặc hiện thông báo nhẹ nhàng thay vì treo giao diện
         banner.style.display = 'none';
     }
 }
