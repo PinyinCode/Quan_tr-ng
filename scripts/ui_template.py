@@ -3546,12 +3546,6 @@ body.practice-full-open .pf-tiktok-float {
         max-width: 90% !important;
     }
 }
-    # Thêm đoạn này vào trong build_layout_css():
-    css_lines.append("")
-    css_lines.append("/* Ép ẩn hoàn toàn banner hết hạn / gia hạn */")
-    css_lines.append("#expiryBanner, #vocabWarningBanner {")
-    css_lines.append("    display: none !important;")
-    css_lines.append("}")
 
 """
 def build_ui_html():
@@ -3633,6 +3627,7 @@ def build_ui_html():
             <i class="fas fa-chevron-down ds-arrow"></i>
             <span class="ds-new-badge" id="dsNewBadge">NEW</span>
         </button>
+        <!-- __FAV_DATASET_TAB__ -->
     </div>
     <div class="ds-sub-wrap" id="dsSubWrap" style="display:none">
         <div class="ds-sub-label">
@@ -3669,6 +3664,9 @@ def build_ui_html():
 </div>
 <main class="main" id="mainContent" style="display:none">
 <div class="container">
+
+<!-- __QUICK_INTRO_BANNER__ -->
+
 
 <div class="expiry-banner" id="expiryBanner" style="display:none">
     <div class="expiry-banner-icon" id="expiryBannerIcon">
@@ -3914,31 +3912,7 @@ def build_ui_html():
         </div>
     </div>
 </div>
-
-<script>
-(function() {
-    function forceHideExpiryBanner() {
-        try {
-            var expBanner = document.getElementById('expiryBanner');
-            if (expBanner) {
-                // Ép ẩn hẳn banner này đi bằng display none với !important
-                expBanner.style.setProperty('display', 'none', 'important');
-            }
-        } catch(e) {}
-    }
-    // Chạy liên tục để đè lên các script gốc của trang web đang cố bật lại banner
-    setInterval(forceHideExpiryBanner, 200);
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', forceHideExpiryBanner);
-    } else {
-        forceHideExpiryBanner();
-    }
-})();
-</script>
-
 """
-
-
 def build_ui_js():
     return r"""
 var filtered = [];
