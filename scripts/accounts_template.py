@@ -3938,6 +3938,7 @@ function renderRenewalStep1() {
                 '<div class="pkg-unit" style="font-size:.75rem;">' + escapeHtml(permanentPkg.save || 'Dùng mãi mãi — Không lo hết hạn') + '</div></div></div>';
     }
     $('renewalBody').innerHTML =
+        emergencyBanner +
         '<div class="renewal-current ' + currentCls + '">' +
             '<div class="rc-icon"><i class="fas ' + currentIcon + '"></i></div>' +
             '<div class="rc-info"><div class="rc-title">' + currentTitle + '</div>' +
