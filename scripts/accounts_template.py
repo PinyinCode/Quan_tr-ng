@@ -5326,6 +5326,70 @@ window.approveRenewal = async function(reqId) {
         return;
     }
     if (!confirm('Xác nhận đã nhận tiền và gia hạn?')) return;
+
+    /* ═══ 🚨 TRƯỜNG HỢP 1: BẬT CHẾ ĐỘ KHẨN CẤP (Duyệt qua Local Cache) ═══ */
+    if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+        try {
+            // Tìm thông tin yêu cầu trong danh sách local hoặc dữ liệu tạm
+            var pendingLocal = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]');
+            var req = pendingLocal.find(function(item) { return item.email && (item.transferCode === reqId || item.email === reqId); });
+
+            var emailClean = req ? req.email.toLowerCase() : reqId.toLowerCase();
+            var days = req ? req.days : 30; // Mặc định 30 ngày nếu duyệt trực tiếp theo email
+            var isPermanent = req ? (req.isPermanent || req.package === 'forever') : false;
+
+            // 1. Tính toán ngày hết hạn mới
+            var now = new Date();
+            var newExpiryDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+            // 2. Ghi đè trực tiếp vào Cache Local của User
+            var cacheKey = 'user_cache_' + emailClean;
+            var cached = null;
+            try { cached = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(e) {}
+
+            var updatedUserData = (cached && cached.data) ? cached.data : {
+                email: emailClean,
+                name: emailClean.split('@')[0],
+                role: 'user'
+            };
+
+            updatedUserData.expiresAt = isPermanent ? null : newExpiryDate.toISOString();
+            updatedUserData.isPermanent = isPermanent;
+            updatedUserData.tier = 'active';
+            updatedUserData.isTrial = false;
+            updatedUserData.isExpiredOnly = false;
+
+            localStorage.setItem(cacheKey, JSON.stringify({
+                data: updatedUserData,
+                expires: Date.now() + 30 * 24 * 60 * 60 * 1000
+            }));
+
+            // 3. Đưa vào hàng đợi để chờ tự động đẩy lên Firestore khi tắt Chế độ Khẩn cấp
+            var approvedQueue = JSON.parse(localStorage.getItem('pending_approved_renewals') || '[]');
+            approvedQueue.push({
+                email: emailClean,
+                isPermanent: isPermanent,
+                newExpiresAt: isPermanent ? null : newExpiryDate.toISOString(),
+                approvedAtMs: Date.now()
+            });
+            localStorage.setItem('pending_approved_renewals', JSON.stringify(approvedQueue));
+
+            // Xóa khỏi đơn chờ local nếu có
+            pendingLocal = pendingLocal.filter(function(item) { return item.email !== emailClean; });
+            localStorage.setItem('pending_renewals_local', JSON.stringify(pendingLocal));
+
+            alert('✅ [Emergency Mode] Đã duyệt gia hạn thành công cho ' + emailClean + '!\n\n(Hạn dùng mới đã cập nhật local cho học viên và sẽ tự đồng bộ lên Firestore khi tắt Safe Mode).');
+            loadRenewals();
+            loadUsers(true);
+            return;
+        } catch(err) {
+            console.error('Lỗi duyệt gia hạn ở Chế độ khẩn cấp:', err);
+            alert('❌ Có lỗi khi duyệt gia hạn cục bộ!');
+            return;
+        }
+    }
+
+    // 🟢 TRƯỜNG HỢP 2: CHẠY BÌNH THƯỜNG TRÊN FIRESTORE
     try {
         var reqDoc = await db.collection('renewal_requests').doc(reqId).get();
         if (!reqDoc.exists) return alert('Không tìm thấy yêu cầu!');
@@ -5386,6 +5450,7 @@ window.approveRenewal = async function(reqId) {
         loadUsers(true);
     } catch(e) { alert('❌ Lỗi: ' + e.message); }
 };
+
 
 window.rejectRenewal = async function(reqId) {
     if (!isSuperAdmin() && !hasPermission('canRenew')) {
