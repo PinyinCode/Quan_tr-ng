@@ -1876,6 +1876,115 @@ function hasPermission(permKey) {
     }
     return perms[permKey] === true;
 }
+// Kiểm tra xem chế độ khẩn cấp có đang bật không
+function isEmergencyModeActive() {
+    try {
+        return localStorage.getItem('EMERGENCY_QUOTA_MODE') === 'true';
+    } catch(e) {
+        return false;
+    }
+}
+
+// Hàm gạt công tắc (Chỉ Super Admin chạy được)
+function toggleEmergencyMode(checkbox) {
+    var isSuperAdmin = currentUser && 
+                       currentUser.email && 
+                       typeof SUPER_ADMIN !== 'undefined' && 
+                       currentUser.email.toLowerCase() === SUPER_ADMIN.toLowerCase();
+
+    if (!isSuperAdmin) {
+        alert('🚫 Bạn không có quyền thực hiện thao tác này!');
+        if (checkbox) checkbox.checked = !checkbox.checked;
+        return;
+    }
+
+    var isActive = checkbox ? checkbox.checked : !isEmergencyModeActive();
+    
+    try {
+        localStorage.setItem('EMERGENCY_QUOTA_MODE', isActive ? 'true' : 'false');
+    } catch(e) {}
+
+    if (isActive) {
+        alert('🚨 Đã BẬT Chế độ khẩn cấp!\n\nHệ thống sẽ bỏ qua kết nối Firestore. User mới và cũ vẫn đăng nhập/đăng ký bình thường.');
+    } else {
+        alert('✅ Đã TẮT Chế độ khẩn cấp.\n\nHệ thống sẽ kết nối lại Firebase Firestore bình thường.');
+    }
+    
+    location.reload(); // Tải lại trang để áp dụng
+}
+
+// Hàm đồng bộ tài khoản mới đăng ký trong lúc bật khẩn cấp lên Firestore khi quota hồi phục
+async function syncEmergencyUserIfNeeded() {
+    if (isEmergencyModeActive() || !currentUser || !currentUser.email || !db) return;
+    
+    var email = currentUser.email.toLowerCase();
+    var syncKey = 'synced_emergency_' + email;
+    
+    if (localStorage.getItem(syncKey) === 'true') return;
+
+    try {
+        var docRef = db.collection('allowed_users').doc(email);
+        var doc = await docRef.get();
+
+        if (!doc.exists) {
+            console.log('🔄 Đang đồng bộ tài khoản mới từ chế độ khẩn cấp lên Firestore...');
+            
+            var days = (typeof TRIAL_DAYS === 'number' && TRIAL_DAYS > 0) ? TRIAL_DAYS : 3;
+            var expiresAt = new Date(Date.now() + days * 86400000);
+            expiresAt.setHours(23, 59, 59, 0);
+
+            await docRef.set({
+                email: email,
+                name: currentUser.name || email.split('@')[0],
+                role: 'user',
+                expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
+                registeredAt: firebase.firestore.FieldValue.serverTimestamp(),
+                isTrial: true,
+                tier: 'trial',
+                trialMaxQuestions: (typeof TRIAL_MAX_QUESTIONS === 'number') ? TRIAL_MAX_QUESTIONS : 50,
+                trialMaxHSK: (typeof TRIAL_MAX_HSK === 'number') ? TRIAL_MAX_HSK : 5
+            });
+
+            localStorage.setItem(syncKey, 'true');
+            console.log('✅ Đồng bộ tài khoản mới lên Firestore thành công!');
+        } else {
+            localStorage.setItem(syncKey, 'true');
+        }
+    } catch (e) {
+        console.warn('⚠️ Chưa thể đồng bộ tài khoản lên Firestore:', e.message);
+    }
+}
+function renderEmergencyModeWidget() {
+    var container = document.getElementById('emergencyModeContainer'); // Thay thế bằng id element thực tế trong HTML của bạn
+    if (!container) return;
+
+    var isSuperAdmin = currentUser && 
+                       currentUser.email && 
+                       typeof SUPER_ADMIN !== 'undefined' && 
+                       currentUser.email.toLowerCase() === SUPER_ADMIN.toLowerCase();
+
+    // Nếu không phải Super Admin thì ẩn hoàn toàn
+    if (!isSuperAdmin) {
+        container.innerHTML = '';
+        return;
+    }
+
+    var isChecked = isEmergencyModeActive() ? 'checked' : '';
+
+    container.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding: .75rem 1rem; background: rgba(239, 68, 68, 0.1); border: 1.5px dashed var(--danger, #ef4444); border-radius: 10px; margin-bottom: 1rem;">
+            <div>
+                <div style="font-weight: 800; font-size: .85rem; color: var(--danger, #ef4444);">🚨 Chế độ khẩn cấp (Super Admin)</div>
+                <div style="font-size: .72rem; color: var(--text-3, #6b7280);">Bật để bỏ qua Firestore, cho phép đăng ký/đăng nhập qua LocalStorage khi hết Quota.</div>
+            </div>
+            <label style="position:relative; display:inline-block; width:40px; height:24px;">
+                <input type="checkbox" id="emergencyQuotaSwitch" ${isChecked} onchange="toggleEmergencyMode(this)" style="opacity:0; width:0; height:0;">
+                <span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:${isEmergencyModeActive() ? '#ef4444' : '#ccc'}; transition:.4s; border-radius:24px;"></span>
+            </label>
+        </div>
+    `;
+}
+
 
 function showUserChangedToast(message, type) {
     var old = document.getElementById('userChangedToast');
