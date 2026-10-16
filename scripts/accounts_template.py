@@ -4020,10 +4020,18 @@ async function autoExpireOldRenewals() {
         console.warn('[Auto-expire] Lỗi (không quan trọng):', e.message);
     }
 }
+/* ============ CẬP NHẬT: TỐI ƯU AUTO-EXPIRE CHỈ CHO ADMIN ============ */
 function scheduleAutoExpire() {
-    setTimeout(autoExpireOldRenewals, 10000);
-    setInterval(autoExpireOldRenewals, 60 * 60 * 1000);
+    // 🛑 CHỈ CHO PHÉP ADMIN MỚI CHẠY TIẾN TRÌNH TỰ ĐỘNG QUÉT ĐƠN GIA HẠN
+    if (currentUser && currentUser.role === 'admin') {
+        console.log('[Auto-expire] Admin detected — khởi động lịch quét tự động.');
+        setTimeout(autoExpireOldRenewals, 10000);
+        setInterval(autoExpireOldRenewals, 60 * 60 * 1000); // 1 tiếng/lần
+    } else {
+        console.log('[Auto-expire] User thường — bỏ qua tiến trình quét ngầm để tiết kiệm quota.');
+    }
 }
+
 
 /* ============ LỊCH SỬ GIA HẠN (USER) ============ */
 window.openRenewalHistory = async function() {
