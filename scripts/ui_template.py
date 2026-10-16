@@ -3911,24 +3911,25 @@ def build_ui_html():
 
 <script>
 (function() {
-    function autoHideAdminBanner() {
+    function forceHideExpiryBanner() {
         try {
-            var role = (window.currentUser && window.currentUser.role) || localStorage.getItem('cached_user_role');
-            if (role === 'admin') {
-                var expBanner = document.getElementById('expiryBanner');
-                if (expBanner && expBanner.style.display !== 'none') {
-                    expBanner.style.display = 'none';
-                }
-                var vocabBanner = document.getElementById('vocabWarningBanner');
-                if (vocabBanner) {
-                    vocabBanner.remove();
-                }
+            var expBanner = document.getElementById('expiryBanner');
+            if (expBanner) {
+                // Ép ẩn hẳn banner này đi bằng display none với !important
+                expBanner.style.setProperty('display', 'none', 'important');
             }
         } catch(e) {}
     }
-    setInterval(autoHideAdminBanner, 400);
+    // Chạy liên tục để đè lên các script gốc của trang web đang cố bật lại banner
+    setInterval(forceHideExpiryBanner, 200);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', forceHideExpiryBanner);
+    } else {
+        forceHideExpiryBanner();
+    }
 })();
 </script>
+
 """
 
 
