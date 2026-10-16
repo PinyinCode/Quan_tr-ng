@@ -2193,6 +2193,46 @@ async function handleAuthChange(user) {
     /* ═══ END CHẶN ANONYMOUS ═══ */
 
     var email = (user.email || '').toLowerCase();
+    var isSuper = (typeof SUPER_ADMIN !== 'undefined' && email === SUPER_ADMIN.toLowerCase());
+
+    /* ═══ KIỂM TRA CHẾ ĐỘ KHẨN CẤP (EMERGENCY MODE) ═══ */
+    if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+        console.warn('🚨 [EMERGENCY MODE] Đang bật — Bỏ qua Firestore để chống lỗi Quota!');
+        
+        var cachedEmergency = null;
+        try { cachedEmergency = JSON.parse(localStorage.getItem('user_cache_' + email) || 'null'); } catch(e) {}
+
+        currentUser = (cachedEmergency && cachedEmergency.data) ? cachedEmergency.data : {
+            email: email,
+            name: user.displayName || email.split('@')[0],
+            role: isSuper ? 'admin' : 'user',
+            photo: user.photoURL || '',
+            expiresAt: null,
+            isPermanent: true,
+            tier: 'active'
+        };
+
+        isDemo = false;
+        publishTierState();
+        applyUserUI();
+
+        if (!appInitialized) {
+            initApp();
+            appInitialized = true;
+        } else {
+            if (typeof refreshApp === 'function') refreshApp();
+        }
+
+        if (typeof buildFilters === 'function') buildFilters();
+        if (typeof applyFilter === 'function') applyFilter();
+        if (typeof updateResultCount === 'function') updateResultCount();
+        if (typeof markCurrentDatasetActive === 'function') markCurrentDatasetActive();
+        if (typeof favUpdateLockState === 'function') favUpdateLockState();
+
+        return; // ⛔ Dừng lại hoàn toàn, không gọi Firestore, chống lỗi quota tuyệt đối!
+    }
+    /* ═══ END CHẾ ĐỘ KHẨN CẤP ═══ */
+
     var cacheKey = 'user_cache_' + email;
     var cached = null;
     try { cached = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(e) {}
@@ -2454,11 +2494,14 @@ async function handleAuthChange(user) {
         watchCurrentUser();
         startRTDBPresence();
 
+        // 🔄 Gọi đồng bộ tự động nếu tài khoản đăng ký lúc khẩn cấp
+        if (typeof syncEmergencyUserIfNeeded === 'function') {
+            await syncEmergencyUserIfNeeded();
+        }
+
     } catch(e) {
         console.error('Auth check error (Quota/Network):', e);
         
-        // 🛑 FALLBACK KHI HẾT QUOTA HOẶC LỖI MẠNG: 
-        // Thử tìm xem trong localStorage có cache cũ dù đã hết hạn (expired) hay không để chống kẹt "Đang cập nhật..."
         var staleCache = null;
         try { staleCache = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(err) {}
 
@@ -2468,7 +2511,7 @@ async function handleAuthChange(user) {
             isDemo = false;
 
             publishTierState();
-            applyUserUI(); // Render giao diện và banner dựa trên cache cũ
+            applyUserUI();
 
             if (!appInitialized) {
                 initApp();
@@ -2477,12 +2520,12 @@ async function handleAuthChange(user) {
                 if (typeof refreshApp === 'function') refreshApp();
             }
         } else {
-            // Nếu hoàn toàn không có cache nào thì mới rơi về chế độ demo
             isDemo = true;
             enterDemoMode();
         }
     }
 }
+
 
 /* ═══════════════════════════════════════════════════════════════
    🔄 REALTIME WATCHER
