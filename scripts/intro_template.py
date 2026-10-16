@@ -1,17 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Intro Template — Banner marquee chạy chữ giới thiệu tính năng.
+Intro Template — Banner marquee chạy chữ thông báo đổi tên miền.
 
 Cung cấp 3 hàm:
   - build_intro_css()   → CSS cho banner marquee + 2 nút mock
-  - build_intro_html()  → HTML cho banner marquee + 2 nút mock
+  - build_intro_html()  → HTML cho banner marquee + 2 nút mock (Đã rút gọn nội dung tên miền)
   - build_intro_js()    → JS điều khiển banner + highlight nút thật
-
-Đặc điểm:
-  - Chữ chạy to, đậm, nổi bật
-  - 2 nút mock (viết + mở rộng) bên phải — click để scroll + blink nút thật
-  - Ẩn banner khi ở tab Từ vựng Premium
-  - Nút #introBtn trên header → scroll đến banner + nhấp nháy
 """
 
 
@@ -21,7 +15,7 @@ Cung cấp 3 hàm:
 def build_intro_css():
     return r"""
 /* ═══════════════════════════════════════════════════════════════ */
-/* QUICK INTRO BANNER — Marquee chạy chữ quảng cáo              */
+/* QUICK INTRO BANNER — Marquee chạy chữ thông báo đổi tên miền  */
 /* ═══════════════════════════════════════════════════════════════ */
 .quick-intro-banner {
     display: flex;
@@ -317,7 +311,7 @@ body[data-vocab-mode="1"] .quick-intro-banner {
 # ═══════════════════════════════════════════════════════════════════
 def build_intro_html():
     return r"""
-<!-- QUICK INTRO BANNER — Marquee chạy chữ + 2 nút mock -->
+<!-- QUICK INTRO BANNER — Marquee thông báo đổi tên miền + 2 nút mock -->
 <div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
@@ -326,12 +320,12 @@ def build_intro_html():
     <div class="qib-marquee">
         <div class="qib-track">
             <span class="qib-item sep">
-                <i class="fas fa-bolt"></i>
-                <b>Chế độ luyện tập</b> Gõ tự do · Ghép chữ · HSK 1 → 9
+                <i class="fas fa-globe"></i>
+                <b>Thông báo:</b> Website chính thức đổi sang tên miền quốc tế: tuhoctiengtrung.org
             </span>
             <span class="qib-item sep">
-                <i class="fas fa-bolt"></i>
-                <b>Chế độ luyện tập</b> Gõ tự do · Ghép chữ · HSK 1 → 9
+                <i class="fas fa-globe"></i>
+                <b>Thông báo:</b> Website chính thức đổi sang tên miền quốc tế: tuhoctiengtrung.org
             </span>
         </div>
     </div>
