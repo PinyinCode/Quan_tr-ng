@@ -1,9 +1,0 @@
-{
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "destination": "https://tuhoctiengtrung.org/$1",
-      "permanent": true
-    }
-  ]
-}
