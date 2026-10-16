@@ -1126,10 +1126,23 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     return patch_grading_js(js)
 
 
+EXPIRY_BANNER_FIX_JS = r"""
+document.addEventListener("DOMContentLoaded", function() {
+    var banner = document.getElementById('expiryBanner');
+    if (banner) {
+        banner.style.display = 'none';
+        var descEl = document.getElementById('expiryBannerDesc');
+        if (descEl) {
+            descEl.innerHTML = '';
+        }
+    }
+});
+"""
 
 
 full_js = (
     build_config_js(CONFIG)
+    + "\n/* EXPIRY BANNER FIX */\n" + EXPIRY_BANNER_FIX_JS
     + "\n/* AUTO SCALE */\n" + build_auto_scale_js()
     + "\n/* TELEGRAM */\n" + build_telegram_notify_js()
     + "\n/* UI */\n" + patch_js(build_ui_js())
