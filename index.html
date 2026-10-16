@@ -14239,19 +14239,6 @@ var $ = function(id) { return document.getElementById(id); };
   window.SITE_NAME = "Thảo nói 中文";
 
 
-/* EXPIRY BANNER FIX */
-
-document.addEventListener("DOMContentLoaded", function() {
-    var banner = document.getElementById('expiryBanner');
-    if (banner) {
-        banner.style.display = 'none';
-        var descEl = document.getElementById('expiryBannerDesc');
-        if (descEl) {
-            descEl.innerHTML = '';
-        }
-    }
-});
-
 /* AUTO SCALE */
 
 (function setupAutoScale(){
