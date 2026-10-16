@@ -3558,7 +3558,7 @@ def build_ui_html():
     <div class="logo-icon"><i class="fas fa-language"></i></div>
     <div class="logo-text">
         <div class="title">
-            <span class="title-text">Học tiếng Trung</span>
+            <span class="title-text">Tuhoctiengtrung</span>
             <span class="hsk-badge">HSK</span>
         </div>
     </div>
