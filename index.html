@@ -3562,12 +3562,6 @@ body.practice-full-open .pf-tiktok-float {
         max-width: 90% !important;
     }
 }
-    # Thêm đoạn này vào trong build_layout_css():
-    css_lines.append("")
-    css_lines.append("/* Ép ẩn hoàn toàn banner hết hạn / gia hạn */")
-    css_lines.append("#expiryBanner, #vocabWarningBanner {")
-    css_lines.append("    display: none !important;")
-    css_lines.append("}")
 
 
 
@@ -12923,6 +12917,12 @@ body.has-floating-group #quickSearchRoot{
             <i class="fas fa-chevron-down ds-arrow"></i>
             <span class="ds-new-badge" id="dsNewBadge">NEW</span>
         </button>
+        <button class="ds-btn ds-btn-primary" data-dataset-group="favorites" id="dsFavBtn">
+            <i class="far fa-heart"></i>
+            <span>Yêu thích</span>
+            <span class="ds-fav-badge" id="favTabBadge" data-count="0"></span>
+            <i class="fas fa-lock ds-fav-lock" id="favTabLock" style="display:none;"></i>
+        </button>
     </div>
     <div class="ds-sub-wrap" id="dsSubWrap" style="display:none">
         <div class="ds-sub-label">
@@ -12959,6 +12959,48 @@ body.has-floating-group #quickSearchRoot{
 </div>
 <main class="main" id="mainContent" style="display:none">
 <div class="container">
+
+
+<!-- QUICK INTRO BANNER — Marquee thông báo đổi tên miền + 2 nút mock -->
+<div class="quick-intro-banner" id="quickIntroBanner">
+    <div class="qib-icon">
+        <i class="fas fa-bullhorn"></i>
+    </div>
+
+    <div class="qib-marquee">
+        <div class="qib-track">
+            <span class="qib-item sep">
+                <i class="fas fa-globe"></i>
+                <b>Tuhoctiengtrung.org:</b> Thông báo: Website chính thức đổi sang tên miền quốc tế [Https://tuhoctiengtrung.org] từ 15/10/2026!
+            </span>
+            <span class="qib-item sep">
+                <i class="fas fa-globe"></i>
+                <b>Tuhoctiengtrung.org:</b> Thông báo: Website chính thức đổi sang tên miền quốc tế [Https://tuhoctiengtrung.org] từ 15/10/2026!
+            </span>
+        </div>
+    </div>
+
+    <div class="qib-mock-actions">
+        <button type="button" class="qib-mock-btn write"
+                id="qibMockWriteBtn"
+                title="Bấm nút này trên mỗi câu để luyện viết chữ Hán">
+            <i class="fas fa-pen-fancy"></i>
+        </button>
+        <button type="button" class="qib-mock-btn full"
+                id="qibMockFullBtn"
+                title="Bấm nút này trên mỗi câu để mở chế độ luyện tập toàn màn hình">
+            <i class="fas fa-expand"></i>
+        </button>
+    </div>
+
+    <div class="qib-actions">
+        <button class="qib-btn-ghost" id="quickIntroDismiss" title="Đóng">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+</div>
+
+
 
 <div class="expiry-banner" id="expiryBanner" style="display:none">
     <div class="expiry-banner-icon" id="expiryBannerIcon">
@@ -13284,28 +13326,6 @@ body.has-floating-group #quickSearchRoot{
         </div>
     </div>
 </div>
-
-<script>
-(function() {
-    function forceHideExpiryBanner() {
-        try {
-            var expBanner = document.getElementById('expiryBanner');
-            if (expBanner) {
-                // Ép ẩn hẳn banner này đi bằng display none với !important
-                expBanner.style.setProperty('display', 'none', 'important');
-            }
-        } catch(e) {}
-    }
-    // Chạy liên tục để đè lên các script gốc của trang web đang cố bật lại banner
-    setInterval(forceHideExpiryBanner, 200);
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', forceHideExpiryBanner);
-    } else {
-        forceHideExpiryBanner();
-    }
-})();
-</script>
-
 
 
 <div class="login-modal" id="loginModal">
