@@ -1,0 +1,16 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "tuhoctiengtrung.org",
+          "operator": "not"
+        }
+      ],
+      "destination": "https://tuhoctiengtrung.org/$1",
+      "permanent": true
+    }
+  ]
+}
