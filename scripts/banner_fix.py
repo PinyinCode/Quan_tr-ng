@@ -1,23 +1,26 @@
 # -*- coding: utf-8 -*-
 """
-Module FIX BANNER — Độc lập, không đụng accounts.py gốc.
+banner_fix.py — Module độc lập fix banner hiện sai khi Firestore chết/slow.
 
-Vấn đề đang fix:
-  - Firestore chết/slow → banner hiện sai (báo "sắp hết hạn" cho admin/active)
-  - renderExpiryBanner() + updateDemoBannerByTier() có quá nhiều lớp guard chồng chéo
-  - Không có cơ chế timeout khi Firestore không trả lời
+VẤN ĐỀ:
+  - Firestore không trả lời (quota/timeout) → currentUser null hoặc cache rỗng
+  - Banner mặc định đang hiển thị trạng thái DEMO
+  - Khi user thực ra là admin/active nhưng Firestore chưa kịp trả → banner báo sai
 
-Giải pháp:
-  1. Timeout guard 10s: nếu Firestore không trả lời → ẩn hết banner
-  2. Ghi đè 2 hàm cũ (renderExpiryBanner, updateDemoBannerByTier) bằng
-     1 hàm duy nhất updateAllBanners() — logic phẳng, dễ trace
-  3. Tự động hook vào các điểm quan trọng trong accounts.py
+GIẢI PHÁP:
+  1. Timeout guard 10s: hết 10s Firestore không phản hồi → ẩn HẾT banner
+  2. Ghi đè renderExpiryBanner() + updateDemoBannerByTier() cũ
+     bằng 1 hàm duy nhất updateAllBanners() logic phẳng
+  3. Tự hook vào auth.signInWithPopup / signOut / showLoginModal để reset timer
+  4. Định kỳ re-render banner 30s/lần để đề phòng state thay đổi âm thầm
 
-CÁCH DÙNG (trong main.py):
+CÁCH DÙNG trong build.py:
     import banner_fix
     ...
-    auth_js = build_all_auth(config)[2]      # JS cũ
-    auth_js = banner_fix.apply_banner_fix(auth_js)   # ⭐ Fix ở đây
+    auth_css, auth_html, auth_js = build_all_auth(CONFIG)
+    auth_js = banner_fix.apply_banner════_fix(auth_js)   # ⭐ 1 d════òng duy nhất
+
+Không đụ════ng accounts_template.py gốc════════ → dễ rollback, dễ test.
 """
 
 
@@ -53,11 +56,12 @@ BANNER_FIX_JS = r"""
         __timer = setTimeout(function() {
             if (__resolved) return;
             __timeout = true;
-            console.warn('[banner_fix] ⏱️ Firestore không phản hồi sau ' + (TIMEOUT_MS / 1000) + 's — ẩn hết banner');
+            console.warn('[banner_fix] ⏱️ Firestore không phản hồi sau ' +
+                         (TIMEOUT_MS / 1000) + 's — ẩn hết banner');
 
             hideAllBannersNow();
 
-            // Tránh treo loading screen
+            /* Tránh treo loading screen khi Firebase chết */
             var ls = document.getElementById('loadingScreen');
             if (ls) ls.classList.add('hidden');
             var st = document.getElementById('stickyTop');
@@ -77,14 +81,14 @@ BANNER_FIX_JS = r"""
         }
     }
 
-    // Expose ra window để các hàm khác có thể gọi
+    /* Expose ra window */
     window.__bannerFixStartTimer   = startTimer;
     window.__bannerFixResolveTimer = resolveTimer;
     window.__bannerFixGetState = function() {
         return { resolved: __resolved, timeout: __timeout, timerActive: !!__timer };
     };
 
-    /* ═══════════════════════════════════════════════════════════════
+    /* ═══════════════════════════════════════════
        🎨 UPDATE ALL BANNERS — 1 hàm duy nhất quyết định banner nào hiện
        ═══════════════════════════════════════════════════════════════ */
     function updateAllBanners() {
@@ -134,7 +138,8 @@ BANNER_FIX_JS = r"""
         /* ── 6. Tính ngày còn lại ── */
         var expDate = null;
         try {
-            expDate = (typeof getExpiryDate === 'function') ? getExpiryDate(cu.expiresAt) : null;
+            expDate = (typeof getExpiryDate === 'function')
+                      ? getExpiryDate(cu.expiresAt) : null;
         } catch(e) {}
 
         if (!expDate || isNaN(expDate.getTime())) { hideAll(); return; }
@@ -156,8 +161,8 @@ BANNER_FIX_JS = r"""
         var banner = document.getElementById('expiryBanner');
         if (!banner) return;
 
-        var isExpired = daysLeft <= 0;
-        var isUrgent  = !isExpired && daysLeft <= 3;
+        var isExpired  = daysLeft <= 0;
+        var isUrgent   = !isExpired && daysLeft <= 3;
         var expDateStr = expDate.toLocaleDateString('vi-VN');
         var tier = (typeof currentUser !== 'undefined' && currentUser.tier) || 'active';
 
@@ -258,90 +263,90 @@ BANNER_FIX_JS = r"""
     }
 
     /* ═══════════════════════════════════════════════════════════════
-       🔁 GHI ĐÈ CÁC HÀM CŨ
+       🔁 GHI ĐÈ HÀM CŨ
        Sau khi file này chạy, mọi lời gọi renderExpiryBanner() /
        updateDemoBannerByTier() sẽ trỏ về updateAllBanners() mới.
        ═══════════════════════════════════════════════════════════════ */
-    window.updateAllBanners         = updateAllBanners;
-    window.renderExpiryBanner       = updateAllBanners;
-    window.updateDemoBannerByTier   = updateAllBanners;
+    window.updateAllBanners       = updateAllBanners;
+    window.renderExpiryBanner     = updateAllBanners;
+    window.updateDemoBannerByTier = updateAllBanners;
 
     /* ═══════════════════════════════════════════════════════════════
        🔌 HOOK VÀO CÁC ĐIỂM QUAN TRỌNG
        ═══════════════════════════════════════════════════════════════ */
 
-    /* 1. Bắt đầu đếm 10s khi DOM ready */
+    /* 1. Bắt đầu đếm khi DOM ready */
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', startTimer);
     } else {
         startTimer();
     }
 
-    /* 2. Hook vào firebase.auth().onAuthStateChanged
-       Mỗi khi auth state thay đổi → nếu Firebase trả lời → resolve timer */
+    /* 2. Hook vào firebase.auth().onAuthStateChanged */
     function hookAuth() {
         try {
             if (typeof firebase === 'undefined' || !firebase.auth) return false;
             var fbAuth = firebase.auth();
             if (!fbAuth) return false;
+            if (fbAuth.__bannerFixHooked) return true;
 
             fbAuth.onAuthStateChanged(function() {
-                /* Auth state thay đổi → Firestore sẽ sớm trả lời → resolve */
                 resolveTimer();
-                /* Nhưng chưa chắc Firestore đã trả lời — đợi updateAllBanners tự check */
+                /* Đợi Firestore trả lời rồi mới vẽ lại banner */
+                setTimeout(function() {
+                    if (typeof window.updateAllBanners === 'function') {
+                        try { window.updateAllBanners(); } catch(e) {}
+                    }
+                }, 500);
             });
+            fbAuth.__bannerFixHooked = true;
             return true;
         } catch(e) { return false; }
     }
 
-    /* Chờ firebase sẵn sàng rồi hook */
     var hookInterval = setInterval(function() {
-        if (hookAuth()) {
-            clearInterval(hookInterval);
-        }
+        if (hookAuth()) clearInterval(hookInterval);
     }, 500);
-    /* Bỏ cuộc sau 30s */
     setTimeout(function() { clearInterval(hookInterval); }, 30000);
 
-    /* 3. Hook vào handleAuthChange nếu có thể (nếu code cũ gọi thì ghi đè)
-       Không thể wrap trực tiếp vì handleAuthChange là function riêng,
-       nên ta monkey-patch auth.signInWithPopup và auth.signOut để reset timer */
+    /* 3. Hook vào auth.signInWithPopup / signOut để reset timer */
     setTimeout(function() {
         try {
             if (typeof auth === 'undefined' || !auth) return;
 
-            /* Wrap signInWithPopup */
-            if (auth.signInWithPopup && !auth.__patchedSignIn) {
+            if (auth.signInWithPopup && !auth.__bannerFixSignIn) {
                 var origSignIn = auth.signInWithPopup.bind(auth);
                 auth.signInWithPopup = function() {
                     startTimer();
                     return origSignIn.apply(null, arguments);
                 };
-                auth.__patchedSignIn = true;
+                auth.__bannerFixSignIn = true;
             }
 
-            /* Wrap signOut */
-            if (auth.signOut && !auth.__patchedSignOut) {
+            if (auth.signOut && !auth.__bannerFixSignOut) {
                 var origSignOut = auth.signOut.bind(auth);
                 auth.signOut = function() {
                     startTimer();
                     return origSignOut.apply(null, arguments);
                 };
-                auth.__patchedSignOut = true;
+                auth.__bannerFixSignOut = true;
             }
         } catch(e) {}
     }, 1500);
 
     /* 4. Hook vào showLoginModal để reset timer */
-    var origShowLogin = window.showLoginModal;
-    if (typeof origShowLogin === 'function') {
-        window.showLoginModal = function() {
-            startTimer();
-            return origShowLogin.apply(this, arguments);
-        };
-    }
+    setTimeout(function() {
+        var origShowLogin = window.showLoginModal;
+        if (typeof origShowLogin === 'function' && !origShowLogin.__bannerFixWrapped) {
+            window.showLoginModal = function() {
+                startTimer();
+                return origShowLogin.apply(this, arguments);
+            };
+            window.showLoginModal.__bannerFixWrapped = true;
+        }
+    }, 2000);
 
-    /* 5. Định kỳ re-render banner mỗi 30s (trong trường hợp state thay đổi âm thầm) */
+    /* 5. Re-render banner mỗi 30s để đề phòng state thay đổi âm thầm */
     setInterval(function() {
         if (typeof window.updateAllBanners === 'function') {
             try { window.updateAllBanners(); } catch(e) {}
@@ -349,8 +354,7 @@ BANNER_FIX_JS = r"""
     }, 30000);
 
     /* ═══════════════════════════════════════════════════════════════
-       🐛 DEBUG HELPER
-       Dùng: mở F12 → gõ __debugBannerFix()
+       🐛 DEBUG — Dùng: mở F12 → gõ __debugBannerFix()
        ═══════════════════════════════════════════════════════════════ */
     window.__debugBannerFix = function() {
         var state = window.__bannerFixGetState();
@@ -380,26 +384,27 @@ BANNER_FIX_JS = r"""
         return result;
     };
 
-    console.log('[banner_fix] ✅ Module loaded — timeout guard ' + (TIMEOUT_MS / 1000) + 's');
+    console.log('[banner_fix] ✅ Module loaded — timeout guard ' +
+                (TIMEOUT_MS / 1000) + 's');
 })();
 """
 
 
 def apply_banner_fix(js: str) -> str:
     """
-    Chèn BANNER_FIX_JS vào cuối chuỗi JS của accounts.py.
-    
+    Chèn BANNER_FIX_JS vào cuối chuỗi JS của accounts_template.
+
     Args:
-        js: Chuỗi JS từ build_accounts_js() của accounts.py
-    
+        js: Chuỗi JS từ build_all_auth() (phần tử thứ 3 của tuple trả về)
+
     Returns:
         Chuỗi JS đã được chèn fix ở cuối
     """
     if not js:
-        return js
+        return BANNER_FIX_JS
     return js + "\n\n" + BANNER_FIX_JS
 
 
 def build_banner_fix_js() -> str:
-    """Trả về riêng JS fix (nếu muốn nhúng ở file khác)."""
+    """Trả về riêng JS fix (nếu cần nhúng ở nơi khác)."""
     return BANNER_FIX_JS
