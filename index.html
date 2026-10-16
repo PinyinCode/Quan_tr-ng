@@ -19951,11 +19951,35 @@ async function handleAuthChange(user) {
         startRTDBPresence();
 
     } catch(e) {
-        console.error('Auth check error:', e);
-        isDemo = true;
-        enterDemoMode();
+        console.error('Auth check error (Quota/Network):', e);
+        
+        // 🛑 FALLBACK KHI HẾT QUOTA HOẶC LỖI MẠNG: 
+        // Thử tìm xem trong localStorage có cache cũ dù đã hết hạn (expired) hay không để chống kẹt "Đang cập nhật..."
+        var staleCache = null;
+        try { staleCache = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(err) {}
+
+        if (staleCache && staleCache.data) {
+            console.warn('⚠️ Hết quota/Lỗi kết nối — Sử dụng dữ liệu Cache cũ để hiển thị giao diện.');
+            currentUser = staleCache.data;
+            isDemo = false;
+
+            publishTierState();
+            applyUserUI(); // Render giao diện và banner dựa trên cache cũ
+
+            if (!appInitialized) {
+                initApp();
+                appInitialized = true;
+            } else {
+                if (typeof refreshApp === 'function') refreshApp();
+            }
+        } else {
+            // Nếu hoàn toàn không có cache nào thì mới rơi về chế độ demo
+            isDemo = true;
+            enterDemoMode();
+        }
     }
 }
+
 /* ═══════════════════════════════════════════════════════════════
    🔄 REALTIME WATCHER
    ═══════════════════════════════════════════════════════════════ */
