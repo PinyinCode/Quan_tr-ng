@@ -19589,6 +19589,100 @@ function renderEmergencyModeWidget() {
         </div>
     `;
 }
+/* ═══════════════════════════════════════════════════════════════
+   🚨 HÀM XỬ LÝ GIA HẠN KHI BẬT CHẾ ĐỘ KHẨN CẤP (SAFE MODE)
+   ═══════════════════════════════════════════════════════════════ */
+
+// 1. User tạo/chuyển khoản đơn gia hạn trong Chế độ khẩn cấp
+function saveEmergencyRenewalRequest(reqData) {
+    try {
+        var pending = [];
+        try { pending = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]'); } catch(e) {}
+        
+        // Loại bỏ đơn cũ cùng email nếu có
+        pending = pending.filter(function(item) { return item.email !== reqData.email; });
+        pending.push(reqData);
+        
+        localStorage.setItem('pending_renewals_local', JSON.stringify(pending));
+        console.log('🚨 [Emergency] Đã lưu yêu cầu gia hạn vào LocalStorage:', reqData);
+        return true;
+    } catch(e) {
+        console.error('Lỗi lưu đơn gia hạn khẩn cấp:', e);
+        return false;
+    }
+}
+
+// 2. Tự động đồng bộ các đơn gia hạn chưa đẩy lên Firestore khi Quota phục hồi
+async function syncPendingRenewals() {
+    if (isEmergencyModeActive() || !db) return;
+
+    // A. Đồng bộ các đơn user đăng ký gia hạn lúc khẩn cấp lên renewal_requests
+    var pendingReqs = [];
+    try { pendingReqs = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]'); } catch(e) {}
+
+    if (pendingReqs.length > 0) {
+        console.log('🔄 Đang đồng bộ đơn gia hạn local lên Firestore...', pendingReqs);
+        var remainingReqs = [];
+
+        for (var i = 0; i < pendingReqs.length; i++) {
+            var req = pendingReqs[i];
+            try {
+                await db.collection('renewal_requests').add({
+                    email: req.email,
+                    name: req.name,
+                    package: req.package,
+                    packageLabel: req.packageLabel,
+                    amount: req.amount,
+                    days: req.days,
+                    transferCode: req.transferCode,
+                    status: req.status || 'user_paid',
+                    isPermanent: req.isPermanent || false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log('✅ Đã đẩy đơn gia hạn local lên Cloud:', req.email);
+            } catch(e) {
+                console.warn('⚠️ Chưa thể đẩy đơn gia hạn của ' + req.email + ':', e.message);
+                remainingReqs.push(req);
+            }
+        }
+        localStorage.setItem('pending_renewals_local', JSON.stringify(remainingReqs));
+    }
+
+    // B. Đồng bộ các đơn Admin ĐÃ DUYỆT lúc khẩn cấp lên allowed_users & renewal_requests
+    var approvedList = [];
+    try { approvedList = JSON.parse(localStorage.getItem('pending_approved_renewals') || '[]'); } catch(e) {}
+
+    if (approvedList.length > 0) {
+        console.log('🔄 Đang đồng bộ kết quả duyệt gia hạn lên Firestore...', approvedList);
+        var remainingApproved = [];
+
+        for (var j = 0; j < approvedList.length; j++) {
+            var item = approvedList[j];
+            try {
+                var updateData = {
+                    isTrial: false,
+                    tier: 'active',
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                if (item.isPermanent) {
+                    updateData.expiresAt = null;
+                    updateData.isPermanent = true;
+                } else if (item.newExpiresAt) {
+                    updateData.expiresAt = firebase.firestore.Timestamp.fromDate(new Date(item.newExpiresAt));
+                    updateData.isPermanent = false;
+                }
+
+                await db.collection('allowed_users').doc(item.email).update(updateData);
+                console.log('✅ Đã cập nhật hạn dùng chính thức lên Firestore cho:', item.email);
+            } catch(e) {
+                console.warn('⚠️ Chưa thể đồng bộ hạn mới cho ' + item.email + ':', e.message);
+                remainingApproved.push(item);
+            }
+        }
+        localStorage.setItem('pending_approved_renewals', JSON.stringify(remainingApproved));
+    }
+}
 
 
 function showUserChangedToast(message, type) {
