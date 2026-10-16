@@ -24152,6 +24152,8 @@ document.addEventListener('click', function(e) {
 
     var HIDE_STYLE_ID = '__banner_fix_hide_style__';
     var TIMEOUT_MS = 3000;
+    var MAX_LATE_MS = 15000;      // Nếu Firestore đến sau 15s → giữ ẩn
+    var LOAD_START = Date.now();
 
     /* ─── Hàm chèn CSS ẩn banner ─── */
     function injectHideCSS() {
@@ -24209,9 +24211,26 @@ document.addEventListener('click', function(e) {
     function resolveTimer() {
         __resolved = true;
         if (__timer) { clearTimeout(__timer); __timer = null; }
-        if (!__timeout) removeHideCSS();
-    }
 
+        /* Chưa timeout → Firestore trả lời đúng hạn → cho updateAllBanners xử lý */
+        if (!__timeout) {
+            removeHideCSS();
+            return;
+        }
+
+        /* Đã timeout + Firestore trả lời muộn → Chiến lược C */
+        var elapsed = Date.now() - LOAD_START;
+        if (elapsed < MAX_LATE_MS) {
+            console.log('[banner_fix] Firestore đến muộn sau ' +
+                        (elapsed / 1000).toFixed(1) + 's — cập nhật lại banner');
+            __timeout = false;          // Gỡ timeout
+            updateAllBanners();          // Vẽ lại theo user thật
+        } else {
+            console.log('[banner_fix] Firestore đến quá muộn (' +
+                        (elapsed / 1000).toFixed(1) + 's) — giữ ẩn cứng');
+            /* Giữ CSS ẩn — không làm gì */
+        }
+    }
     /* ═══════════════════════════════════════════════════════════════
        UPDATE ALL BANNERS — dùng CSS !important để chắc chắn ẩn
        ═══════════════════════════════════════════════════════════════ */
