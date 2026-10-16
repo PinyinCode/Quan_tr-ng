@@ -3608,6 +3608,7 @@ def build_ui_html():
 </div>
 </div>
 </div></header>
+<!-- __TIKTOK_BAR__ -->
 
 <!-- DATASET SELECTOR -->
 <div class="dataset-selector" id="datasetSelector">
@@ -3908,7 +3909,6 @@ def build_ui_html():
     </div>
 </div>
 
-<!-- ⭐ SCRIPT BẢO VỆ TỰ ĐỘNG ÉP ẨN BANNER KHI LÀ ADMIN ⭐ -->
 <script>
 (function() {
     function autoHideAdminBanner() {
@@ -3930,6 +3930,7 @@ def build_ui_html():
 })();
 </script>
 """
+
 
 def build_ui_js():
     return r"""
