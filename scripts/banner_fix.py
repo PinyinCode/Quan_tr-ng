@@ -24,7 +24,7 @@ BANNER_FIX_JS = r"""
     'use strict';
 
     var HIDE_STYLE_ID = '__banner_fix_hide_style__';
-    var TIMEOUT_MS = 10000;
+    var TIMEOUT_MS = 3000;
 
     /* ─── Hàm chèn CSS ẩn banner ─── */
     function injectHideCSS() {
