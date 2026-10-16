@@ -20477,7 +20477,7 @@ function renderExpiryBanner() {
     if (!banner) return;
 
     try {
-        /* ═══ 🚨 NẾU HẾT QUOTA / CHẾ ĐỘ KHẨN CẤP -> ẨN LUÔN BANNER ═══ */
+        /* ═══ 🚨 1. KIỂM TRA CHẾ ĐỘ KHẨN CẤP / HẾT QUOTA — ẨN BANNER ═══ */
         if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
             banner.style.display = 'none';
             return;
@@ -20489,9 +20489,9 @@ function renderExpiryBanner() {
             return;
         }
 
-        // Chặn admin / super admin / vĩnh viễn (luôn ẩn)
+        /* ═══ 🛡️ 2. CHẶN TOÀN BỘ TÀI KHOẢN ADMIN HOẶC VĨNH VIỄN ═══ */
         var userEmail = (user.email || '').toLowerCase();
-        var emergencyAdminEmails = ['hoanginvest199@gmail.com']; // Điền email admin của bạn
+        var emergencyAdminEmails = ['hoanginvest199@gmail.com']; // 👈 Thay email admin của bạn vào đây
         var superAdminEmail = (typeof SUPER_ADMIN !== 'undefined' && SUPER_ADMIN ? SUPER_ADMIN.toLowerCase() : '');
 
         var isAdminAccount = (
@@ -20510,6 +20510,7 @@ function renderExpiryBanner() {
             return;
         }
 
+        /* ═══ ⏰ 3. TÍNH TOÁN NGÀY HẾT HẠN CHO USER THƯỜNG ═══ */
         var expDate = getExpiryDate(user.expiresAt);
         if (!expDate || isNaN(expDate.getTime())) {
             banner.style.display = 'none';
@@ -20521,7 +20522,7 @@ function renderExpiryBanner() {
         var expDateStr = expDate.toLocaleDateString('vi-VN');
         var tier = user.tier || 'active';
 
-        // Nếu còn trên 7 ngày thì ẩn
+        // Nếu còn trên 7 ngày thì ẩn banner đi cho gọn
         if (daysLeft > 7) {
             banner.style.display = 'none';
             return;
@@ -20587,15 +20588,16 @@ function renderExpiryBanner() {
             };
         }
 
-        // Khi mọi thứ bình thường (hạn dưới 7 ngày) -> hiển thị banner nhắc nhở
+        // Hiển thị banner khi mọi thứ bình thường và tài khoản dưới 7 ngày hết hạn
         banner.style.display = 'flex';
 
     } catch (err) {
-        /* ═══ 🚨 NẾU CÓ BẤT KỲ LỖI NÀO (HẾT QUOTA, MẤT MẠNG) -> ẨN BANNER ═══ */
+        /* ═══ 🚨 4. BẮT MỌI LỖI PHÁT SINH (HẾT QUOTA / MẤT MẠNG) -> ẨN BANNER LUÔN ═══ */
         console.warn('⚠️ Lỗi kết nối / Hết quota -> Ẩn banner:', err);
         banner.style.display = 'none';
     }
 }
+
 
 
 
