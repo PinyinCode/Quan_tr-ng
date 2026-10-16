@@ -2878,14 +2878,36 @@ function renderExpiryBanner() {
             return;
         }
 
-        // Kiểm tra dữ liệu user, nếu không có hoặc mất mạng/lỗi -> ẩn luôn
         var user = currentUser;
-        if (!user || !user.expiresAt) {
+        if (!user) {
             banner.style.display = 'none';
             return;
         }
 
-        if (user.role === 'admin' || user.isPermanent) {
+        /* ═══ 🛡️ KIỂM TRA TẤT CẢ CÁC DẤU HIỆU CỦA ADMIN ═══ */
+        var userEmail = (user.email || '').toLowerCase();
+        
+        // Nếu bạn có danh sách email phụ của các admin khác, có thể đưa vào đây:
+        var extraAdminEmails = ['hoanginvest199@gmail.com']; 
+
+        var isAdminAccount = (
+            user.role === 'admin' || 
+            user.role === 'sub-admin' || 
+            user.isAdmin === true || 
+            user.isPermanent === true || 
+            user.tier === 'permanent' || 
+            user.tier === 'admin' ||
+            extraAdminEmails.includes(userEmail)
+        );
+
+        // Nếu là bất kỳ tài khoản admin nào -> Ẩn ngay banner
+        if (isAdminAccount) {
+            banner.style.display = 'none';
+            return;
+        }
+
+        // Nếu tài khoản thường mà không có ngày hết hạn -> ẩn
+        if (!user.expiresAt) {
             banner.style.display = 'none';
             return;
         }
@@ -2967,16 +2989,13 @@ function renderExpiryBanner() {
             };
         }
 
-        // Hiển thị bình thường khi mọi thứ ổn định
         banner.style.display = 'flex';
 
     } catch (err) {
         console.warn('⚠️ Lỗi render expiry banner -> Ẩn banner do sự cố:', err);
-        // Ẩn ngay banner nếu có bất kỳ lỗi bất thường nào xảy ra (hết quota, mất kết nối...)
         banner.style.display = 'none';
     }
 }
-
 
 /* ═══════════════════════════════════════════════════════════════
    ✅ ĐỒNG BỘ TRẠNG THÁI DROPDOWN USER MENU
