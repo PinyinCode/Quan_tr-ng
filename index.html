@@ -20193,9 +20193,14 @@ async function handleAuthChange(user) {
         watchCurrentUser();
         startRTDBPresence();
 
-        // 🔄 Gọi đồng bộ tự động nếu tài khoản đăng ký lúc khẩn cấp
+        // 🔄 1. Gọi đồng bộ tài khoản mới tạo lúc bật chế độ khẩn cấp (nếu có)
         if (typeof syncEmergencyUserIfNeeded === 'function') {
             await syncEmergencyUserIfNeeded();
+        }
+
+        // 🔄 2. Gọi đồng bộ danh sách gia hạn & duyệt gia hạn lúc bật chế độ khẩn cấp (nếu có)
+        if (typeof syncPendingRenewals === 'function') {
+            await syncPendingRenewals();
         }
 
     } catch(e) {
@@ -20224,7 +20229,6 @@ async function handleAuthChange(user) {
         }
     }
 }
-
 
 /* ═══════════════════════════════════════════════════════════════
    🔄 REALTIME WATCHER
