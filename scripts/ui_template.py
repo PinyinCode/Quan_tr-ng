@@ -3608,7 +3608,6 @@ def build_ui_html():
 </div>
 </div>
 </div></header>
-<!-- __TIKTOK_BAR__ -->
 
 <!-- DATASET SELECTOR -->
 <div class="dataset-selector" id="datasetSelector">
@@ -3627,7 +3626,6 @@ def build_ui_html():
             <i class="fas fa-chevron-down ds-arrow"></i>
             <span class="ds-new-badge" id="dsNewBadge">NEW</span>
         </button>
-        <!-- __FAV_DATASET_TAB__ -->
     </div>
     <div class="ds-sub-wrap" id="dsSubWrap" style="display:none">
         <div class="ds-sub-label">
@@ -3664,9 +3662,6 @@ def build_ui_html():
 </div>
 <main class="main" id="mainContent" style="display:none">
 <div class="container">
-
-<!-- __QUICK_INTRO_BANNER__ -->
-
 
 <div class="expiry-banner" id="expiryBanner" style="display:none">
     <div class="expiry-banner-icon" id="expiryBannerIcon">
@@ -3912,7 +3907,30 @@ def build_ui_html():
         </div>
     </div>
 </div>
+
+<!-- ⭐ SCRIPT BẢO VỆ TỰ ĐỘNG ÉP ẨN BANNER KHI LÀ ADMIN ⭐ -->
+<script>
+(function() {
+    function autoHideAdminBanner() {
+        try {
+            var role = (window.currentUser && window.currentUser.role) || localStorage.getItem('cached_user_role');
+            if (role === 'admin') {
+                var expBanner = document.getElementById('expiryBanner');
+                if (expBanner && expBanner.style.display !== 'none') {
+                    expBanner.style.display = 'none';
+                }
+                var vocabBanner = document.getElementById('vocabWarningBanner');
+                if (vocabBanner) {
+                    vocabBanner.remove();
+                }
+            }
+        } catch(e) {}
+    }
+    setInterval(autoHideAdminBanner, 400);
+})();
+</script>
 """
+
 def build_ui_js():
     return r"""
 var filtered = [];
