@@ -120,6 +120,8 @@ VOCAB_WARNING_CSS = r"""
     .vocab-warning-text span { font-size: .74rem; }
 }
 """
+
+
 def build_vocab_js_patch():
     return r"""
 (function() {
@@ -136,28 +138,11 @@ def build_vocab_js_patch():
             else if (typeof currentUser !== 'undefined' && currentUser) u = currentUser;
         } catch(e) {}
 
-        // ⭐ KỂM TRA DỰ PHÒNG TỪ LOCALSTORAGE KHI FIRESTORE LỖI HOẶC CHƯA TẢI XONG
-        var cachedRole = null;
-        try {
-            cachedRole = localStorage.getItem('cached_user_role');
-            if (!u) {
-                var cachedStr = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
-                if (cachedStr) u = JSON.parse(cachedStr);
-            }
-        } catch(e) {}
-
-        // Lưu lại cache role nếu u hiện tại đã có
-        if (u && u.role) {
-            try { localStorage.setItem('cached_user_role', u.role); } catch(e) {}
-        }
-
-        // Nếu là Admin (kể cả đọc từ u hay từ cache) -> Mở toàn bộ, KHÔNG có warning/banner
-        if ((u && u.role === 'admin') || cachedRole === 'admin') {
+        if (u && u.role === 'admin') {
             return { allowed: true, tier: 'admin',
                 hskAllowed: [1,2,3,4,5,6,7,8,9], maxQuestions: -1,
                 label: 'Admin - Toàn bộ HSK', warning: null };
         }
-
         if (u && u.isPermanent === true) {
             return { allowed: true, tier: 'premium',
                 hskAllowed: [1,2,3,4,5,6,7,8,9], maxQuestions: -1,
@@ -206,7 +191,7 @@ def build_vocab_js_patch():
             }
             return { allowed: true, tier: 'trial', hskAllowed: hskArr, maxQuestions: maxQ,
                 label: 'Trial - ' + hskRange,
-                warning: 'Bạn Trial giới hạn ' + hskRange và ' +
+                warning: 'Bạn Trial giới hạn ' + hskRange + ' và ' +
                          (maxQ > 0 ? maxQ + ' từ' : 'một số từ') +
                          ' — nâng cấp Premium để mở toàn bộ.' };
         }
@@ -286,17 +271,9 @@ def build_vocab_js_patch():
         }
     }
 
-    /* ⭐ BANNER GỘP — ÉP ẨN BANNER GIA HẠN KHI LÀ ADMIN */
+    /* ⭐ BANNER GỘP — hiện ở mọi tab, gộp thông tin lượt Nghe + Viết */
     function injectVocabWarningBanner() {
         var acc = getVocabAccess();
-
-        // Ép ẩn luôn banner gốc #expiryBanner nếu là Admin
-        var role = (window.currentUser && window.currentUser.role) || localStorage.getItem('cached_user_role');
-        if (acc.tier === 'admin' || role === 'admin') {
-            var expB = document.getElementById('expiryBanner');
-            if (expB) expB.style.display = 'none';
-        }
-
         if (!acc.warning) {
             var oldOut = document.getElementById('vocabWarningBanner');
             if (oldOut) oldOut.remove();
@@ -308,6 +285,7 @@ def build_vocab_js_patch():
         var main = document.getElementById('mainContent');
         if (!main) return;
 
+        /* ⭐ Tính thông tin hiển thị tuỳ tab */
         var limitedCount = 0, totalCount = 0;
         var unit = _isVocabMode() ? 'từ' : 'câu';
 
@@ -325,6 +303,7 @@ def build_vocab_js_patch():
             }
         } catch(e) {}
 
+        /* ⭐ Thông tin lượt Nghe + Viết còn lại */
         var remaining = 0;
         try {
             if (typeof getDemoRemaining === 'function') {
@@ -350,6 +329,7 @@ def build_vocab_js_patch():
         var btnFn = acc.tier === 'demo' ? 'vocabUpgradeLogin()'
                   : 'vocabUpgradeRenew()';
 
+        /* ⭐ Warning message có dấu + ngắn gọn */
         var descText = '';
         if (acc.tier === 'demo') {
             descText = 'Đăng nhập bằng Gmail để dùng toàn bộ kho câu, không giới hạn.';
@@ -515,6 +495,7 @@ def build_vocab_js_patch():
 
         updateTabLockState();
 
+        /* ⭐ Luôn inject banner ở MỌI TAB (không chỉ vocab) */
         setInterval(function() {
             updateTabLockState();
             injectVocabWarningBanner();
@@ -526,7 +507,6 @@ def build_vocab_js_patch():
     setTimeout(patchLoop, 800);
 })();
 """
-
 
 
 # =================================================================
