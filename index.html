@@ -21462,6 +21462,37 @@ window.selectPackage = function(pkgId) {
 async function goToPayment() {
     if (!renewalSelectedPkg) return;
 
+    var transferCode = generateTransferCode();
+    var amount = renewalSelectedPkg.amount;
+    var btn = $('renewalNextBtn');
+    
+    if (btn) { 
+        btn.disabled = true; 
+        btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Đang tạo...'; 
+    }
+
+    var reqData = {
+        email: currentUser.email, 
+        name: currentUser.name,
+        package: renewalSelectedPkg.id, 
+        packageLabel: renewalSelectedPkg.label,
+        amount: amount, 
+        days: renewalSelectedPkg.days,
+        transferCode: transferCode, 
+        status: 'pending', 
+        method: 'manual',
+        isPermanent: renewalSelectedPkg.permanent || false,
+        createdAtMs: Date.now()
+    };
+
+    /* ═══ 🚨 XỬ LÝ CHẾ ĐỘ KHẨN CẤP HOẶC FALLBACK KHI HẾT QUOTA ═══ */
+    if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+        saveEmergencyRenewalRequest(reqData);
+        renewalCurrentReq = { id: 'local_' + Date.now(), code: transferCode };
+        renderPaymentScreen();
+        return;
+    }
+
     try {
         var checkSnap = await db.collection('renewal_requests')
             .where('email', '==', currentUser.email)
@@ -21474,34 +21505,26 @@ async function goToPayment() {
             closeRenewalModal();
             return;
         }
-    } catch(e) {
-        console.error('Double-check error:', e);
-    }
 
-    var transferCode = generateTransferCode();
-    var amount = renewalSelectedPkg.amount;
-    var btn = $('renewalNextBtn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Đang tạo...'; }
-    try {
-        var reqData = {
-            email: currentUser.email, name: currentUser.name,
-            package: renewalSelectedPkg.id, packageLabel: renewalSelectedPkg.label,
-            amount: amount, days: renewalSelectedPkg.days,
-            transferCode: transferCode, status: 'pending', method: 'manual',
+        var reqRef = await db.collection('renewal_requests').add(Object.assign({}, reqData, {
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        if (renewalSelectedPkg.permanent) reqData.isPermanent = true;
-        var reqRef = await db.collection('renewal_requests').add(reqData);
+        }));
+        
         renewalCurrentReq = { id: reqRef.id, code: transferCode };
         checkPendingRenewalBadge();
+        renderPaymentScreen();
+        listenRenewalRequest(renewalCurrentReq.id);
+
     } catch(e) {
-        alert('❌ Lỗi tạo yêu cầu: ' + e.message);
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrow-right"></i> Tiếp tục'; }
-        return;
+        console.warn('⚠️ Lỗi Firestore khi tạo đơn gia hạn (Quota Exceeded). Chuyển sang lưu Local Emergency:', e.message);
+        
+        // Tự động lưu Local dự phòng nếu dính lỗi Quota
+        saveEmergencyRenewalRequest(reqData);
+        renewalCurrentReq = { id: 'local_' + Date.now(), code: transferCode };
+        renderPaymentScreen();
     }
-    renderPaymentScreen();
-    listenRenewalRequest(renewalCurrentReq.id);
 }
+
 
 function renderPaymentScreen() {
     var pkg = renewalSelectedPkg;
@@ -21554,19 +21577,64 @@ window.copyText = function(text, btn) {
 
 window.userConfirmPaid = async function() {
     if (!renewalCurrentReq) return;
+
     var btn = $('renewalConfirmBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Đang gửi...';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Đang gửi...';
+    }
+
+    /* ═══ 🚨 1. KIỂM TRA CHẾ ĐỘ KHẨN CẤP (EMERGENCY MODE) ═══ */
+    if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+        try {
+            var pending = [];
+            try { pending = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]'); } catch(e) {}
+
+            var emailClean = (currentUser && currentUser.email) ? currentUser.email.toLowerCase() : '';
+            var found = false;
+
+            pending.forEach(function(item) {
+                if (item.email === emailClean || item.transferCode === renewalCurrentReq.code) {
+                    item.status = 'user_paid';
+                    item.userConfirmedAtMs = Date.now();
+                    found = true;
+                }
+            });
+
+            // Nếu chưa có trong danh sách local thì tạo thêm record mới
+            if (!found && emailClean) {
+                pending.push({
+                    email: emailClean,
+                    name: (currentUser && currentUser.name) ? currentUser.name : emailClean.split('@')[0],
+                    transferCode: renewalCurrentReq.code || '',
+                    status: 'user_paid',
+                    userConfirmedAtMs: Date.now()
+                });
+            }
+
+            localStorage.setItem('pending_renewals_local', JSON.stringify(pending));
+            console.log('🚨 [Emergency] Đã lưu trạng thái user_paid vào LocalStorage cho:', emailClean);
+        } catch(err) {
+            console.warn('Lỗi ghi cache gia hạn khẩn cấp:', err);
+        }
+
+        renderPendingConfirm();
+        return; // Dừng lại ở đây, không gọi Firestore
+    }
+
+    /* ═══ 🟢 2. TRƯỜNG HỢP BÌNH THƯỜNG (KẾT NỐI FIRESTORE) ═══ */
     try {
         var _reqData = null;
         try {
             var _snap = await db.collection('renewal_requests').doc(renewalCurrentReq.id).get();
             if (_snap.exists) _reqData = _snap.data();
         } catch(_e) {}
+
         await db.collection('renewal_requests').doc(renewalCurrentReq.id).update({
             userConfirmedAt: firebase.firestore.FieldValue.serverTimestamp(),
             status: 'user_paid'
         });
+
         if (_reqData && typeof window.notifyTelegramUserPaid === 'function') {
             try {
                 window.notifyTelegramUserPaid({
@@ -21579,12 +21647,32 @@ window.userConfirmPaid = async function() {
                 });
             } catch(_te) {}
         }
+
         renderPendingConfirm();
         checkPendingRenewalBadge();
+
     } catch(e) {
-        alert('❌ Lỗi: ' + e.message);
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-check"></i> Tôi đã thanh toán';
+        console.error('Lỗi xác nhận thanh toán trên Firestore (Quota/Network):', e);
+
+        // 🛑 FALLBACK DỰ PHÒNG: Nếu dính lỗi QuotaExceeded bất ngờ khi công tắc chưa kịp bật
+        try {
+            var pendingFallback = [];
+            try { pendingFallback = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]'); } catch(err) {}
+
+            var emailFallback = (currentUser && currentUser.email) ? currentUser.email.toLowerCase() : '';
+            pendingFallback.push({
+                email: emailFallback,
+                name: (currentUser && currentUser.name) ? currentUser.name : emailFallback.split('@')[0],
+                transferCode: (renewalCurrentReq && renewalCurrentReq.code) ? renewalCurrentReq.code : '',
+                status: 'user_paid',
+                userConfirmedAtMs: Date.now()
+            });
+
+            localStorage.setItem('pending_renewals_local', JSON.stringify(pendingFallback));
+        } catch(err) {}
+
+        // Vẫn chuyển giao diện sang màn hình chờ để user không bị khó chịu
+        renderPendingConfirm();
     }
 };
 
