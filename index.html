@@ -20226,104 +20226,112 @@ function renderExpiryBanner() {
     var banner = $('expiryBanner');
     if (!banner) return;
 
-    if (!currentUser) {
-        banner.style.display = 'none';
-        return;
-    }
-    if (currentUser.role === 'admin' || currentUser.isPermanent) {
-        banner.style.display = 'none';
-        return;
-    }
-    if (!currentUser.expiresAt) {
-        banner.style.display = 'none';
-        return;
-    }
-
-    var expDate = getExpiryDate(currentUser.expiresAt);
-    if (!expDate || isNaN(expDate.getTime())) {
-        banner.style.display = 'none';
-        return;
-    }
-
-    var now = Date.now();
-    var daysLeft = Math.ceil((expDate.getTime() - now) / (24 * 60 * 60 * 1000));
-    var expDateStr = expDate.toLocaleDateString('vi-VN');
-    var tier = currentUser.tier || 'active';
-
-    if (daysLeft > 7) {
-        banner.style.display = 'none';
-        return;
-    }
-
-    var isExpired = daysLeft <= 0;
-    var isUrgent  = !isExpired && daysLeft <= 3;
-
-    banner.classList.remove('urgent', 'expired');
-    if (isExpired) {
-        banner.classList.add('expired');
-    } else if (isUrgent) {
-        banner.classList.add('urgent');
-    }
-
-    var iconWrap = $('expiryBannerIcon') || banner.querySelector('.expiry-banner-icon');
-    if (iconWrap) {
-        if (isExpired) {
-            iconWrap.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-        } else if (isUrgent) {
-            iconWrap.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
-        } else {
-            iconWrap.innerHTML = '<i class="fas fa-hourglass-half"></i>';
+    try {
+        if (!currentUser) {
+            banner.style.display = 'none';
+            return;
         }
-    }
-
-    var titleEl = $('expiryBannerTitle') || banner.querySelector('.expiry-banner-text .title');
-    if (titleEl) {
-        if (isExpired) {
-            titleEl.innerHTML = '❌ Tài khoản đã HẾT HẠN!';
-        } else if (isUrgent) {
-            titleEl.innerHTML = '🔥 Chỉ còn ' + daysLeft + ' ngày!';
-        } else if (tier === 'trial') {
-            titleEl.innerHTML = '🎁 Trial còn ' + daysLeft + ' ngày';
-        } else {
-            titleEl.innerHTML = '⏰ Tài khoản sắp hết hạn';
+        if (currentUser.role === 'admin' || currentUser.isPermanent) {
+            banner.style.display = 'none';
+            return;
         }
-    }
-
-    var descEl = $('expiryBannerDesc') || banner.querySelector('.expiry-banner-text .desc');
-    if (descEl) {
-        if (isExpired) {
-            descEl.innerHTML = 'Đã hết hạn vào <b>' + expDateStr + '</b> (' +
-                Math.abs(daysLeft) + ' ngày trước). Bạn đang ở chế độ giới hạn — ' +
-                'gia hạn ngay để mở khóa toàn bộ!';
-        } else if (isUrgent) {
-            descEl.innerHTML = 'Tài khoản sẽ hết hạn vào <b>' + expDateStr + '</b> — ' +
-                'chỉ còn <b>' + daysLeft + ' ngày</b>. Gia hạn ngay để không bị gián đoạn!';
-        } else if (tier === 'trial') {
-            descEl.innerHTML = 'Còn <b>' + daysLeft + ' ngày</b> dùng thử (đến <b>' +
-                expDateStr + '</b>). Nâng cấp để mở khóa toàn bộ nội dung!';
-        } else {
-            descEl.innerHTML = 'Còn <b>' + daysLeft + ' ngày</b> sử dụng (đến <b>' +
-                expDateStr + '</b>). Gia hạn sớm để yên tâm học tập!';
+        if (!currentUser.expiresAt) {
+            banner.style.display = 'none';
+            return;
         }
-    }
 
-    var contactBtn = $('expiryContactBtn') || banner.querySelector('.expiry-banner-btn');
-    if (contactBtn) {
-        if (isExpired) {
-            contactBtn.innerHTML = '<i class="fas fa-gem"></i> Gia hạn ngay';
-        } else if (isUrgent) {
-            contactBtn.innerHTML = '<i class="fas fa-gem"></i> Gia hạn ngay';
-        } else {
-            contactBtn.innerHTML = '<i class="fas fa-gem"></i> Gia hạn';
+        var expDate = getExpiryDate(currentUser.expiresAt);
+        if (!expDate || isNaN(expDate.getTime())) {
+            banner.style.display = 'none';
+            return;
         }
-        contactBtn.onclick = function(e) {
-            e.preventDefault();
-            if (typeof openRenewalModal === 'function') openRenewalModal();
-        };
-    }
 
-    banner.style.display = 'flex';
+        var now = Date.now();
+        var daysLeft = Math.ceil((expDate.getTime() - now) / (24 * 60 * 60 * 1000));
+        var expDateStr = expDate.toLocaleDateString('vi-VN');
+        var tier = currentUser.tier || 'active';
+
+        if (daysLeft > 7) {
+            banner.style.display = 'none';
+            return;
+        }
+
+        var isExpired = daysLeft <= 0;
+        var isUrgent  = !isExpired && daysLeft <= 3;
+
+        banner.classList.remove('urgent', 'expired');
+        if (isExpired) {
+            banner.classList.add('expired');
+        } else if (isUrgent) {
+            banner.classList.add('urgent');
+        }
+
+        var iconWrap = $('expiryBannerIcon') || banner.querySelector('.expiry-banner-icon');
+        if (iconWrap) {
+            if (isExpired) {
+                iconWrap.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+            } else if (isUrgent) {
+                iconWrap.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+            } else {
+                iconWrap.innerHTML = '<i class="fas fa-hourglass-half"></i>';
+            }
+        }
+
+        var titleEl = $('expiryBannerTitle') || banner.querySelector('.expiry-banner-text .title');
+        if (titleEl) {
+            if (isExpired) {
+                titleEl.innerHTML = '❌ Tài khoản đã HẾT HẠN!';
+            } else if (isUrgent) {
+                titleEl.innerHTML = '🔥 Chỉ còn ' + daysLeft + ' ngày!';
+            } else if (tier === 'trial') {
+                titleEl.innerHTML = '🎁 Trial còn ' + daysLeft + ' ngày';
+            } else {
+                titleEl.innerHTML = '⏰ Tài khoản sắp hết hạn';
+            }
+        }
+
+        var descEl = $('expiryBannerDesc') || banner.querySelector('.expiry-banner-text .desc');
+        if (descEl) {
+            if (isExpired) {
+                descEl.innerHTML = 'Đã hết hạn vào <b>' + expDateStr + '</b> (' +
+                    Math.abs(daysLeft) + ' ngày trước). Bạn đang ở chế độ giới hạn — ' +
+                    'gia hạn ngay để mở khóa toàn bộ!';
+            } else if (isUrgent) {
+                descEl.innerHTML = 'Tài khoản sẽ hết hạn vào <b>' + expDateStr + '</b> — ' +
+                    'chỉ còn <b>' + daysLeft + ' ngày</b>. Gia hạn ngay để không bị gián đoạn!';
+            } else if (tier === 'trial') {
+                descEl.innerHTML = 'Còn <b>' + daysLeft + ' ngày</b> dùng thử (đến <b>' +
+                    expDateStr + '</b>). Nâng cấp để mở khóa toàn bộ nội dung!';
+            } else {
+                descEl.innerHTML = 'Còn <b>' + daysLeft + ' ngày</b> sử dụng (đến <b>' +
+                    expDateStr + '</b>). Gia hạn sớm để yên tâm học tập!';
+            }
+        }
+
+        var contactBtn = $('expiryContactBtn') || banner.querySelector('.expiry-banner-btn');
+        if (contactBtn) {
+            if (isExpired) {
+                contactBtn.innerHTML = '<i class="fas fa-gem"></i> Gia hạn ngay';
+            } else if (isUrgent) {
+                contactBtn.innerHTML = '<i class="fas fa-gem"></i> Gia hạn ngay';
+            } else {
+                contactBtn.innerHTML = '<i class="fas fa-gem"></i> Gia hạn';
+            }
+            contactBtn.onclick = function(e) {
+                e.preventDefault();
+                if (typeof openRenewalModal === 'function') openRenewalModal();
+            };
+        }
+
+        banner.style.display = 'flex';
+
+    } catch (err) {
+        console.warn('⚠️ Lỗi render expiry banner (Fallback active):', err);
+        // Trường hợp ngoại lệ xảy ra, ẩn banner đi hoặc hiện thông báo nhẹ nhàng thay vì treo giao diện
+        banner.style.display = 'none';
+    }
 }
+
 
 /* ═══════════════════════════════════════════════════════════════
    ✅ ĐỒNG BỘ TRẠNG THÁI DROPDOWN USER MENU
