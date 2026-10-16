@@ -2872,26 +2872,25 @@ function renderExpiryBanner() {
     if (!banner) return;
 
     try {
-        /* ═══ 🚨 KIỂM TRA CHẾ ĐỘ KHẨN CẤP — ẨN BANNER KHI BẬT ═══ */
+        /* ═══ 🚨 KIỂM TRA CHẾ ĐỘ KHẨN CẤP / QUOTA LỖI — ẨN BANNER ═══ */
         if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
             banner.style.display = 'none';
             return;
         }
 
-        if (!currentUser) {
-            banner.style.display = 'none';
-            return;
-        }
-        if (currentUser.role === 'admin' || currentUser.isPermanent) {
-            banner.style.display = 'none';
-            return;
-        }
-        if (!currentUser.expiresAt) {
+        // Kiểm tra dữ liệu user, nếu không có hoặc mất mạng/lỗi -> ẩn luôn
+        var user = currentUser;
+        if (!user || !user.expiresAt) {
             banner.style.display = 'none';
             return;
         }
 
-        var expDate = getExpiryDate(currentUser.expiresAt);
+        if (user.role === 'admin' || user.isPermanent) {
+            banner.style.display = 'none';
+            return;
+        }
+
+        var expDate = getExpiryDate(user.expiresAt);
         if (!expDate || isNaN(expDate.getTime())) {
             banner.style.display = 'none';
             return;
@@ -2900,8 +2899,9 @@ function renderExpiryBanner() {
         var now = Date.now();
         var daysLeft = Math.ceil((expDate.getTime() - now) / (24 * 60 * 60 * 1000));
         var expDateStr = expDate.toLocaleDateString('vi-VN');
-        var tier = currentUser.tier || 'active';
+        var tier = user.tier || 'active';
 
+        // Nếu còn trên 7 ngày thì ẩn
         if (daysLeft > 7) {
             banner.style.display = 'none';
             return;
@@ -2945,14 +2945,13 @@ function renderExpiryBanner() {
         if (descEl) {
             if (isExpired) {
                 descEl.innerHTML = 'Đã hết hạn vào <b>' + expDateStr + '</b> (' +
-                    Math.abs(daysLeft) + ' ngày trước). Bạn đang ở chế độ giới hạn — ' +
-                    'gia hạn ngay để mở khóa toàn bộ!';
+                    Math.abs(daysLeft) + ' ngày trước). Gia hạn ngay để mở khóa toàn bộ!';
             } else if (isUrgent) {
                 descEl.innerHTML = 'Tài khoản sẽ hết hạn vào <b>' + expDateStr + '</b> — ' +
                     'chỉ còn <b>' + daysLeft + ' ngày</b>. Gia hạn ngay để không bị gián đoạn!';
             } else if (tier === 'trial') {
                 descEl.innerHTML = 'Còn <b>' + daysLeft + ' ngày</b> dùng thử (đến <b>' +
-                    expDateStr + '</b>). Nâng cấp để mở khóa toàn bộ nội dung!';
+                    expDateStr + '</b>). Nâng cấp để mở khóa toàn bộ!';
             } else {
                 descEl.innerHTML = 'Còn <b>' + daysLeft + ' ngày</b> sử dụng (đến <b>' +
                     expDateStr + '</b>). Gia hạn sớm để yên tâm học tập!';
@@ -2961,23 +2960,19 @@ function renderExpiryBanner() {
 
         var contactBtn = $('expiryContactBtn') || banner.querySelector('.expiry-banner-btn');
         if (contactBtn) {
-            if (isExpired) {
-                contactBtn.innerHTML = '<i class="fas fa-gem"></i> Gia hạn ngay';
-            } else if (isUrgent) {
-                contactBtn.innerHTML = '<i class="fas fa-gem"></i> Gia hạn ngay';
-            } else {
-                contactBtn.innerHTML = '<i class="fas fa-gem"></i> Gia hạn';
-            }
+            contactBtn.innerHTML = '<i class="fas fa-gem"></i> Gia hạn ngay';
             contactBtn.onclick = function(e) {
                 e.preventDefault();
                 if (typeof openRenewalModal === 'function') openRenewalModal();
             };
         }
 
+        // Hiển thị bình thường khi mọi thứ ổn định
         banner.style.display = 'flex';
 
     } catch (err) {
-        console.warn('⚠️ Lỗi render expiry banner (Fallback active):', err);
+        console.warn('⚠️ Lỗi render expiry banner -> Ẩn banner do sự cố:', err);
+        // Ẩn ngay banner nếu có bất kỳ lỗi bất thường nào xảy ra (hết quota, mất kết nối...)
         banner.style.display = 'none';
     }
 }
