@@ -6672,8 +6672,9 @@ window.batKhanCap = function() {
     setTimeout(function() { location.reload(); }, 1000);
 };
 
-window.tatKhanCap = function() {
+window.tatKhanCap = async function() {
     console.log('%c🎮 tatKhanCap() được gọi', 'color:#94a3b8;font-style:italic');
+    
     if (!currentUser || !currentUser.email) {
         console.error('%c❌ Chưa đăng nhập!', 'color:#dc2626;font-weight:bold');
         return;
@@ -6683,9 +6684,263 @@ window.tatKhanCap = function() {
         console.error('Email của bạn:', currentUser.email);
         return;
     }
-    localStorage.setItem('EMERGENCY_QUOTA_MODE', 'false');
-    console.log('%c✅ ĐÃ TẮT CHẾ ĐỘ KHẨN CẤP', 'color:#16a34a;font-weight:bold;font-size:16px');
-    setTimeout(function() { location.reload(); }, 1000);
+
+    console.log('%c⏳ Bắt đầu tắt chế độ khẩn cấp + đồng bộ Firestore...', 
+                'color:#f59e0b;font-weight:bold;font-size:14px');
+
+    /* ═══════════════════════════════════════════════════════════
+       BƯỚC 1: QUÉT LOCALSTORAGE TÌM USER TẠO TRONG EMERGENCY
+       ═══════════════════════════════════════════════════════════ */
+    var emergencyUsers = [];
+    var syncKeysToRemove = [];
+
+    try {
+        for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            
+            // Tìm các key dạng: user_cache_<email>
+            if (key && key.indexOf('user_cache_') === 0) {
+                var email = key.replace('user_cache_', '').toLowerCase();
+                
+                // Check xem user này đã sync chưa
+                var syncKey = 'synced_emergency_' + email;
+                var alreadySynced = localStorage.getItem(syncKey) === 'true';
+                
+                if (alreadySynced) continue; // Đã sync → bỏ qua
+                
+                // Lấy data
+                try {
+                    var cached = JSON.parse(localStorage.getItem(key) || 'null');
+                    if (cached && cached.data) {
+                        emergencyUsers.push({
+                            email: email,
+                            data: cached.data,
+                            cacheKey: key,
+                            syncKey: syncKey
+                        });
+                    }
+                } catch(e) {}
+            }
+        }
+    } catch(e) {
+        console.error('Lỗi quét localStorage:', e);
+    }
+
+    console.log('%c📋 Tìm thấy ' + emergencyUsers.length + ' user cần sync', 
+                'color:#4f46e5;font-weight:bold;font-size:13px');
+
+    if (emergencyUsers.length === 0) {
+        console.log('%c→ Không có user nào cần sync, tắt trực tiếp', 'color:#94a3b8');
+        localStorage.setItem('EMERGENCY_QUOTA_MODE', 'false');
+        console.log('%c✅ ĐÃ TẮT CHẾ ĐỘ KHẨN CẤP', 
+                    'color:#16a34a;font-weight:bold;font-size:16px');
+        setTimeout(function() { location.reload(); }, 1000);
+        return;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       BƯỚC 2: SYNC TỪNG USER LÊN FIRESTORE
+       ═══════════════════════════════════════════════════════════ */
+    var success = 0;
+    var skipped = 0;
+    var failed = 0;
+    var results = [];
+
+    for (var j = 0; j < emergencyUsers.length; j++) {
+        var u = emergencyUsers[j];
+        var email = u.email;
+        var userData = u.data;
+
+        try {
+            var docRef = db.collection('allowed_users').doc(email);
+            var doc = await docRef.get();
+
+            if (doc.exists) {
+                // ⭐ User đã tồn tại → KHÔNG ghi đè, chỉ đánh dấu đã sync
+                console.log('%c  ⏭️  ' + email + ' (đã tồn tại — bỏ qua)', 
+                            'color:#94a3b8');
+                skipped++;
+                results.push({ email: email, status: 'skipped' });
+            } else {
+                // ⭐ User mới → tạo trial
+                var days = (typeof TRIAL_DAYS === 'number' && TRIAL_DAYS > 0) ? TRIAL_DAYS : 3;
+                var expiresAt = new Date(Date.now() + days * 86400000);
+                expiresAt.setHours(23, 59, 59, 0);
+
+                await docRef.set({
+                    email: email,
+                    name: userData.name || email.split('@')[0],
+                    role: userData.role || 'user',
+                    expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
+                    registeredAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    isTrial: true,
+                    trialDays: days,
+                    trialStartedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    tier: 'trial',
+                    trialMaxQuestions: (typeof TRIAL_MAX_QUESTIONS === 'number') ? TRIAL_MAX_QUESTIONS : 50,
+                    trialMaxHSK: (typeof TRIAL_MAX_HSK === 'number') ? TRIAL_MAX_HSK : 5,
+                    syncedFromEmergency: true
+                });
+
+                console.log('%c  ✅ ' + email + ' → trial ' + days + ' ngày', 
+                            'color:#16a34a;font-weight:bold');
+                success++;
+                results.push({ email: email, status: 'created' });
+            }
+
+            // ⭐ Đánh dấu đã sync
+            localStorage.setItem(u.syncKey, 'true');
+            syncKeysToRemove.push(u.syncKey);
+
+            // ⭐ Xóa cache cũ (để lần login sau đọc Firestore mới)
+            localStorage.removeItem(u.cacheKey);
+
+        } catch(err) {
+            console.error('%c  ❌ ' + email + ' — Lỗi: ' + err.message, 
+                        'color:#dc2626;font-weight:bold');
+            failed++;
+            results.push({ email: email, status: 'failed', error: err.message });
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       BƯỚC 3: SYNC PENDING RENEWALS
+       ═══════════════════════════════════════════════════════════ */
+    var renewalsSynced = 0;
+    var renewalsFailed = 0;
+
+    try {
+        var pendingReqs = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]');
+        
+        if (pendingReqs.length > 0) {
+            console.log('%c💰 Đang sync ' + pendingReqs.length + ' đơn gia hạn...', 
+                        'color:#7c3aed;font-weight:bold');
+            
+            var remainingReqs = [];
+            
+            for (var k = 0; k < pendingReqs.length; k++) {
+                var req = pendingReqs[k];
+                try {
+                    await db.collection('renewal_requests').add({
+                        email: req.email,
+                        name: req.name,
+                        package: req.package,
+                        packageLabel: req.packageLabel,
+                        amount: req.amount,
+                        days: req.days,
+                        transferCode: req.transferCode,
+                        status: req.status || 'user_paid',
+                        isPermanent: req.isPermanent || false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        createdAtMs: req.createdAtMs,
+                        syncedFromEmergency: true
+                    });
+                    renewalsSynced++;
+                    console.log('%c  ✅ Đơn ' + req.transferCode, 'color:#16a34a');
+                } catch(e) {
+                    renewalsFailed++;
+                    remainingReqs.push(req);
+                    console.error('%c  ❌ Đơn ' + req.transferCode + ': ' + e.message, 'color:#dc2626');
+                }
+            }
+            
+            if (remainingReqs.length === 0) {
+                localStorage.removeItem('pending_renewals_local');
+            } else {
+                localStorage.setItem('pending_renewals_local', JSON.stringify(remainingReqs));
+            }
+        }
+    } catch(e) {
+        console.warn('Lỗi sync renewals:', e);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       BƯỚC 4: SYNC PENDING APPROVED RENEWALS
+       ═══════════════════════════════════════════════════════════ */
+    var approvedSynced = 0;
+    var approvedFailed = 0;
+
+    try {
+        var approvedList = JSON.parse(localStorage.getItem('pending_approved_renewals') || '[]');
+        
+        if (approvedList.length > 0) {
+            console.log('%c✅ Đang sync ' + approvedList.length + ' đơn đã duyệt...', 
+                        'color:#16a34a;font-weight:bold');
+            
+            var remainingApproved = [];
+            
+            for (var m = 0; m < approvedList.length; m++) {
+                var item = approvedList[m];
+                try {
+                    var updateData = {
+                        isTrial: false,
+                        tier: 'active',
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    if (item.isPermanent) {
+                        updateData.expiresAt = null;
+                        updateData.isPermanent = true;
+                    } else if (item.newExpiresAt) {
+                        updateData.expiresAt = firebase.firestore.Timestamp.fromDate(new Date(item.newExpiresAt));
+                        updateData.isPermanent = false;
+                    }
+
+                    await db.collection('allowed_users').doc(item.email).update(updateData);
+                    approvedSynced++;
+                    console.log('%c  ✅ ' + item.email, 'color:#16a34a');
+                } catch(e) {
+                    approvedFailed++;
+                    remainingApproved.push(item);
+                    console.error('%c  ❌ ' + item.email + ': ' + e.message, 'color:#dc2626');
+                }
+            }
+            
+            if (remainingApproved.length === 0) {
+                localStorage.removeItem('pending_approved_renewals');
+            } else {
+                localStorage.setItem('pending_approved_renewals', JSON.stringify(remainingApproved));
+            }
+        }
+    } catch(e) {
+        console.warn('Lỗi sync approved:', e);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       BƯỚC 5: BÁO CÁO KẾT QUẢ
+       ═══════════════════════════════════════════════════════════ */
+    console.log('%c═══════════════════════════════════════', 'color:#4f46e5');
+    console.log('%c📊 KẾT QUẢ ĐỒNG BỘ', 'color:#4f46e5;font-weight:bold;font-size:14px');
+    console.log('%c═══════════════════════════════════════', 'color:#4f46e5');
+    console.log('  👤 User tạo mới:', success);
+    console.log('  ⏭️  User bỏ qua (đã tồn tại):', skipped);
+    console.log('  ❌ User lỗi:', failed);
+    console.log('  💰 Đơn gia hạn sync:', renewalsSynced);
+    console.log('  ✅ Đơn đã duyệt sync:', approvedSynced);
+    console.log('%c═══════════════════════════════════════', 'color:#4f46e5');
+
+    /* ═══════════════════════════════════════════════════════════
+       BƯỚC 6: TẮT EMERGENCY MODE
+       ═══════════════════════════════════════════════════════════ */
+    if (failed === 0 && renewalsFailed === 0 && approvedFailed === 0) {
+        // ⭐ Sync thành công hoàn toàn → tắt
+        localStorage.setItem('EMERGENCY_QUOTA_MODE', 'false');
+        console.log('%c✅ ĐÃ TẮT CHẾ ĐỘ KHẨN CẤP', 
+                    'color:#16a34a;font-weight:bold;font-size:16px');
+        setTimeout(function() { location.reload(); }, 1500);
+    } else {
+        // ⚠️ Có lỗi → KHÔNG tắt, để admin xử lý
+        console.error('%c⚠️ CÓ LỖI KHI SYNC — CHƯA TẮT CHẾ ĐỘ KHẨN CẤP!', 
+                     'color:#dc2626;font-weight:bold;font-size:14px');
+        console.error('→ Vẫn giữ emergency mode để tránh mất dữ liệu.');
+        console.error('→ Kiểm tra Firestore quota rồi chạy lại tatKhanCap().');
+        
+        // In danh sách lỗi
+        var failedList = results.filter(function(r) { return r.status === 'failed'; });
+        if (failedList.length > 0) {
+            console.table(failedList);
+        }
+    }
 };
 
 window.checkKhanCap = function() {
