@@ -20614,6 +20614,37 @@ async function checkPendingRenewalBadge() {
         if (b) b.style.display = 'none';
         return;
     }
+
+    var cacheKey = 'checked_renewal_' + currentUser.email;
+    
+    // 🛑 TỐI ƯU 1: Nếu trong phiên làm việc này đã kiểm tra rồi, 
+    // ta lấy trạng thái tạm thời từ sessionStorage để hoàn toàn KHÔNG gọi Firestore nữa.
+    var cachedStatus = null;
+    try {
+        cachedStatus = sessionStorage.getItem(cacheKey);
+    } catch(e) {}
+
+    var btn = $('renewalPendingBtn');
+    var countEl = $('renewalPendingCount');
+
+    if (cachedStatus !== null) {
+        // Đã kiểm tra trong cache trước đó
+        if (cachedStatus === 'none') {
+            if (btn) btn.style.display = 'none';
+        } else {
+            // Có đơn chờ (lưu trạng thái 'pending' hoặc 'user_paid')
+            if (btn) {
+                btn.style.display = 'flex';
+                if (countEl) {
+                    countEl.textContent = cachedStatus === 'user_paid' ? '⏳' : '1';
+                    countEl.style.background = cachedStatus === 'user_paid' ? '#2563eb' : '#f59e0b';
+                }
+            }
+        }
+        return;
+    }
+
+    // 🛑 TỐI ƯU 2: Nếu chưa kiểm tra trong phiên, thực hiện gọi Firestore 1 LẦN DUY NHẤT và lưu vào Cache
     try {
         var snap = await db.collection('renewal_requests')
             .where('email', '==', currentUser.email)
@@ -20621,24 +20652,27 @@ async function checkPendingRenewalBadge() {
             .limit(1)
             .get();
 
-        var btn = $('renewalPendingBtn');
-        var countEl = $('renewalPendingCount');
         if (!btn) return;
 
         if (snap.empty) {
             btn.style.display = 'none';
+            try { sessionStorage.setItem(cacheKey, 'none'); } catch(e) {}
         } else {
             btn.style.display = 'flex';
             var data = snap.docs[0].data();
+            var status = data.status || 'pending';
+            
             if (countEl) {
-                countEl.textContent = data.status === 'user_paid' ? '⏳' : '1';
-                countEl.style.background = data.status === 'user_paid' ? '#2563eb' : '#f59e0b';
+                countEl.textContent = status === 'user_paid' ? '⏳' : '1';
+                countEl.style.background = status === 'user_paid' ? '#2563eb' : '#f59e0b';
             }
+            try { sessionStorage.setItem(cacheKey, status); } catch(e) {}
         }
     } catch(e) {
         console.warn('checkPendingRenewalBadge error:', e);
     }
 }
+
 
 
 function updateDemoBannerByTier() {
