@@ -321,11 +321,11 @@ def build_intro_html():
         <div class="qib-track">
             <span class="qib-item sep">
                 <i class="fas fa-globe"></i>
-                <b>Thông báo:</b> Website chính thức đổi sang tên miền quốc tế: tuhoctiengtrung.org
+                <b>Tuhoctiengtrung.org:</b> Thông báo: Website chính thức đổi sang tên miền quốc tế [Https://tuhoctiengtrung.org] từ 15/10/2026!
             </span>
             <span class="qib-item sep">
                 <i class="fas fa-globe"></i>
-                <b>Tuhoctiengtrung.org:</b> Thông báo: Website chính thức đổi sang tên miền quốc tế từ 15/10/2026!
+                <b>Tuhoctiengtrung.org:</b> Thông báo: Website chính thức đổi sang tên miền quốc tế [Https://tuhoctiengtrung.org] từ 15/10/2026!
             </span>
         </div>
     </div>
