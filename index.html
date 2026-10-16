@@ -24195,6 +24195,68 @@ document.addEventListener('click', function(e) {
 });
 
 
+/* ═══════════════════════════════════════════════════════════════
+   🎮 CONSOLE COMMANDS — Chỉ Super Admin mới chạy được
+   ═══════════════════════════════════════════════════════════════ */
+
+function __isSuperAdminNow() {
+    if (!currentUser || !currentUser.email) return false;
+    if (typeof SUPER_ADMIN === 'undefined' || !SUPER_ADMIN) return false;
+    return currentUser.email.toLowerCase() === SUPER_ADMIN.toLowerCase();
+}
+
+window.batKhanCap = function() {
+    console.log('%c🎮 batKhanCap() được gọi', 'color:#94a3b8;font-style:italic');
+    if (!currentUser || !currentUser.email) {
+        console.error('%c❌ Chưa đăng nhập!', 'color:#dc2626;font-weight:bold');
+        return;
+    }
+    if (!__isSuperAdminNow()) {
+        console.error('%c🚫 CHỈ SUPER ADMIN mới dùng được lệnh này!', 'color:#dc2626;font-weight:bold;font-size:14px');
+        console.error('Email của bạn:', currentUser.email);
+        return;
+    }
+    localStorage.setItem('EMERGENCY_QUOTA_MODE', 'true');
+    console.log('%c🚨 ĐÃ BẬT CHẾ ĐỘ KHẨN CẤP', 'color:#dc2626;font-weight:bold;font-size:16px');
+    setTimeout(function() { location.reload(); }, 1000);
+};
+
+window.tatKhanCap = function() {
+    console.log('%c🎮 tatKhanCap() được gọi', 'color:#94a3b8;font-style:italic');
+    if (!currentUser || !currentUser.email) {
+        console.error('%c❌ Chưa đăng nhập!', 'color:#dc2626;font-weight:bold');
+        return;
+    }
+    if (!__isSuperAdminNow()) {
+        console.error('%c🚫 CHỈ SUPER ADMIN mới dùng được lệnh này!', 'color:#dc2626;font-weight:bold;font-size:14px');
+        console.error('Email của bạn:', currentUser.email);
+        return;
+    }
+    localStorage.setItem('EMERGENCY_QUOTA_MODE', 'false');
+    console.log('%c✅ ĐÃ TẮT CHẾ ĐỘ KHẨN CẤP', 'color:#16a34a;font-weight:bold;font-size:16px');
+    setTimeout(function() { location.reload(); }, 1000);
+};
+
+window.checkKhanCap = function() {
+    var isOn = localStorage.getItem('EMERGENCY_QUOTA_MODE') === 'true';
+    var email = currentUser ? currentUser.email : '(chưa đăng nhập)';
+    console.log('%c📊 TRẠNG THÁI CHẾ ĐỘ KHẨN CẤP', 'color:#4f46e5;font-weight:bold;font-size:14px');
+    console.log('  Trạng thái:', isOn ? '🚨 ĐANG BẬT' : '✅ ĐANG TẮT');
+    console.log('  Email:', email);
+    console.log('  Super Admin?', __isSuperAdminNow() ? '✅ Phải' : '❌ Không phải');
+    console.log('  Cờ localStorage:', localStorage.getItem('EMERGENCY_QUOTA_MODE'));
+};
+
+setTimeout(function() {
+    if (__isSuperAdminNow()) {
+        console.log('%c🎮 CONSOLE COMMANDS (Super Admin)', 'color:#4f46e5;font-weight:bold;font-size:13px;padding:4px 0');
+        console.log('  batKhanCap()    → Bật chế độ khẩn cấp');
+        console.log('  tatKhanCap()    → Tắt chế độ khẩn cấp');
+        console.log('  checkKhanCap()  → Kiểm tra trạng thái');
+    }
+}, 3000);
+
+
 
 (function() {
     'use strict';
