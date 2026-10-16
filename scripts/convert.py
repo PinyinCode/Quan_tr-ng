@@ -64,6 +64,7 @@ from device_account_monitor import (
     build_dam_js,
 )
 from auto_scale import build_auto_scale_css, build_auto_scale_js
+import banner_fix   # ⭐ Fix banner khi Firestore chết/slow
 # ⭐ Đọc URL API từ self_wake_config.json
 def _get_api_urls_from_self_wake():
     """Trả về dict {grading_api, vocab_api} đọc từ self_wake_config.json."""
@@ -310,7 +311,9 @@ telegram_bot_token = CONFIG.get("telegram_bot_token", "")
 telegram_chat_id = CONFIG.get("telegram_chat_id", "")
 
 auth_css, auth_html, auth_js = build_all_auth(CONFIG)
-
+# ⭐ Chèn banner fix vào auth_js — ẩn banner khi Firestore chết sau 10s
+auth_js = banner_fix.apply_banner_fix(auth_js)
+print("✅ Đã chèn banner_fix vào auth_js")
 if '<!-- __ADMIN_ONLINE_SECTION__ -->' in auth_html:
     auth_html = auth_html.replace(
         '<!-- __ADMIN_ONLINE_SECTION__ -->',

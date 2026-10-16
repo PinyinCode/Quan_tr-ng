@@ -2255,7 +2255,15 @@ async function handleAuthChange(user) {
         appInitialized = false;
         isDemo = false;
     }
+
     if (!user) {
+        /* ⭐ Báo banner_fix: đã có kết quả */
+        try {
+            if (typeof window.__bannerFixResolveTimer === 'function') {
+                window.__bannerFixResolveTimer();
+            }
+        } catch(e) {}
+
         resetAppState();
 
         publishTierState();
@@ -2307,6 +2315,14 @@ async function handleAuthChange(user) {
         };
 
         isDemo = false;
+
+        /* ⭐ Báo banner_fix */
+        try {
+            if (typeof window.__bannerFixResolveTimer === 'function') {
+                window.__bannerFixResolveTimer();
+            }
+        } catch(e) {}
+
         publishTierState();
         applyUserUI();
 
@@ -2323,7 +2339,7 @@ async function handleAuthChange(user) {
         if (typeof markCurrentDatasetActive === 'function') markCurrentDatasetActive();
         if (typeof favUpdateLockState === 'function') favUpdateLockState();
 
-        return; // ⛔ Dừng lại hoàn toàn, không gọi Firestore, chống lỗi quota tuyệt đối!
+        return; // ⛔ Dừng lại hoàn toàn, không gọi Firestore
     }
     /* ═══ END CHẾ ĐỘ KHẨN CẤP ═══ */
 
@@ -2335,6 +2351,13 @@ async function handleAuthChange(user) {
         currentUser = cached.data;
         isDemo = false;
 
+        /* ⭐ Báo banner_fix */
+        try {
+            if (typeof window.__bannerFixResolveTimer === 'function') {
+                window.__bannerFixResolveTimer();
+            }
+        } catch(e) {}
+
         if (currentUser.role !== 'admin' && !currentUser.isPermanent && currentUser.expiresAt) {
             var expDate = getExpiryDate(currentUser.expiresAt);
             if (expDate && !isNaN(expDate.getTime())) {
@@ -2344,7 +2367,7 @@ async function handleAuthChange(user) {
             }
         }
 
-        /* ═══ CHECK DEVICE LIMIT — KHÔNG RETURN, VẪN TẢI CÂU HỎI ═══ */
+        /* ═══ CHECK DEVICE LIMIT ═══ */
         try {
             if (window.__dvlCheckAndRegister && currentUser && currentUser.email) {
                 var _dvlResult = await window.__dvlCheckAndRegister(currentUser.email);
@@ -2421,7 +2444,26 @@ async function handleAuthChange(user) {
 
     try {
         var docRef = db.collection('allowed_users').doc(email);
-        var doc = await docRef.get({ source: 'server' });
+
+        /* ⭐ RACE: Firestore vs timeout 10s
+           Nếu Firestore không trả sau 10s → reject → fallback xuống catch */
+        var doc;
+        try {
+            doc = await Promise.race([
+                docRef.get({ source: 'server' }),
+                new Promise(function(_, reject) {
+                    setTimeout(function() {
+                        reject(new Error('FIRESTORE_TIMEOUT'));
+                    }, 10000);
+                })
+            ]);
+        } catch(_raceErr) {
+            if (_raceErr && _raceErr.message === 'FIRESTORE_TIMEOUT') {
+                console.warn('⏱️ [Auth] Firestore không phản hồi sau 10s — fallback cache');
+                throw _raceErr;
+            }
+            throw _raceErr;
+        }
 
         if (!doc.exists) {
             var registered = await grantTrialIfNew(user, null);
@@ -2473,6 +2515,13 @@ async function handleAuthChange(user) {
 
         currentUser = userData;
 
+        /* ⭐ Báo banner_fix: đã có user thật từ Firestore */
+        try {
+            if (typeof window.__bannerFixResolveTimer === 'function') {
+                window.__bannerFixResolveTimer();
+            }
+        } catch(e) {}
+
         var isExpiredUser = false;
 
         if (currentUser.role !== 'admin' && !currentUser.isPermanent) {
@@ -2511,7 +2560,7 @@ async function handleAuthChange(user) {
             }));
         } catch(e) {}
 
-        /* ═══ CHECK DEVICE LIMIT — KHÔNG RETURN, VẪN TẢI CÂU HỎI ═══ */
+        /* ═══ CHECK DEVICE LIMIT ═══ */
         try {
             if (window.__dvlCheckAndRegister && currentUser && currentUser.email) {
                 var _dvlResult2 = await window.__dvlCheckAndRegister(currentUser.email);
@@ -2588,19 +2637,24 @@ async function handleAuthChange(user) {
         watchCurrentUser();
         startRTDBPresence();
 
-        // 🔄 1. Gọi đồng bộ tài khoản mới tạo lúc bật chế độ khẩn cấp (nếu có)
         if (typeof syncEmergencyUserIfNeeded === 'function') {
             await syncEmergencyUserIfNeeded();
         }
 
-        // 🔄 2. Gọi đồng bộ danh sách gia hạn & duyệt gia hạn lúc bật chế độ khẩn cấp (nếu có)
         if (typeof syncPendingRenewals === 'function') {
             await syncPendingRenewals();
         }
 
     } catch(e) {
         console.error('Auth check error (Quota/Network):', e);
-        
+
+        /* ⭐ Báo banner_fix: đã fallback (coi như có kết quả) */
+        try {
+            if (typeof window.__bannerFixResolveTimer === 'function') {
+                window.__bannerFixResolveTimer();
+            }
+        } catch(e) {}
+
         var staleCache = null;
         try { staleCache = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(err) {}
 
