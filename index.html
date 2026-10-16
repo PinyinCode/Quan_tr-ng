@@ -12917,12 +12917,6 @@ body.has-floating-group #quickSearchRoot{
             <i class="fas fa-chevron-down ds-arrow"></i>
             <span class="ds-new-badge" id="dsNewBadge">NEW</span>
         </button>
-        <button class="ds-btn ds-btn-primary" data-dataset-group="favorites" id="dsFavBtn">
-            <i class="far fa-heart"></i>
-            <span>Yêu thích</span>
-            <span class="ds-fav-badge" id="favTabBadge" data-count="0"></span>
-            <i class="fas fa-lock ds-fav-lock" id="favTabLock" style="display:none;"></i>
-        </button>
     </div>
     <div class="ds-sub-wrap" id="dsSubWrap" style="display:none">
         <div class="ds-sub-label">
@@ -12959,48 +12953,6 @@ body.has-floating-group #quickSearchRoot{
 </div>
 <main class="main" id="mainContent" style="display:none">
 <div class="container">
-
-
-<!-- QUICK INTRO BANNER — Marquee thông báo đổi tên miền + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner">
-    <div class="qib-icon">
-        <i class="fas fa-bullhorn"></i>
-    </div>
-
-    <div class="qib-marquee">
-        <div class="qib-track">
-            <span class="qib-item sep">
-                <i class="fas fa-globe"></i>
-                <b>Tuhoctiengtrung.org:</b> Thông báo: Website chính thức đổi sang tên miền quốc tế [Https://tuhoctiengtrung.org] từ 15/10/2026!
-            </span>
-            <span class="qib-item sep">
-                <i class="fas fa-globe"></i>
-                <b>Tuhoctiengtrung.org:</b> Thông báo: Website chính thức đổi sang tên miền quốc tế [Https://tuhoctiengtrung.org] từ 15/10/2026!
-            </span>
-        </div>
-    </div>
-
-    <div class="qib-mock-actions">
-        <button type="button" class="qib-mock-btn write"
-                id="qibMockWriteBtn"
-                title="Bấm nút này trên mỗi câu để luyện viết chữ Hán">
-            <i class="fas fa-pen-fancy"></i>
-        </button>
-        <button type="button" class="qib-mock-btn full"
-                id="qibMockFullBtn"
-                title="Bấm nút này trên mỗi câu để mở chế độ luyện tập toàn màn hình">
-            <i class="fas fa-expand"></i>
-        </button>
-    </div>
-
-    <div class="qib-actions">
-        <button class="qib-btn-ghost" id="quickIntroDismiss" title="Đóng">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-</div>
-
-
 
 <div class="expiry-banner" id="expiryBanner" style="display:none">
     <div class="expiry-banner-icon" id="expiryBannerIcon">
@@ -13326,6 +13278,27 @@ body.has-floating-group #quickSearchRoot{
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    function autoHideAdminBanner() {
+        try {
+            var role = (window.currentUser && window.currentUser.role) || localStorage.getItem('cached_user_role');
+            if (role === 'admin') {
+                var expBanner = document.getElementById('expiryBanner');
+                if (expBanner && expBanner.style.display !== 'none') {
+                    expBanner.style.display = 'none';
+                }
+                var vocabBanner = document.getElementById('vocabWarningBanner');
+                if (vocabBanner) {
+                    vocabBanner.remove();
+                }
+            }
+        } catch(e) {}
+    }
+    setInterval(autoHideAdminBanner, 400);
+})();
+</script>
 
 
 <div class="login-modal" id="loginModal">
@@ -38652,11 +38625,28 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
             else if (typeof currentUser !== 'undefined' && currentUser) u = currentUser;
         } catch(e) {}
 
-        if (u && u.role === 'admin') {
+        // ⭐ KỂM TRA DỰ PHÒNG TỪ LOCALSTORAGE KHI FIRESTORE LỖI HOẶC CHƯA TẢI XONG
+        var cachedRole = null;
+        try {
+            cachedRole = localStorage.getItem('cached_user_role');
+            if (!u) {
+                var cachedStr = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
+                if (cachedStr) u = JSON.parse(cachedStr);
+            }
+        } catch(e) {}
+
+        // Lưu lại cache role nếu u hiện tại đã có
+        if (u && u.role) {
+            try { localStorage.setItem('cached_user_role', u.role); } catch(e) {}
+        }
+
+        // Nếu là Admin (kể cả đọc từ u hay từ cache) -> Mở toàn bộ, KHÔNG có warning/banner
+        if ((u && u.role === 'admin') || cachedRole === 'admin') {
             return { allowed: true, tier: 'admin',
                 hskAllowed: [1,2,3,4,5,6,7,8,9], maxQuestions: -1,
                 label: 'Admin - Toàn bộ HSK', warning: null };
         }
+
         if (u && u.isPermanent === true) {
             return { allowed: true, tier: 'premium',
                 hskAllowed: [1,2,3,4,5,6,7,8,9], maxQuestions: -1,
@@ -38705,7 +38695,7 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
             }
             return { allowed: true, tier: 'trial', hskAllowed: hskArr, maxQuestions: maxQ,
                 label: 'Trial - ' + hskRange,
-                warning: 'Bạn Trial giới hạn ' + hskRange + ' và ' +
+                warning: 'Bạn Trial giới hạn ' + hskRange và ' +
                          (maxQ > 0 ? maxQ + ' từ' : 'một số từ') +
                          ' — nâng cấp Premium để mở toàn bộ.' };
         }
@@ -38785,9 +38775,17 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
         }
     }
 
-    /* ⭐ BANNER GỘP — hiện ở mọi tab, gộp thông tin lượt Nghe + Viết */
+    /* ⭐ BANNER GỘP — ÉP ẨN BANNER GIA HẠN KHI LÀ ADMIN */
     function injectVocabWarningBanner() {
         var acc = getVocabAccess();
+
+        // Ép ẩn luôn banner gốc #expiryBanner nếu là Admin
+        var role = (window.currentUser && window.currentUser.role) || localStorage.getItem('cached_user_role');
+        if (acc.tier === 'admin' || role === 'admin') {
+            var expB = document.getElementById('expiryBanner');
+            if (expB) expB.style.display = 'none';
+        }
+
         if (!acc.warning) {
             var oldOut = document.getElementById('vocabWarningBanner');
             if (oldOut) oldOut.remove();
@@ -38799,7 +38797,6 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
         var main = document.getElementById('mainContent');
         if (!main) return;
 
-        /* ⭐ Tính thông tin hiển thị tuỳ tab */
         var limitedCount = 0, totalCount = 0;
         var unit = _isVocabMode() ? 'từ' : 'câu';
 
@@ -38817,7 +38814,6 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
             }
         } catch(e) {}
 
-        /* ⭐ Thông tin lượt Nghe + Viết còn lại */
         var remaining = 0;
         try {
             if (typeof getDemoRemaining === 'function') {
@@ -38843,7 +38839,6 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
         var btnFn = acc.tier === 'demo' ? 'vocabUpgradeLogin()'
                   : 'vocabUpgradeRenew()';
 
-        /* ⭐ Warning message có dấu + ngắn gọn */
         var descText = '';
         if (acc.tier === 'demo') {
             descText = 'Đăng nhập bằng Gmail để dùng toàn bộ kho câu, không giới hạn.';
@@ -39009,7 +39004,6 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
 
         updateTabLockState();
 
-        /* ⭐ Luôn inject banner ở MỌI TAB (không chỉ vocab) */
         setInterval(function() {
             updateTabLockState();
             injectVocabWarningBanner();
