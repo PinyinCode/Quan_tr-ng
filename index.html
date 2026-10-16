@@ -19481,7 +19481,11 @@ function hasPermission(permKey) {
     }
     return perms[permKey] === true;
 }
-// Kiểm tra xem chế độ khẩn cấp có đang bật không
+/* ═══════════════════════════════════════════════════════════════
+   🚨 EMERGENCY MODE — Sync qua RTDB
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Sync version — dùng cho chỗ không await được */
 function isEmergencyModeActive() {
     try {
         return localStorage.getItem('EMERGENCY_QUOTA_MODE') === 'true';
@@ -19490,6 +19494,57 @@ function isEmergencyModeActive() {
     }
 }
 
+/* Async version — đọc từ RTDB */
+async function isEmergencyModeActiveAsync() {
+    if (typeof firebase === 'undefined' || typeof firebase.database !== 'function') {
+        return isEmergencyModeActive();
+    }
+    
+    try {
+        var snap = await firebase.database().ref('config/emergency').once('value');
+        var data = snap.val() || {};
+        var isOn = data.enabled === true;
+        
+        localStorage.setItem('EMERGENCY_QUOTA_MODE', isOn ? 'true' : 'false');
+        return isOn;
+    } catch(e) {
+        console.warn('[Emergency] Không đọc được RTDB:', e.message);
+        return isEmergencyModeActive();
+    }
+}
+
+/* ⭐ Lắng nghe thay đổi realtime từ RTDB */
+var _emergencyListenerStarted = false;
+function startEmergencyListener() {
+    if (_emergencyListenerStarted) return;
+    if (typeof firebase === 'undefined' || typeof firebase.database !== 'function') return;
+    
+    _emergencyListenerStarted = true;
+    console.log('🚨 [Emergency] Bắt đầu lắng nghe RTDB...');
+    
+    firebase.database().ref('config/emergency').on('value', function(snap) {
+        var data = snap.val() || {};
+        var isOn = data.enabled === true;
+        var current = localStorage.getItem('EMERGENCY_QUOTA_MODE') === 'true';
+        
+        if (isOn !== current) {
+            console.log('%c🔄 [Emergency] Cờ thay đổi: ' + (isOn ? 'BẬT' : 'TẮT'), 
+                        'color:#f59e0b;font-weight:bold;font-size:14px');
+            console.log('   → Do:', data.updatedBy || '(unknown)');
+            
+            localStorage.setItem('EMERGENCY_QUOTA_MODE', isOn ? 'true' : 'false');
+            
+            if (typeof showUserChangedToast === 'function') {
+                if (isOn) showUserChangedToast('🚨 Hệ thống chuyển sang chế độ bảo trì', 'info');
+                else showUserChangedToast('✅ Hệ thống đã hoạt động trở lại', 'success');
+            }
+            
+            setTimeout(function() { location.reload(); }, 1500);
+        }
+    }, function(err) {
+        console.warn('[Emergency] Listener error:', err.message);
+    });
+}
 // Hàm gạt công tắc (Chỉ Super Admin chạy được)
 function toggleEmergencyMode(checkbox) {
     var isSuperAdmin = currentUser && 
