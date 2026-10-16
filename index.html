@@ -24196,61 +24196,49 @@ document.addEventListener('click', function(e) {
 
 
 
-
-/* ═══════════════════════════════════════════════════════════════════
-   🩹 BANNER FIX — Dùng CSS !important để ẩn banner chắc chắn 100%
-   Không phụ thuộc vào việc override hàm JS (tránh bị closure cản trở)
-   ═══════════════════════════════════════════════════════════════════ */
 (function() {
     'use strict';
 
     var HIDE_STYLE_ID = '__banner_fix_hide_style__';
-    var TIMEOUT_MS = 3000;
-    var MAX_LATE_MS = 15000;      // Nếu Firestore đến sau 15s → giữ ẩn
-    var LOAD_START = Date.now();
+    var TIMEOUT_MS    = 3000;
+    var MAX_LATE_MS   = 15000;
+    var LOAD_START    = Date.now();
 
-    /* ─── Hàm chèn CSS ẩn banner ─── */
     function injectHideCSS() {
         if (document.getElementById(HIDE_STYLE_ID)) return;
         var style = document.createElement('style');
         style.id = HIDE_STYLE_ID;
-        style.textContent = [
-            '#expiryBanner { display: none !important; }',
-            '#demoBanner   { display: none !important; }'
-        ].join('\n');
+        style.textContent =
+            '#expiryBanner { display: none !important; }\n' +
+            '#demoBanner   { display: none !important; }';
         (document.head || document.documentElement).appendChild(style);
-        console.log('[banner_fix] 🛡️ Đã chèn CSS ẩn hết banner');
+        console.log('[banner_fix] 🛡️ Chèn CSS ẩn banner');
     }
 
-    /* ─── Hàm gỡ CSS ẩn banner (cho phép banner hiện lại theo logic gốc) ─── */
     function removeHideCSS() {
         var el = document.getElementById(HIDE_STYLE_ID);
         if (el) {
             el.remove();
-            console.log('[banner_fix] 🔓 Đã gỡ CSS ẩn banner');
+            console.log('[banner_fix] 🔓 Gỡ CSS ẩn banner');
         }
     }
 
-    /* ─── State ─── */
-    var __timeout = false;
-    var __resolved = false;
-    var __timer = null;
+    var __timeout = false, __resolved = false, __timer = null;
 
     function startTimer() {
         if (__timer) clearTimeout(__timer);
         __resolved = false;
-        __timeout = false;
-        removeHideCSS();
+        __timeout  = false;
+        LOAD_START = Date.now();
+
+        /* ⭐ Ẩn banner NGAY từ đầu */
+        injectHideCSS();
 
         __timer = setTimeout(function() {
             if (__resolved) return;
             __timeout = true;
-            console.warn('[banner_fix] ⏱️ Firestore timeout sau ' +
-                         (TIMEOUT_MS / 1000) + 's — ẨN HẾT BANNER');
+            console.warn('[banner_fix] ⏱️ Timeout ' + (TIMEOUT_MS/1000) + 's — giữ ẩn');
 
-            injectHideCSS();
-
-            /* Tránh treo loading screen */
             var ls = document.getElementById('loadingScreen');
             if (ls) ls.classList.add('hidden');
             var st = document.getElementById('stickyTop');
@@ -24266,54 +24254,43 @@ document.addEventListener('click', function(e) {
         __resolved = true;
         if (__timer) { clearTimeout(__timer); __timer = null; }
 
-        /* Chưa timeout → Firestore trả lời đúng hạn → cho updateAllBanners xử lý */
-        if (!__timeout) {
-            removeHideCSS();
+        if (__timeout) {
+            var elapsed = Date.now() - LOAD_START;
+            if (elapsed < MAX_LATE_MS) {
+                __timeout = false;
+                updateAllBanners();
+            }
             return;
         }
 
-        /* Đã timeout + Firestore trả lời muộn → Chiến lược C */
-        var elapsed = Date.now() - LOAD_START;
-        if (elapsed < MAX_LATE_MS) {
-            console.log('[banner_fix] Firestore đến muộn sau ' +
-                        (elapsed / 1000).toFixed(1) + 's — cập nhật lại banner');
-            __timeout = false;          // Gỡ timeout
-            updateAllBanners();          // Vẽ lại theo user thật
+        /* ⭐ Chỉ gỡ CSS khi đã có currentUser thật */
+        var cu = (typeof currentUser !== 'undefined') ? currentUser : null;
+        if (cu) {
+            removeHideCSS();
+            updateAllBanners();
         } else {
-            console.log('[banner_fix] Firestore đến quá muộn (' +
-                        (elapsed / 1000).toFixed(1) + 's) — giữ ẩn cứng');
-            /* Giữ CSS ẩn — không làm gì */
+            console.log('[banner_fix] resolveTimer — chưa có user, giữ ẩn');
         }
     }
-    /* ═══════════════════════════════════════════════════════════════
-       UPDATE ALL BANNERS — dùng CSS !important để chắc chắn ẩn
-       ═══════════════════════════════════════════════════════════════ */
-    function updateAllBanners() {
-        /* Nếu đang timeout → giữ nguyên CSS ẩn */
-        if (__timeout) {
-            injectHideCSS();
-            return;
-        }
 
-        /* Emergency mode → ẩn */
+    function updateAllBanners() {
+        if (__timeout) { injectHideCSS(); return; }
+
         try {
             if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
-                injectHideCSS();
-                return;
+                injectHideCSS(); return;
             }
         } catch(e) {}
 
-        /* Không có user → để banner mặc định (demo) */
         var cu = (typeof currentUser !== 'undefined') ? currentUser : null;
-        var hasFirebaseUser = false;
-        try { hasFirebaseUser = !!(window.auth && window.auth.currentUser); } catch(e) {}
+        var hasFbUser = false;
+        try { hasFbUser = !!(window.auth && window.auth.currentUser); } catch(e) {}
 
         if (!cu) {
-            if (!hasFirebaseUser) {
-                /* Guest thật → cho demoBanner hiện */
+            if (!hasFbUser) {
                 removeHideCSS();
-                var db = document.getElementById('demoBanner');
                 var eb = document.getElementById('expiryBanner');
+                var db = document.getElementById('demoBanner');
                 if (eb) eb.style.display = 'none';
                 if (db) db.style.display = 'flex';
             } else {
@@ -24322,61 +24299,42 @@ document.addEventListener('click', function(e) {
             return;
         }
 
-        /* Admin / vĩnh viễn → ẩn */
         var role = String(cu.role || '').toLowerCase();
         var isAdmin = (role === 'admin' || role === 'super_admin' || role === 'sub_admin');
         if (isAdmin || cu.isPermanent === true) { injectHideCSS(); return; }
 
-        /* Không có expiresAt → ẩn */
         if (!cu.expiresAt) { injectHideCSS(); return; }
 
-        /* Tính ngày còn lại */
         var expDate = null;
         try {
             expDate = (typeof getExpiryDate === 'function') ? getExpiryDate(cu.expiresAt) : null;
         } catch(e) {}
         if (!expDate || isNaN(expDate.getTime())) { injectHideCSS(); return; }
 
-        var daysLeft = Math.ceil((expDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
-
-        /* Còn > 7 ngày → ẩn */
+        var daysLeft = Math.ceil((expDate.getTime() - Date.now()) / 86400000);
         if (daysLeft > 7) { injectHideCSS(); return; }
 
-        /* Sắp hết hạn → bỏ CSS ẩn để banner hiện (logic gốc vẽ nội dung) */
         removeHideCSS();
         var db2 = document.getElementById('demoBanner');
         if (db2) db2.style.display = 'none';
-
-        /* Gọi lại hàm gốc để vẽ nội dung banner */
-        try {
-            if (typeof window.__originalRenderExpiryBanner === 'function') {
-                window.__originalRenderExpiryBanner();
-            }
-        } catch(e) {}
     }
 
-    /* Expose toàn cục */
-    window.updateAllBanners = updateAllBanners;
-    window.__bannerFixInjectCSS = injectHideCSS;
-    window.__bannerFixRemoveCSS = removeHideCSS;
-    window.__bannerFixStartTimer = startTimer;
+    window.updateAllBanners        = updateAllBanners;
     window.__bannerFixResolveTimer = resolveTimer;
-    window.__bannerFixGetState = function() {
-        return { resolved: __resolved, timeout: __timeout, timerActive: !!__timer };
+    window.__bannerFixStartTimer   = startTimer;
+    window.__bannerFixGetState     = function() {
+        return { resolved: __resolved, timeout: __timeout,
+                 timerActive: !!__timer, elapsedMs: Date.now() - LOAD_START };
     };
 
-    /* ═══════════════════════════════════════════════════════════════
-       HOOK
-       ═══════════════════════════════════════════════════════════════ */
-
-    /* 1. Bắt đầu đếm khi DOM ready */
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', startTimer);
     } else {
         startTimer();
     }
 
-    /* 2. Hook vào firebase auth */
+    /* ⭐ onAuthStateChanged — có hoặc không có user đều resolve
+         NHƯNG resolveTimer() chỉ gỡ CSS khi currentUser có giá trị */
     var hookInt = setInterval(function() {
         try {
             if (typeof firebase !== 'undefined' && firebase.auth) {
@@ -24391,39 +24349,11 @@ document.addEventListener('click', function(e) {
     }, 500);
     setTimeout(function() { clearInterval(hookInt); }, 30000);
 
-    /* 3. Định kỳ update mỗi 30s */
     setInterval(function() {
         try { updateAllBanners(); } catch(e) {}
     }, 30000);
 
-    /* 4. Cho phép test bằng tay */
-    window.__debugBannerFix = function() {
-        var state = window.__bannerFixGetState();
-        var cu = (typeof currentUser !== 'undefined') ? currentUser : null;
-        var result = {
-            timeoutState: state,
-            hideCSSPresent: !!document.getElementById(HIDE_STYLE_ID),
-            currentUser: cu ? {
-                email: cu.email, role: cu.role, tier: cu.tier,
-                expiresAt: cu.expiresAt, isPermanent: cu.isPermanent
-            } : null,
-            bannerComputed: {
-                expiry: (function() {
-                    var b = document.getElementById('expiryBanner');
-                    return b ? window.getComputedStyle(b).display : null;
-                })(),
-                demo: (function() {
-                    var b = document.getElementById('demoBanner');
-                    return b ? window.getComputedStyle(b).display : null;
-                })()
-            }
-        };
-        console.table(result);
-        return result;
-    };
-
-    console.log('[banner_fix] ✅ Module loaded — dùng CSS !important, timeout ' +
-                (TIMEOUT_MS / 1000) + 's');
+    console.log('[banner_fix] ✅ Loaded — ẩn ngay từ đầu, timeout ' + (TIMEOUT_MS/1000) + 's');
 })();
 
 /* INTRO */
