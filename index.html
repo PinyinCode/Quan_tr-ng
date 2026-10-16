@@ -24161,6 +24161,27 @@ window.testTelegram = function() {
     log('Module loaded — ' + SERVERS.length + ' servers');
 })();
 
+/* ⭐ Khởi động listener emergency khi app load */
+(function initEmergencyListener() {
+    function tryStart() {
+        if (typeof firebase !== 'undefined' && firebase.database) {
+            startEmergencyListener();
+            
+            isEmergencyModeActiveAsync().then(function(isOn) {
+                console.log('[Emergency] Trạng thái hiện tại:', isOn ? '🚨 BẬT' : '✅ TẮT');
+            });
+        } else {
+            setTimeout(tryStart, 1000);
+        }
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tryStart);
+    } else {
+        tryStart();
+    }
+})();
+
 
 
 /* ⭐ Ẩn #expiryBanner khi #vocabWarningBanner đang hiện (tránh trùng) */
