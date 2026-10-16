@@ -21470,6 +21470,40 @@ window.closeRenewalModal = function() {
 };
 
 function renderRenewalStep1() {
+    
+    /* ⭐ CẢNH BÁO EMERGENCY MODE */
+    var emergencyBanner = '';
+    if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+        emergencyBanner = 
+            '<div style="' +
+                'display:flex;gap:.75rem;padding:1rem;margin-bottom:1rem;' +
+                'border-radius:12px;' +
+                'background:linear-gradient(135deg,#fef3c7,#fde68a);' +
+                'border:1.5px solid #f59e0b;' +
+                'box-shadow:0 4px 12px rgba(245,158,11,.2);' +
+            '">' +
+                '<div style="' +
+                    'width:38px;height:38px;border-radius:10px;' +
+                    'background:linear-gradient(135deg,#f59e0b,#d97706);' +
+                    'color:#fff;display:flex;align-items:center;justify-content:center;' +
+                    'font-size:1.1rem;flex-shrink:0;' +
+                '">' +
+                    '<i class="fas fa-exclamation-triangle"></i>' +
+                '</div>' +
+                '<div style="flex:1;min-width:0;">' +
+                    '<div style="font-weight:800;font-size:.9rem;color:#92400e;margin-bottom:.25rem;">' +
+                        '⚠️ Hệ thống đang bảo trì' +
+                    '</div>' +
+                    '<div style="font-size:.78rem;color:#78350f;line-height:1.55;">' +
+                        'Bạn vẫn có thể <b>tạo đơn và chuyển khoản</b> bình thường. ' +
+                        'Tuy nhiên, admin sẽ <b>xác nhận thủ công</b> — đơn có thể chờ lâu hơn.' +
+                        '<br><b style="color:#92400e">💡 Mẹo:</b> Sau khi chuyển khoản, ' +
+                        'gửi bill qua <b>Zalo admin</b> để được xử lý nhanh hơn.' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+    }
+    
     var daysLeft = getDaysRemaining(currentUser);
     var isExpired = daysLeft !== null && daysLeft <= 0;
     var isWarn = daysLeft !== null && daysLeft > 0 && daysLeft <= 7;
