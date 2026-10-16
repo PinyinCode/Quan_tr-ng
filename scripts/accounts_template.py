@@ -2884,29 +2884,25 @@ function renderExpiryBanner() {
             return;
         }
 
-        /* ═══ 🛡️ KIỂM TRA TẤT CẢ CÁC DẤU HIỆU CỦA ADMIN ═══ */
+        /* ═══ 🛡️ CHẶN TUYỆT ĐỐI ĐỐI VỚI MỌI TÀI KHOẢN ADMIN / VĨNH VIỄN ═══ */
         var userEmail = (user.email || '').toLowerCase();
-        
-        // Nếu bạn có danh sách email phụ của các admin khác, có thể đưa vào đây:
-        var extraAdminEmails = ['hoanginvest199@gmail.com']; 
+        var superAdminEmail = (typeof SUPER_ADMIN !== 'undefined' ? SUPER_ADMIN.toLowerCase() : '');
 
         var isAdminAccount = (
-            user.role === 'admin' || 
-            user.role === 'sub-admin' || 
-            user.isAdmin === true || 
-            user.isPermanent === true || 
-            user.tier === 'permanent' || 
-            user.tier === 'admin' ||
-            extraAdminEmails.includes(userEmail)
+            userEmail === superAdminEmail ||
+            user.role === 'admin' ||
+            user.role === 'super_admin' ||
+            user.isPermanent === true ||
+            user.tier === 'permanent' ||
+            user.tier === 'admin'
         );
 
-        // Nếu là bất kỳ tài khoản admin nào -> Ẩn ngay banner
         if (isAdminAccount) {
             banner.style.display = 'none';
             return;
         }
 
-        // Nếu tài khoản thường mà không có ngày hết hạn -> ẩn
+        // Nếu là user thường mà không có ngày hết hạn thì cũng ẩn
         if (!user.expiresAt) {
             banner.style.display = 'none';
             return;
@@ -2970,7 +2966,7 @@ function renderExpiryBanner() {
                     Math.abs(daysLeft) + ' ngày trước). Gia hạn ngay để mở khóa toàn bộ!';
             } else if (isUrgent) {
                 descEl.innerHTML = 'Tài khoản sẽ hết hạn vào <b>' + expDateStr + '</b> — ' +
-                    'chỉ còn <b>' + daysLeft + ' ngày</b>. Gia hạn ngay để không bị gián đoạn!';
+                    'chỉ còn <b>' + daysLeft + ' ngày</b>. Gia hạn ngay để không gián đoạn!';
             } else if (tier === 'trial') {
                 descEl.innerHTML = 'Còn <b>' + daysLeft + ' ngày</b> dùng thử (đến <b>' +
                     expDateStr + '</b>). Nâng cấp để mở khóa toàn bộ!';
@@ -2996,6 +2992,7 @@ function renderExpiryBanner() {
         banner.style.display = 'none';
     }
 }
+
 
 /* ═══════════════════════════════════════════════════════════════
    ✅ ĐỒNG BỘ TRẠNG THÁI DROPDOWN USER MENU
