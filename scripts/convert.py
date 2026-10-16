@@ -1128,6 +1128,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
 
 
+
 full_js = (
     build_config_js(CONFIG)
     + "\n/* AUTO SCALE */\n" + build_auto_scale_js()

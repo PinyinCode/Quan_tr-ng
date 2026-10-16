@@ -1876,6 +1876,209 @@ function hasPermission(permKey) {
     }
     return perms[permKey] === true;
 }
+// Kiểm tra xem chế độ khẩn cấp có đang bật không
+function isEmergencyModeActive() {
+    try {
+        return localStorage.getItem('EMERGENCY_QUOTA_MODE') === 'true';
+    } catch(e) {
+        return false;
+    }
+}
+
+// Hàm gạt công tắc (Chỉ Super Admin chạy được)
+function toggleEmergencyMode(checkbox) {
+    var isSuperAdmin = currentUser && 
+                       currentUser.email && 
+                       typeof SUPER_ADMIN !== 'undefined' && 
+                       currentUser.email.toLowerCase() === SUPER_ADMIN.toLowerCase();
+
+    if (!isSuperAdmin) {
+        alert('🚫 Bạn không có quyền thực hiện thao tác này!');
+        if (checkbox) checkbox.checked = !checkbox.checked;
+        return;
+    }
+
+    var isActive = checkbox ? checkbox.checked : !isEmergencyModeActive();
+    
+    try {
+        localStorage.setItem('EMERGENCY_QUOTA_MODE', isActive ? 'true' : 'false');
+    } catch(e) {}
+
+    if (isActive) {
+        alert('🚨 Đã BẬT Chế độ khẩn cấp!\n\nHệ thống sẽ bỏ qua kết nối Firestore. User mới và cũ vẫn đăng nhập/đăng ký bình thường.');
+    } else {
+        alert('✅ Đã TẮT Chế độ khẩn cấp.\n\nHệ thống sẽ kết nối lại Firebase Firestore bình thường.');
+    }
+    
+    location.reload(); // Tải lại trang để áp dụng
+}
+
+// Hàm đồng bộ tài khoản mới đăng ký trong lúc bật khẩn cấp lên Firestore khi quota hồi phục
+async function syncEmergencyUserIfNeeded() {
+    if (isEmergencyModeActive() || !currentUser || !currentUser.email || !db) return;
+    
+    var email = currentUser.email.toLowerCase();
+    var syncKey = 'synced_emergency_' + email;
+    
+    if (localStorage.getItem(syncKey) === 'true') return;
+
+    try {
+        var docRef = db.collection('allowed_users').doc(email);
+        var doc = await docRef.get();
+
+        if (!doc.exists) {
+            console.log('🔄 Đang đồng bộ tài khoản mới từ chế độ khẩn cấp lên Firestore...');
+            
+            var days = (typeof TRIAL_DAYS === 'number' && TRIAL_DAYS > 0) ? TRIAL_DAYS : 3;
+            var expiresAt = new Date(Date.now() + days * 86400000);
+            expiresAt.setHours(23, 59, 59, 0);
+
+            await docRef.set({
+                email: email,
+                name: currentUser.name || email.split('@')[0],
+                role: 'user',
+                expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
+                registeredAt: firebase.firestore.FieldValue.serverTimestamp(),
+                isTrial: true,
+                tier: 'trial',
+                trialMaxQuestions: (typeof TRIAL_MAX_QUESTIONS === 'number') ? TRIAL_MAX_QUESTIONS : 50,
+                trialMaxHSK: (typeof TRIAL_MAX_HSK === 'number') ? TRIAL_MAX_HSK : 5
+            });
+
+            localStorage.setItem(syncKey, 'true');
+            console.log('✅ Đồng bộ tài khoản mới lên Firestore thành công!');
+        } else {
+            localStorage.setItem(syncKey, 'true');
+        }
+    } catch (e) {
+        console.warn('⚠️ Chưa thể đồng bộ tài khoản lên Firestore:', e.message);
+    }
+}
+function renderEmergencyModeWidget() {
+    var container = document.getElementById('emergencyModeContainer'); // Thay thế bằng id element thực tế trong HTML của bạn
+    if (!container) return;
+
+    var isSuperAdmin = currentUser && 
+                       currentUser.email && 
+                       typeof SUPER_ADMIN !== 'undefined' && 
+                       currentUser.email.toLowerCase() === SUPER_ADMIN.toLowerCase();
+
+    // Nếu không phải Super Admin thì ẩn hoàn toàn
+    if (!isSuperAdmin) {
+        container.innerHTML = '';
+        return;
+    }
+
+    var isChecked = isEmergencyModeActive() ? 'checked' : '';
+
+    container.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding: .75rem 1rem; background: rgba(239, 68, 68, 0.1); border: 1.5px dashed var(--danger, #ef4444); border-radius: 10px; margin-bottom: 1rem;">
+            <div>
+                <div style="font-weight: 800; font-size: .85rem; color: var(--danger, #ef4444);">🚨 Chế độ khẩn cấp (Super Admin)</div>
+                <div style="font-size: .72rem; color: var(--text-3, #6b7280);">Bật để bỏ qua Firestore, cho phép đăng ký/đăng nhập qua LocalStorage khi hết Quota.</div>
+            </div>
+            <label style="position:relative; display:inline-block; width:40px; height:24px;">
+                <input type="checkbox" id="emergencyQuotaSwitch" ${isChecked} onchange="toggleEmergencyMode(this)" style="opacity:0; width:0; height:0;">
+                <span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:${isEmergencyModeActive() ? '#ef4444' : '#ccc'}; transition:.4s; border-radius:24px;"></span>
+            </label>
+        </div>
+    `;
+}
+/* ═══════════════════════════════════════════════════════════════
+   🚨 HÀM XỬ LÝ GIA HẠN KHI BẬT CHẾ ĐỘ KHẨN CẤP (SAFE MODE)
+   ═══════════════════════════════════════════════════════════════ */
+
+// 1. User tạo/chuyển khoản đơn gia hạn trong Chế độ khẩn cấp
+function saveEmergencyRenewalRequest(reqData) {
+    try {
+        var pending = [];
+        try { pending = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]'); } catch(e) {}
+        
+        // Loại bỏ đơn cũ cùng email nếu có
+        pending = pending.filter(function(item) { return item.email !== reqData.email; });
+        pending.push(reqData);
+        
+        localStorage.setItem('pending_renewals_local', JSON.stringify(pending));
+        console.log('🚨 [Emergency] Đã lưu yêu cầu gia hạn vào LocalStorage:', reqData);
+        return true;
+    } catch(e) {
+        console.error('Lỗi lưu đơn gia hạn khẩn cấp:', e);
+        return false;
+    }
+}
+
+// 2. Tự động đồng bộ các đơn gia hạn chưa đẩy lên Firestore khi Quota phục hồi
+async function syncPendingRenewals() {
+    if (isEmergencyModeActive() || !db) return;
+
+    // A. Đồng bộ các đơn user đăng ký gia hạn lúc khẩn cấp lên renewal_requests
+    var pendingReqs = [];
+    try { pendingReqs = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]'); } catch(e) {}
+
+    if (pendingReqs.length > 0) {
+        console.log('🔄 Đang đồng bộ đơn gia hạn local lên Firestore...', pendingReqs);
+        var remainingReqs = [];
+
+        for (var i = 0; i < pendingReqs.length; i++) {
+            var req = pendingReqs[i];
+            try {
+                await db.collection('renewal_requests').add({
+                    email: req.email,
+                    name: req.name,
+                    package: req.package,
+                    packageLabel: req.packageLabel,
+                    amount: req.amount,
+                    days: req.days,
+                    transferCode: req.transferCode,
+                    status: req.status || 'user_paid',
+                    isPermanent: req.isPermanent || false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log('✅ Đã đẩy đơn gia hạn local lên Cloud:', req.email);
+            } catch(e) {
+                console.warn('⚠️ Chưa thể đẩy đơn gia hạn của ' + req.email + ':', e.message);
+                remainingReqs.push(req);
+            }
+        }
+        localStorage.setItem('pending_renewals_local', JSON.stringify(remainingReqs));
+    }
+
+    // B. Đồng bộ các đơn Admin ĐÃ DUYỆT lúc khẩn cấp lên allowed_users & renewal_requests
+    var approvedList = [];
+    try { approvedList = JSON.parse(localStorage.getItem('pending_approved_renewals') || '[]'); } catch(e) {}
+
+    if (approvedList.length > 0) {
+        console.log('🔄 Đang đồng bộ kết quả duyệt gia hạn lên Firestore...', approvedList);
+        var remainingApproved = [];
+
+        for (var j = 0; j < approvedList.length; j++) {
+            var item = approvedList[j];
+            try {
+                var updateData = {
+                    isTrial: false,
+                    tier: 'active',
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                if (item.isPermanent) {
+                    updateData.expiresAt = null;
+                    updateData.isPermanent = true;
+                } else if (item.newExpiresAt) {
+                    updateData.expiresAt = firebase.firestore.Timestamp.fromDate(new Date(item.newExpiresAt));
+                    updateData.isPermanent = false;
+                }
+
+                await db.collection('allowed_users').doc(item.email).update(updateData);
+                console.log('✅ Đã cập nhật hạn dùng chính thức lên Firestore cho:', item.email);
+            } catch(e) {
+                console.warn('⚠️ Chưa thể đồng bộ hạn mới cho ' + item.email + ':', e.message);
+                remainingApproved.push(item);
+            }
+        }
+        localStorage.setItem('pending_approved_renewals', JSON.stringify(remainingApproved));
+    }
+}
+
 
 function showUserChangedToast(message, type) {
     var old = document.getElementById('userChangedToast');
@@ -1968,6 +2171,9 @@ try {
     firebase.initializeApp(FIREBASE_CONFIG);
     auth = firebase.auth();
     db = firebase.firestore();
+db.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
+    console.warn("Firestore persistence error:", err);
+});
     try {
         db.settings({
             experimentalForceLongPolling: true,
@@ -2081,6 +2287,46 @@ async function handleAuthChange(user) {
     /* ═══ END CHẶN ANONYMOUS ═══ */
 
     var email = (user.email || '').toLowerCase();
+    var isSuper = (typeof SUPER_ADMIN !== 'undefined' && email === SUPER_ADMIN.toLowerCase());
+
+    /* ═══ KIỂM TRA CHẾ ĐỘ KHẨN CẤP (EMERGENCY MODE) ═══ */
+    if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+        console.warn('🚨 [EMERGENCY MODE] Đang bật — Bỏ qua Firestore để chống lỗi Quota!');
+        
+        var cachedEmergency = null;
+        try { cachedEmergency = JSON.parse(localStorage.getItem('user_cache_' + email) || 'null'); } catch(e) {}
+
+        currentUser = (cachedEmergency && cachedEmergency.data) ? cachedEmergency.data : {
+            email: email,
+            name: user.displayName || email.split('@')[0],
+            role: isSuper ? 'admin' : 'user',
+            photo: user.photoURL || '',
+            expiresAt: null,
+            isPermanent: true,
+            tier: 'active'
+        };
+
+        isDemo = false;
+        publishTierState();
+        applyUserUI();
+
+        if (!appInitialized) {
+            initApp();
+            appInitialized = true;
+        } else {
+            if (typeof refreshApp === 'function') refreshApp();
+        }
+
+        if (typeof buildFilters === 'function') buildFilters();
+        if (typeof applyFilter === 'function') applyFilter();
+        if (typeof updateResultCount === 'function') updateResultCount();
+        if (typeof markCurrentDatasetActive === 'function') markCurrentDatasetActive();
+        if (typeof favUpdateLockState === 'function') favUpdateLockState();
+
+        return; // ⛔ Dừng lại hoàn toàn, không gọi Firestore, chống lỗi quota tuyệt đối!
+    }
+    /* ═══ END CHẾ ĐỘ KHẨN CẤP ═══ */
+
     var cacheKey = 'user_cache_' + email;
     var cached = null;
     try { cached = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(e) {}
@@ -2342,12 +2588,43 @@ async function handleAuthChange(user) {
         watchCurrentUser();
         startRTDBPresence();
 
+        // 🔄 1. Gọi đồng bộ tài khoản mới tạo lúc bật chế độ khẩn cấp (nếu có)
+        if (typeof syncEmergencyUserIfNeeded === 'function') {
+            await syncEmergencyUserIfNeeded();
+        }
+
+        // 🔄 2. Gọi đồng bộ danh sách gia hạn & duyệt gia hạn lúc bật chế độ khẩn cấp (nếu có)
+        if (typeof syncPendingRenewals === 'function') {
+            await syncPendingRenewals();
+        }
+
     } catch(e) {
-        console.error('Auth check error:', e);
-        isDemo = true;
-        enterDemoMode();
+        console.error('Auth check error (Quota/Network):', e);
+        
+        var staleCache = null;
+        try { staleCache = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(err) {}
+
+        if (staleCache && staleCache.data) {
+            console.warn('⚠️ Hết quota/Lỗi kết nối — Sử dụng dữ liệu Cache cũ để hiển thị giao diện.');
+            currentUser = staleCache.data;
+            isDemo = false;
+
+            publishTierState();
+            applyUserUI();
+
+            if (!appInitialized) {
+                initApp();
+                appInitialized = true;
+            } else {
+                if (typeof refreshApp === 'function') refreshApp();
+            }
+        } else {
+            isDemo = true;
+            enterDemoMode();
+        }
     }
 }
+
 /* ═══════════════════════════════════════════════════════════════
    🔄 REALTIME WATCHER
    ═══════════════════════════════════════════════════════════════ */
@@ -2594,104 +2871,130 @@ function renderExpiryBanner() {
     var banner = $('expiryBanner');
     if (!banner) return;
 
-    if (!currentUser) {
-        banner.style.display = 'none';
-        return;
-    }
-    if (currentUser.role === 'admin' || currentUser.isPermanent) {
-        banner.style.display = 'none';
-        return;
-    }
-    if (!currentUser.expiresAt) {
-        banner.style.display = 'none';
-        return;
-    }
-
-    var expDate = getExpiryDate(currentUser.expiresAt);
-    if (!expDate || isNaN(expDate.getTime())) {
-        banner.style.display = 'none';
-        return;
-    }
-
-    var now = Date.now();
-    var daysLeft = Math.ceil((expDate.getTime() - now) / (24 * 60 * 60 * 1000));
-    var expDateStr = expDate.toLocaleDateString('vi-VN');
-    var tier = currentUser.tier || 'active';
-
-    if (daysLeft > 7) {
-        banner.style.display = 'none';
-        return;
-    }
-
-    var isExpired = daysLeft <= 0;
-    var isUrgent  = !isExpired && daysLeft <= 3;
-
-    banner.classList.remove('urgent', 'expired');
-    if (isExpired) {
-        banner.classList.add('expired');
-    } else if (isUrgent) {
-        banner.classList.add('urgent');
-    }
-
-    var iconWrap = $('expiryBannerIcon') || banner.querySelector('.expiry-banner-icon');
-    if (iconWrap) {
-        if (isExpired) {
-            iconWrap.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-        } else if (isUrgent) {
-            iconWrap.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
-        } else {
-            iconWrap.innerHTML = '<i class="fas fa-hourglass-half"></i>';
+    try {
+        /* ═══ 🚨 1. KIỂM TRA CHẾ ĐỘ KHẨN CẤP / HẾT QUOTA — ẨN BANNER ═══ */
+        if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+            banner.style.display = 'none';
+            return;
         }
-    }
 
-    var titleEl = $('expiryBannerTitle') || banner.querySelector('.expiry-banner-text .title');
-    if (titleEl) {
-        if (isExpired) {
-            titleEl.innerHTML = '❌ Tài khoản đã HẾT HẠN!';
-        } else if (isUrgent) {
-            titleEl.innerHTML = '🔥 Chỉ còn ' + daysLeft + ' ngày!';
-        } else if (tier === 'trial') {
-            titleEl.innerHTML = '🎁 Trial còn ' + daysLeft + ' ngày';
-        } else {
-            titleEl.innerHTML = '⏰ Tài khoản sắp hết hạn';
+        var user = currentUser;
+        if (!user) {
+            banner.style.display = 'none';
+            return;
         }
-    }
 
-    var descEl = $('expiryBannerDesc') || banner.querySelector('.expiry-banner-text .desc');
-    if (descEl) {
-        if (isExpired) {
-            descEl.innerHTML = 'Đã hết hạn vào <b>' + expDateStr + '</b> (' +
-                Math.abs(daysLeft) + ' ngày trước). Bạn đang ở chế độ giới hạn — ' +
-                'gia hạn ngay để mở khóa toàn bộ!';
-        } else if (isUrgent) {
-            descEl.innerHTML = 'Tài khoản sẽ hết hạn vào <b>' + expDateStr + '</b> — ' +
-                'chỉ còn <b>' + daysLeft + ' ngày</b>. Gia hạn ngay để không bị gián đoạn!';
-        } else if (tier === 'trial') {
-            descEl.innerHTML = 'Còn <b>' + daysLeft + ' ngày</b> dùng thử (đến <b>' +
-                expDateStr + '</b>). Nâng cấp để mở khóa toàn bộ nội dung!';
-        } else {
-            descEl.innerHTML = 'Còn <b>' + daysLeft + ' ngày</b> sử dụng (đến <b>' +
-                expDateStr + '</b>). Gia hạn sớm để yên tâm học tập!';
+        /* ═══ 🛡️ 2. CHẶN TOÀN BỘ TÀI KHOẢN ADMIN HOẶC VĨNH VIỄN ═══ */
+        var userEmail = (user.email || '').toLowerCase();
+        var emergencyAdminEmails = ['hoanginvest199@gmail.com']; // 👈 Thay email admin của bạn vào đây
+        var superAdminEmail = (typeof SUPER_ADMIN !== 'undefined' && SUPER_ADMIN ? SUPER_ADMIN.toLowerCase() : '');
+
+        var isAdminAccount = (
+            emergencyAdminEmails.includes(userEmail) ||
+            (superAdminEmail && userEmail === superAdminEmail) ||
+            user.role === 'admin' ||
+            user.role === 'super_admin' ||
+            user.role === 'sub_admin' ||
+            user.isPermanent === true ||
+            user.tier === 'permanent' ||
+            user.tier === 'admin'
+        );
+
+        if (isAdminAccount || !user.expiresAt) {
+            banner.style.display = 'none';
+            return;
         }
-    }
 
-    var contactBtn = $('expiryContactBtn') || banner.querySelector('.expiry-banner-btn');
-    if (contactBtn) {
+        /* ═══ ⏰ 3. TÍNH TOÁN NGÀY HẾT HẠN CHO USER THƯỜNG ═══ */
+        var expDate = getExpiryDate(user.expiresAt);
+        if (!expDate || isNaN(expDate.getTime())) {
+            banner.style.display = 'none';
+            return;
+        }
+
+        var now = Date.now();
+        var daysLeft = Math.ceil((expDate.getTime() - now) / (24 * 60 * 60 * 1000));
+        var expDateStr = expDate.toLocaleDateString('vi-VN');
+        var tier = user.tier || 'active';
+
+        // Nếu còn trên 7 ngày thì ẩn banner đi cho gọn
+        if (daysLeft > 7) {
+            banner.style.display = 'none';
+            return;
+        }
+
+        var isExpired = daysLeft <= 0;
+        var isUrgent  = !isExpired && daysLeft <= 3;
+
+        banner.classList.remove('urgent', 'expired');
         if (isExpired) {
+            banner.classList.add('expired');
+        } else if (isUrgent) {
+            banner.classList.add('urgent');
+        }
+
+        var iconWrap = $('expiryBannerIcon') || banner.querySelector('.expiry-banner-icon');
+        if (iconWrap) {
+            if (isExpired) {
+                iconWrap.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+            } else if (isUrgent) {
+                iconWrap.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+            } else {
+                iconWrap.innerHTML = '<i class="fas fa-hourglass-half"></i>';
+            }
+        }
+
+        var titleEl = $('expiryBannerTitle') || banner.querySelector('.expiry-banner-text .title');
+        if (titleEl) {
+            if (isExpired) {
+                titleEl.innerHTML = '❌ Tài khoản đã HẾT HẠN!';
+            } else if (isUrgent) {
+                titleEl.innerHTML = '🔥 Chỉ còn ' + daysLeft + ' ngày!';
+            } else if (tier === 'trial') {
+                titleEl.innerHTML = '🎁 Trial còn ' + daysLeft + ' ngày';
+            } else {
+                titleEl.innerHTML = '⏰ Tài khoản sắp hết hạn';
+            }
+        }
+
+        var descEl = $('expiryBannerDesc') || banner.querySelector('.expiry-banner-text .desc');
+        if (descEl) {
+            if (isExpired) {
+                descEl.innerHTML = 'Đã hết hạn vào <b>' + expDateStr + '</b> (' +
+                    Math.abs(daysLeft) + ' ngày trước). Gia hạn ngay để mở khóa toàn bộ!';
+            } else if (isUrgent) {
+                descEl.innerHTML = 'Tài khoản sẽ hết hạn vào <b>' + expDateStr + '</b> — ' +
+                    'chỉ còn <b>' + daysLeft + ' ngày</b>. Gia hạn ngay để không bị gián đoạn!';
+            } else if (tier === 'trial') {
+                descEl.innerHTML = 'Còn <b>' + daysLeft + ' ngày</b> dùng thử (đến <b>' +
+                    expDateStr + '</b>). Nâng cấp để mở khóa toàn bộ!';
+            } else {
+                descEl.innerHTML = 'Còn <b>' + daysLeft + ' ngày</b> sử dụng (đến <b>' +
+                    expDateStr + '</b>). Gia hạn sớm để yên tâm học tập!';
+            }
+        }
+
+        var contactBtn = $('expiryContactBtn') || banner.querySelector('.expiry-banner-btn');
+        if (contactBtn) {
             contactBtn.innerHTML = '<i class="fas fa-gem"></i> Gia hạn ngay';
-        } else if (isUrgent) {
-            contactBtn.innerHTML = '<i class="fas fa-gem"></i> Gia hạn ngay';
-        } else {
-            contactBtn.innerHTML = '<i class="fas fa-gem"></i> Gia hạn';
+            contactBtn.onclick = function(e) {
+                e.preventDefault();
+                if (typeof openRenewalModal === 'function') openRenewalModal();
+            };
         }
-        contactBtn.onclick = function(e) {
-            e.preventDefault();
-            if (typeof openRenewalModal === 'function') openRenewalModal();
-        };
-    }
 
-    banner.style.display = 'flex';
+        // Hiển thị banner khi mọi thứ bình thường và tài khoản dưới 7 ngày hết hạn
+        banner.style.display = 'flex';
+
+    } catch (err) {
+        /* ═══ 🚨 4. BẮT MỌI LỖI PHÁT SINH (HẾT QUOTA / MẤT MẠNG) -> ẨN BANNER LUÔN ═══ */
+        console.warn('⚠️ Lỗi kết nối / Hết quota -> Ẩn banner:', err);
+        banner.style.display = 'none';
+    }
 }
+
+
+
 
 /* ═══════════════════════════════════════════════════════════════
    ✅ ĐỒNG BỘ TRẠNG THÁI DROPDOWN USER MENU
@@ -3006,6 +3309,37 @@ async function checkPendingRenewalBadge() {
         if (b) b.style.display = 'none';
         return;
     }
+
+    var cacheKey = 'checked_renewal_' + currentUser.email;
+    
+    // 🛑 TỐI ƯU 1: Nếu trong phiên làm việc này đã kiểm tra rồi, 
+    // ta lấy trạng thái tạm thời từ sessionStorage để hoàn toàn KHÔNG gọi Firestore nữa.
+    var cachedStatus = null;
+    try {
+        cachedStatus = sessionStorage.getItem(cacheKey);
+    } catch(e) {}
+
+    var btn = $('renewalPendingBtn');
+    var countEl = $('renewalPendingCount');
+
+    if (cachedStatus !== null) {
+        // Đã kiểm tra trong cache trước đó
+        if (cachedStatus === 'none') {
+            if (btn) btn.style.display = 'none';
+        } else {
+            // Có đơn chờ (lưu trạng thái 'pending' hoặc 'user_paid')
+            if (btn) {
+                btn.style.display = 'flex';
+                if (countEl) {
+                    countEl.textContent = cachedStatus === 'user_paid' ? '⏳' : '1';
+                    countEl.style.background = cachedStatus === 'user_paid' ? '#2563eb' : '#f59e0b';
+                }
+            }
+        }
+        return;
+    }
+
+    // 🛑 TỐI ƯU 2: Nếu chưa kiểm tra trong phiên, thực hiện gọi Firestore 1 LẦN DUY NHẤT và lưu vào Cache
     try {
         var snap = await db.collection('renewal_requests')
             .where('email', '==', currentUser.email)
@@ -3013,24 +3347,27 @@ async function checkPendingRenewalBadge() {
             .limit(1)
             .get();
 
-        var btn = $('renewalPendingBtn');
-        var countEl = $('renewalPendingCount');
         if (!btn) return;
 
         if (snap.empty) {
             btn.style.display = 'none';
+            try { sessionStorage.setItem(cacheKey, 'none'); } catch(e) {}
         } else {
             btn.style.display = 'flex';
             var data = snap.docs[0].data();
+            var status = data.status || 'pending';
+            
             if (countEl) {
-                countEl.textContent = data.status === 'user_paid' ? '⏳' : '1';
-                countEl.style.background = data.status === 'user_paid' ? '#2563eb' : '#f59e0b';
+                countEl.textContent = status === 'user_paid' ? '⏳' : '1';
+                countEl.style.background = status === 'user_paid' ? '#2563eb' : '#f59e0b';
             }
+            try { sessionStorage.setItem(cacheKey, status); } catch(e) {}
         }
     } catch(e) {
         console.warn('checkPendingRenewalBadge error:', e);
     }
 }
+
 
 
 function updateDemoBannerByTier() {
@@ -3537,6 +3874,37 @@ window.selectPackage = function(pkgId) {
 async function goToPayment() {
     if (!renewalSelectedPkg) return;
 
+    var transferCode = generateTransferCode();
+    var amount = renewalSelectedPkg.amount;
+    var btn = $('renewalNextBtn');
+    
+    if (btn) { 
+        btn.disabled = true; 
+        btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Đang tạo...'; 
+    }
+
+    var reqData = {
+        email: currentUser.email, 
+        name: currentUser.name,
+        package: renewalSelectedPkg.id, 
+        packageLabel: renewalSelectedPkg.label,
+        amount: amount, 
+        days: renewalSelectedPkg.days,
+        transferCode: transferCode, 
+        status: 'pending', 
+        method: 'manual',
+        isPermanent: renewalSelectedPkg.permanent || false,
+        createdAtMs: Date.now()
+    };
+
+    /* ═══ 🚨 XỬ LÝ CHẾ ĐỘ KHẨN CẤP HOẶC FALLBACK KHI HẾT QUOTA ═══ */
+    if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+        saveEmergencyRenewalRequest(reqData);
+        renewalCurrentReq = { id: 'local_' + Date.now(), code: transferCode };
+        renderPaymentScreen();
+        return;
+    }
+
     try {
         var checkSnap = await db.collection('renewal_requests')
             .where('email', '==', currentUser.email)
@@ -3549,34 +3917,26 @@ async function goToPayment() {
             closeRenewalModal();
             return;
         }
-    } catch(e) {
-        console.error('Double-check error:', e);
-    }
 
-    var transferCode = generateTransferCode();
-    var amount = renewalSelectedPkg.amount;
-    var btn = $('renewalNextBtn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Đang tạo...'; }
-    try {
-        var reqData = {
-            email: currentUser.email, name: currentUser.name,
-            package: renewalSelectedPkg.id, packageLabel: renewalSelectedPkg.label,
-            amount: amount, days: renewalSelectedPkg.days,
-            transferCode: transferCode, status: 'pending', method: 'manual',
+        var reqRef = await db.collection('renewal_requests').add(Object.assign({}, reqData, {
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        if (renewalSelectedPkg.permanent) reqData.isPermanent = true;
-        var reqRef = await db.collection('renewal_requests').add(reqData);
+        }));
+        
         renewalCurrentReq = { id: reqRef.id, code: transferCode };
         checkPendingRenewalBadge();
+        renderPaymentScreen();
+        listenRenewalRequest(renewalCurrentReq.id);
+
     } catch(e) {
-        alert('❌ Lỗi tạo yêu cầu: ' + e.message);
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrow-right"></i> Tiếp tục'; }
-        return;
+        console.warn('⚠️ Lỗi Firestore khi tạo đơn gia hạn (Quota Exceeded). Chuyển sang lưu Local Emergency:', e.message);
+        
+        // Tự động lưu Local dự phòng nếu dính lỗi Quota
+        saveEmergencyRenewalRequest(reqData);
+        renewalCurrentReq = { id: 'local_' + Date.now(), code: transferCode };
+        renderPaymentScreen();
     }
-    renderPaymentScreen();
-    listenRenewalRequest(renewalCurrentReq.id);
 }
+
 
 function renderPaymentScreen() {
     var pkg = renewalSelectedPkg;
@@ -3629,19 +3989,64 @@ window.copyText = function(text, btn) {
 
 window.userConfirmPaid = async function() {
     if (!renewalCurrentReq) return;
+
     var btn = $('renewalConfirmBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Đang gửi...';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Đang gửi...';
+    }
+
+    /* ═══ 🚨 1. KIỂM TRA CHẾ ĐỘ KHẨN CẤP (EMERGENCY MODE) ═══ */
+    if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+        try {
+            var pending = [];
+            try { pending = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]'); } catch(e) {}
+
+            var emailClean = (currentUser && currentUser.email) ? currentUser.email.toLowerCase() : '';
+            var found = false;
+
+            pending.forEach(function(item) {
+                if (item.email === emailClean || item.transferCode === renewalCurrentReq.code) {
+                    item.status = 'user_paid';
+                    item.userConfirmedAtMs = Date.now();
+                    found = true;
+                }
+            });
+
+            // Nếu chưa có trong danh sách local thì tạo thêm record mới
+            if (!found && emailClean) {
+                pending.push({
+                    email: emailClean,
+                    name: (currentUser && currentUser.name) ? currentUser.name : emailClean.split('@')[0],
+                    transferCode: renewalCurrentReq.code || '',
+                    status: 'user_paid',
+                    userConfirmedAtMs: Date.now()
+                });
+            }
+
+            localStorage.setItem('pending_renewals_local', JSON.stringify(pending));
+            console.log('🚨 [Emergency] Đã lưu trạng thái user_paid vào LocalStorage cho:', emailClean);
+        } catch(err) {
+            console.warn('Lỗi ghi cache gia hạn khẩn cấp:', err);
+        }
+
+        renderPendingConfirm();
+        return; // Dừng lại ở đây, không gọi Firestore
+    }
+
+    /* ═══ 🟢 2. TRƯỜNG HỢP BÌNH THƯỜNG (KẾT NỐI FIRESTORE) ═══ */
     try {
         var _reqData = null;
         try {
             var _snap = await db.collection('renewal_requests').doc(renewalCurrentReq.id).get();
             if (_snap.exists) _reqData = _snap.data();
         } catch(_e) {}
+
         await db.collection('renewal_requests').doc(renewalCurrentReq.id).update({
             userConfirmedAt: firebase.firestore.FieldValue.serverTimestamp(),
             status: 'user_paid'
         });
+
         if (_reqData && typeof window.notifyTelegramUserPaid === 'function') {
             try {
                 window.notifyTelegramUserPaid({
@@ -3654,12 +4059,32 @@ window.userConfirmPaid = async function() {
                 });
             } catch(_te) {}
         }
+
         renderPendingConfirm();
         checkPendingRenewalBadge();
+
     } catch(e) {
-        alert('❌ Lỗi: ' + e.message);
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-check"></i> Tôi đã thanh toán';
+        console.error('Lỗi xác nhận thanh toán trên Firestore (Quota/Network):', e);
+
+        // 🛑 FALLBACK DỰ PHÒNG: Nếu dính lỗi QuotaExceeded bất ngờ khi công tắc chưa kịp bật
+        try {
+            var pendingFallback = [];
+            try { pendingFallback = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]'); } catch(err) {}
+
+            var emailFallback = (currentUser && currentUser.email) ? currentUser.email.toLowerCase() : '';
+            pendingFallback.push({
+                email: emailFallback,
+                name: (currentUser && currentUser.name) ? currentUser.name : emailFallback.split('@')[0],
+                transferCode: (renewalCurrentReq && renewalCurrentReq.code) ? renewalCurrentReq.code : '',
+                status: 'user_paid',
+                userConfirmedAtMs: Date.now()
+            });
+
+            localStorage.setItem('pending_renewals_local', JSON.stringify(pendingFallback));
+        } catch(err) {}
+
+        // Vẫn chuyển giao diện sang màn hình chờ để user không bị khó chịu
+        renderPendingConfirm();
     }
 };
 
@@ -4017,10 +4442,18 @@ async function autoExpireOldRenewals() {
         console.warn('[Auto-expire] Lỗi (không quan trọng):', e.message);
     }
 }
+/* ============ CẬP NHẬT: TỐI ƯU AUTO-EXPIRE CHỈ CHO ADMIN ============ */
 function scheduleAutoExpire() {
-    setTimeout(autoExpireOldRenewals, 10000);
-    setInterval(autoExpireOldRenewals, 60 * 60 * 1000);
+    // 🛑 CHỈ CHO PHÉP ADMIN MỚI CHẠY TIẾN TRÌNH TỰ ĐỘNG QUÉT ĐƠN GIA HẠN
+    if (currentUser && currentUser.role === 'admin') {
+        console.log('[Auto-expire] Admin detected — khởi động lịch quét tự động.');
+        setTimeout(autoExpireOldRenewals, 10000);
+        setInterval(autoExpireOldRenewals, 60 * 60 * 1000); // 1 tiếng/lần
+    } else {
+        console.log('[Auto-expire] User thường — bỏ qua tiến trình quét ngầm để tiết kiệm quota.');
+    }
 }
+
 
 /* ============ LỊCH SỬ GIA HẠN (USER) ============ */
 window.openRenewalHistory = async function() {
@@ -4910,6 +5343,70 @@ window.approveRenewal = async function(reqId) {
         return;
     }
     if (!confirm('Xác nhận đã nhận tiền và gia hạn?')) return;
+
+    /* ═══ 🚨 TRƯỜNG HỢP 1: BẬT CHẾ ĐỘ KHẨN CẤP (Duyệt qua Local Cache) ═══ */
+    if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+        try {
+            // Tìm thông tin yêu cầu trong danh sách local hoặc dữ liệu tạm
+            var pendingLocal = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]');
+            var req = pendingLocal.find(function(item) { return item.email && (item.transferCode === reqId || item.email === reqId); });
+
+            var emailClean = req ? req.email.toLowerCase() : reqId.toLowerCase();
+            var days = req ? req.days : 30; // Mặc định 30 ngày nếu duyệt trực tiếp theo email
+            var isPermanent = req ? (req.isPermanent || req.package === 'forever') : false;
+
+            // 1. Tính toán ngày hết hạn mới
+            var now = new Date();
+            var newExpiryDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+            // 2. Ghi đè trực tiếp vào Cache Local của User
+            var cacheKey = 'user_cache_' + emailClean;
+            var cached = null;
+            try { cached = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(e) {}
+
+            var updatedUserData = (cached && cached.data) ? cached.data : {
+                email: emailClean,
+                name: emailClean.split('@')[0],
+                role: 'user'
+            };
+
+            updatedUserData.expiresAt = isPermanent ? null : newExpiryDate.toISOString();
+            updatedUserData.isPermanent = isPermanent;
+            updatedUserData.tier = 'active';
+            updatedUserData.isTrial = false;
+            updatedUserData.isExpiredOnly = false;
+
+            localStorage.setItem(cacheKey, JSON.stringify({
+                data: updatedUserData,
+                expires: Date.now() + 30 * 24 * 60 * 60 * 1000
+            }));
+
+            // 3. Đưa vào hàng đợi để chờ tự động đẩy lên Firestore khi tắt Chế độ Khẩn cấp
+            var approvedQueue = JSON.parse(localStorage.getItem('pending_approved_renewals') || '[]');
+            approvedQueue.push({
+                email: emailClean,
+                isPermanent: isPermanent,
+                newExpiresAt: isPermanent ? null : newExpiryDate.toISOString(),
+                approvedAtMs: Date.now()
+            });
+            localStorage.setItem('pending_approved_renewals', JSON.stringify(approvedQueue));
+
+            // Xóa khỏi đơn chờ local nếu có
+            pendingLocal = pendingLocal.filter(function(item) { return item.email !== emailClean; });
+            localStorage.setItem('pending_renewals_local', JSON.stringify(pendingLocal));
+
+            alert('✅ [Emergency Mode] Đã duyệt gia hạn thành công cho ' + emailClean + '!\n\n(Hạn dùng mới đã cập nhật local cho học viên và sẽ tự đồng bộ lên Firestore khi tắt Safe Mode).');
+            loadRenewals();
+            loadUsers(true);
+            return;
+        } catch(err) {
+            console.error('Lỗi duyệt gia hạn ở Chế độ khẩn cấp:', err);
+            alert('❌ Có lỗi khi duyệt gia hạn cục bộ!');
+            return;
+        }
+    }
+
+    // 🟢 TRƯỜNG HỢP 2: CHẠY BÌNH THƯỜNG TRÊN FIRESTORE
     try {
         var reqDoc = await db.collection('renewal_requests').doc(reqId).get();
         if (!reqDoc.exists) return alert('Không tìm thấy yêu cầu!');
@@ -4970,6 +5467,7 @@ window.approveRenewal = async function(reqId) {
         loadUsers(true);
     } catch(e) { alert('❌ Lỗi: ' + e.message); }
 };
+
 
 window.rejectRenewal = async function(reqId) {
     if (!isSuperAdmin() && !hasPermission('canRenew')) {
@@ -5975,12 +6473,31 @@ window.testTelegram = function() {
         var merged = document.getElementById('vocabWarningBanner');
         var expiry = document.getElementById('expiryBanner');
         if (!expiry) return;
+        
         if (merged && merged.offsetParent !== null) {
             expiry.style.display = 'none';
+        } else {
+            expiry.style.display = ''; // Khôi phục hiển thị nếu banner cảnh báo biến mất
         }
     }
-    setInterval(sync, 500);
+
+    // Kiểm tra trạng thái ngay lần đầu tiên
+    sync();
+
+    // Sử dụng MutationObserver thay cho setInterval để theo dõi sự thay đổi trên DOM
+    var observer = new MutationObserver(function() {
+        sync();
+    });
+
+    // Lắng nghe thay đổi cấu trúc hoặc thuộc tính trong body để phát hiện banner
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'class', 'hidden']
+    });
 })();
+
 /* ═══════════════════════════════════════════════════════════════
    ⭐ TOGGLE USER SETTINGS MENU — FIX: dùng position:fixed
    để không bị .admin-body { overflow-y:auto } cắt mất
