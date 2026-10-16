@@ -1968,6 +1968,9 @@ try {
     firebase.initializeApp(FIREBASE_CONFIG);
     auth = firebase.auth();
     db = firebase.firestore();
+db.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
+    console.warn("Firestore persistence error:", err);
+});
     try {
         db.settings({
             experimentalForceLongPolling: true,
