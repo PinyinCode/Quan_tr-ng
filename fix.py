@@ -1,3 +1,125 @@
+# -*- coding: utf-8 -*-
+r"""
+fix.py - Auto-scan data/ và thêm MỌI file Excel thành tab riêng.
++ TỰ ĐỘNG thêm tab TỪ VỰNG PREMIUM từ data/tu_vung_hsk.xlsx
+
+Chạy:
+    python scripts/convert.py
+    python fix.py
+"""
+import json
+import os
+import re
+import sys
+import glob
+import unicodedata
+
+import openpyxl
+
+
+# =================================================================
+#  CONFIG
+# =================================================================
+INDEX_HTML = "index.html"
+CONFIG_JSON = "config.json"
+DATA_DIR = "data"
+
+SKIP_FILES = {"input.xlsx", "input.xls", "input.csv"}
+
+VOCAB_FILE = os.path.join(DATA_DIR, "tu_vung_hsk.xlsx")
+VOCAB_ID = "tu-vung"
+VOCAB_LABEL = "11000+ Từ vựng HSK"
+
+TAB_ICONS = [
+    "fa-comments", "fa-file-alt", "fa-book", "fa-graduation-cap",
+    "fa-star", "fa-fire", "fa-bolt", "fa-rocket",
+]
+TAB_COLORS = [
+    "#0891b2", "#dc2626", "#059669", "#d97706",
+    "#7c3aed", "#db2777", "#0284c7", "#65a30d",
+]
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  VOCAB WARNING CSS
+# ═══════════════════════════════════════════════════════════════════
+VOCAB_WARNING_CSS = r"""
+.vocab-warning-banner {
+    display: flex; align-items: center; gap: .85rem;
+    padding: .85rem 1rem; margin-bottom: 1rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(251, 191, 36, .15), rgba(245, 158, 11, .08));
+    border: 1.5px solid rgba(245, 158, 11, .45);
+    animation: vocabWarnIn .4s cubic-bezier(.34, 1.56, .64, 1);
+}
+@keyframes vocabWarnIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.vocab-warning-banner.tier-trial {
+    background: linear-gradient(135deg, rgba(99, 102, 241, .12), rgba(139, 92, 246, .08));
+    border-color: rgba(99, 102, 241, .45);
+}
+.vocab-warning-banner.tier-expired {
+    background: linear-gradient(135deg, rgba(220, 38, 38, .12), rgba(251, 146, 60, .08));
+    border-color: rgba(220, 38, 38, .5);
+}
+.vocab-warning-banner.tier-active {
+    background: linear-gradient(135deg, rgba(8, 145, 178, .12), rgba(6, 182, 212, .08));
+    border-color: rgba(8, 145, 178, .45);
+}
+.vocab-warning-icon {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, .4);
+}
+.vocab-warning-banner.tier-trial .vocab-warning-icon {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, .4);
+}
+.vocab-warning-banner.tier-expired .vocab-warning-icon {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, .4);
+}
+.vocab-warning-banner.tier-active .vocab-warning-icon {
+    background: linear-gradient(135deg, #0891b2, #06b6d4);
+    box-shadow: 0 4px 12px rgba(8, 145, 178, .4);
+}
+.vocab-warning-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .15rem; }
+.vocab-warning-text strong { font-size: .92rem; font-weight: 800; color: #92400e; }
+.vocab-warning-banner.tier-trial .vocab-warning-text strong { color: #4f46e5; }
+.vocab-warning-banner.tier-expired .vocab-warning-text strong { color: #991b1b; }
+.vocab-warning-banner.tier-active .vocab-warning-text strong { color: #075985; }
+.vocab-warning-text span { font-size: .8rem; color: var(--text-2); line-height: 1.4; }
+.vocab-warning-btn {
+    padding: .55rem .9rem; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b 50%, #ea580c);
+    color: #fff; font-weight: 800; font-size: .8rem;
+    font-family: inherit; cursor: pointer;
+    display: inline-flex; align-items: center; gap: .35rem;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, .4);
+    transition: all .2s; white-space: nowrap; flex-shrink: 0;
+}
+.vocab-warning-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(245, 158, 11, .6);
+}
+[data-theme="dark"] .vocab-warning-banner {
+    background: linear-gradient(135deg, rgba(251, 191, 36, .2), rgba(245, 158, 11, .1));
+}
+[data-theme="dark"] .vocab-warning-text strong { color: #fcd34d; }
+[data-theme="dark"] .vocab-warning-banner.tier-trial .vocab-warning-text strong { color: #c4b5fd; }
+[data-theme="dark"] .vocab-warning-banner.tier-expired .vocab-warning-text strong { color: #fca5a5; }
+[data-theme="dark"] .vocab-warning-banner.tier-active .vocab-warning-text strong { color: #67e8f9; }
+@media (max-width: 600px) {
+    .vocab-warning-banner { flex-wrap: wrap; gap: .6rem; padding: .7rem .8rem; }
+    .vocab-warning-icon { width: 34px; height: 34px; font-size: .95rem; }
+    .vocab-warning-text strong { font-size: .85rem; }
+    .vocab-warning-text span { font-size: .74rem; }
+}
+"""
 def build_vocab_js_patch():
     return r"""
 (function() {
