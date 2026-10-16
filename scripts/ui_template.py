@@ -3559,7 +3559,7 @@ def build_ui_html():
     <div class="logo-text">
         <div class="title">
             <span class="title-text">Tuhoctiengtrung</span>
-            <span class="hsk-badge">HSK</span>
+            <span class="hsk-badge">.org</span>
         </div>
     </div>
 </div>
