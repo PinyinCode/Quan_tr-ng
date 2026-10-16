@@ -3546,6 +3546,12 @@ body.practice-full-open .pf-tiktok-float {
         max-width: 90% !important;
     }
 }
+    # Thêm đoạn này vào trong build_layout_css():
+    css_lines.append("")
+    css_lines.append("/* Ép ẩn hoàn toàn banner hết hạn / gia hạn */")
+    css_lines.append("#expiryBanner, #vocabWarningBanner {")
+    css_lines.append("    display: none !important;")
+    css_lines.append("}")
 
 """
 def build_ui_html():
