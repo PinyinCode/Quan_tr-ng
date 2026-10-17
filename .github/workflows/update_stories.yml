@@ -1,7 +1,12 @@
 name: Run New Story Updater
 
 on:
-  workflow_dispatch: # Kích hoạt thủ công trên giao diện GitHub
+  workflow_dispatch:
+    inputs:
+      limit_words:
+        description: 'Số từ muốn xử lý (Nhập 20 để chạy thử, nhập 0 để chạy hết 11237 từ)'
+        required: true
+        default: '20'
 
 jobs:
   run-updater:
@@ -26,12 +31,13 @@ jobs:
           DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
           QWEN_BASE_URL: ${{ secrets.QWEN_BASE_URL }}
           QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
+          LIMIT_WORDS: ${{ github.event.inputs.limit_words }}
         run: |
-          python vocab_data/update_stories_only.py
+          python -u vocab_data/update_stories_only.py
 
-      - name: Commit and push updated json file
+      - name: Final commit and push updated json file
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add data/ai_mnemonics.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "✨ Auto-update short mnemonic stories [skip ci]" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "✨ Final update for mnemonic stories [skip ci]" && git push)
