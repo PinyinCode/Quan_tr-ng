@@ -4462,65 +4462,32 @@ function getLimitedData() {
     if (!window.__dataLoaded || !RAW_DATA || RAW_DATA.length === 0) {
         return [];
     }
-    if (window.__onboardingOverride && Array.isArray(window.__onboardingOverride)
-        && window.__onboardingOverride.length > 0
-        && !state.search && !state.hsk && !state.subject) {
-        return window.__onboardingOverride;
-    }
 
     var info = getTierInfo();
+    
+    // 1. Admin / Active -> Xem full toàn bộ
     if (info.tier === 'active') return RAW_DATA;
 
-    var max = (typeof info.maxQuestions === 'number' && info.maxQuestions > 0)
-              ? info.maxQuestions
-              : ((typeof DEMO_LIMIT === 'number') ? DEMO_LIMIT : 60);
+    var currentDataset = (typeof CURRENT_DATASET !== 'undefined') ? CURRENT_DATASET : 'tonghop';
 
-    var allowedHsk = getAllowedHskList();
-    if (!allowedHsk || allowedHsk.length === 0) {
-        return RAW_DATA.slice(0, max);
+    // ═══════════════════════════════════════════════════════════
+    // TAB TỔNG HỢP: Lấy full câu theo HSK được phép
+    // ═══════════════════════════════════════════════════════════
+    if (currentDataset === 'tonghop') {
+        var allowedHsk = getAllowedHskList();
+        if (!allowedHsk || allowedHsk.length === 0) return RAW_DATA;
+        
+        // Lấy tất cả câu thuộc HSK cho phép (Không giới hạn số câu)
+        return RAW_DATA.filter(function(r) {
+            return allowedHsk.indexOf(normalizeHsk(r.hsk)) !== -1;
+        });
     }
 
-    // ⭐ DÙNG normalizeHsk ĐỂ SO SÁNH
-    var poolByHsk = RAW_DATA.filter(function(r) {
-        return allowedHsk.indexOf(normalizeHsk(r.hsk)) !== -1;
-    });
+      
+    var max = info.maxQuestions;
+    if (max === -1 || max === Infinity || max <= 0) max = 30; 
 
-    var maxPerTopic = getMaxPerTopic(max, RAW_DATA);
-
-    var topicCount = {};
-    var result = [];
-    var perHsk = Math.ceil(max / allowedHsk.length);
-    var hskCount = {};
-    allowedHsk.forEach(function(h) { hskCount[h] = 0; });
-
-    for (var i = 0; i < poolByHsk.length && result.length < max; i++) {
-        var r = poolByHsk[i];
-        var s = (r.subject || '').trim() || '__no_subject__';
-        if ((topicCount[s] || 0) >= maxPerTopic) continue;
-
-        var rHskNorm = normalizeHsk(r.hsk);   // ⭐ CHUẨN HOÁ
-        if (rHskNorm && hskCount[rHskNorm] !== undefined && hskCount[rHskNorm] >= perHsk) continue;
-
-        result.push(r);
-        topicCount[s] = (topicCount[s] || 0) + 1;
-        if (rHskNorm && hskCount[rHskNorm] !== undefined) hskCount[rHskNorm]++;
-    }
-
-    if (result.length < max) {
-        var usedIds = {};
-        result.forEach(function(r) { usedIds[r.stt] = true; });
-        for (var j = 0; j < poolByHsk.length && result.length < max; j++) {
-            var r2 = poolByHsk[j];
-            if (usedIds[r2.stt]) continue;
-            var s2 = (r2.subject || '').trim() || '__no_subject__';
-            if ((topicCount[s2] || 0) >= maxPerTopic) continue;
-            result.push(r2);
-            usedIds[r2.stt] = true;
-            topicCount[s2] = (topicCount[s2] || 0) + 1;
-        }
-    }
-
-    return result;
+    return RAW_DATA.slice(0, max);
 }
 
 function getAllowedHskList() {
@@ -4823,51 +4790,10 @@ function saveOnboardingSelection(topics, autoPicked) {
 /* SỬA: MAYBE SHOW ONBOARDING — LUÔN VẼ BANNER NẾU CÓ SELECTION */
 /* ═══════════════════════════════════════════════════════════ */
 function maybeShowOnboarding() {
-    var info = getTierInfo();
-
-    // ⭐ Bỏ onboarding cho active + admin
-    if (info.tier === 'active') return;
-    if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin') return;
-
-    // Chỉ demo / trial / expired mới cần chọn chủ đề
-    if (info.tier !== 'demo' && info.tier !== 'trial'
-        && info.tier !== 'expired') return;
-
-    var cfg = getOnboardingConfig();
-    if (!cfg) return;
-
-    if (typeof RAW_DATA === 'undefined' || !RAW_DATA || RAW_DATA.length === 0) {
-        setTimeout(maybeShowOnboarding, 300);
-        return;
-    }
-
-    var mainContent = $('mainContent');
-    if (!mainContent || mainContent.style.display === 'none') {
-        setTimeout(maybeShowOnboarding, 300);
-        return;
-    }
-
-    // Neu da co override -> chi can goi applyFilter de render
-    if (window.__onboardingOverride
-        && Array.isArray(window.__onboardingOverride)
-        && window.__onboardingOverride.length > 0) {
-        if (typeof applyFilter === 'function') applyFilter();
-        if (typeof updateResultCount === 'function') updateResultCount();
-        return;
-    }
-
-    // Co selection cu -> apply + render lai
-    var saved = loadOnboardingSelection();
-    if (saved && Array.isArray(saved.topics) && saved.topics.length > 0) {
-        window.__onboardingAutoPicked = !!saved.auto_picked;
-        applyOnboardingSelection(saved.topics, false);
-        if (typeof applyFilter === 'function') applyFilter();
-        if (typeof updateResultCount === 'function') updateResultCount();
-        return;
-    }
-
-    // Chua co selection -> hien modal
-    showOnboardingModal();
+    // ⭐ ĐÃ VÔ HIỆU HÓA HOÀN TOÀN ONBOARDING
+    // Không hiện popup chọn chủ đề, không tạo banner gợi ý.
+    // Dữ liệu sẽ hiển thị đầy đủ dựa trên HSK được cấu hình (giống hệt Admin).
+    return; 
 }
 function showOnboardingModal() {
     var cfg = getOnboardingConfig();

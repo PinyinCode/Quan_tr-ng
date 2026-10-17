@@ -14210,12 +14210,12 @@ var CURRENT_DATASET = 'tonghop';
 
 var FIREBASE_CONFIG = {"apiKey":"AIzaSyA8VlFQvE_om-51pxffgd7hd2Ud6hQm11k","authDomain":"hoc-tieng-trung-64b8d.firebaseapp.com","projectId":"hoc-tieng-trung-64b8d","storageBucket":"hoc-tieng-trung-64b8d.appspot.com","messagingSenderId":"614326539390","appId":"1:614326539390:web:57344a021d7cbc7b18b42f","databaseURL":"https://hoc-tieng-trung-64b8d-default-rtdb.asia-southeast1.firebasedatabase.app"};
 
-var DEMO_LIMIT = 30;
+var DEMO_LIMIT = 50;
 var DEMO_DAILY_LIMIT = 50;
-var DEMO_HSK_MAX = 3;
+var DEMO_HSK_MAX = 1;
 
 var TRIAL_MAX_QUESTIONS = 100;
-var TRIAL_MAX_HSK = 5;
+var TRIAL_MAX_HSK = 3;
 var TRIAL_UNLIMITED_WRITING = true;
 
 var TARGET_ADMINS = 3;
@@ -14228,7 +14228,7 @@ var TIKTOK_AVATAR = "https://i.postimg.cc/QBD0vj6C/IMG-6296.jpg";
 var TIKTOK_URL = "https://www.tiktok.com/@thaonoizhongwen";
 var SYNONYMS = {"我":["俺","本人","咱"],"你":["您","阁下"],"他":["她","它"],"是":["系","为"],"的":["之"],"不":["没","未"],"很":["非常","十分","特别"],"好":["棒","优秀","不错"],"说":["讲","谈"],"看":["瞧","望"],"吃":["食","用"],"给":["送","赠"],"想要":["想","要"],"越南":["越南"],"中国":["中华"],"谢谢":["感谢","多谢"],"对不起":["抱歉","不好意思"],"再见":["拜拜","再会"],"请":["麻烦","拜托"]};
 var FILLER_WORDS = ["了","的","吗","呢","吧","啊","呀","哦","嘛","哈","哪","着","过"];
-var ONBOARDING_CONFIG = {"demo":{"enabled":true,"max_questions":-1,"hsk_allowed":[1],"topics_per_user":-1,"title":"Bạn quan tâm chủ đề nào?","subtitle":"Chọn chủ đề — chúng tôi sẽ gợi ý câu phù hợp nhất"},"trial":{"enabled":true,"max_questions":-1,"hsk_allowed":[1,2],"topics_per_user":-1,"title":"Bạn quan tâm chủ đề nào?","subtitle":"Chọn chủ đề — chúng tôi sẽ gợi ý câu phù hợp nhất"},"active":{"enabled":true,"max_questions":-1,"hsk_allowed":[1,2,3,4,5,6],"topics_per_user":-1,"title":"Bạn quan tâm chủ đề nào?","subtitle":"không giới hạn"}};
+var ONBOARDING_CONFIG = {"demo":{"enabled":true,"max_questions":30,"hsk_allowed":[1,2,3],"topics_per_user":10,"title":"Bạn quan tâm chủ đề nào?","subtitle":"Chọn tối đa 5 chủ đề — chúng tôi sẽ gợi ý 80 câu phù hợp nhất"},"trial":{"enabled":true,"max_questions":100,"hsk_allowed":[1,2,3,4,5],"topics_per_user":20,"title":"Bạn quan tâm chủ đề nào?","subtitle":"Chọn tối đa 12 chủ đề — chúng tôi sẽ gợi ý 250 câu phù hợp nhất"},"active":{"enabled":true,"max_questions":-1,"hsk_allowed":[1,2,3,4,5,6],"topics_per_user":-1,"title":"Bạn quan tâm chủ đề nào?","subtitle":"không giới hạn"}};
 
 var $ = function(id) { return document.getElementById(id); };
 
@@ -14981,65 +14981,32 @@ function getLimitedData() {
     if (!window.__dataLoaded || !RAW_DATA || RAW_DATA.length === 0) {
         return [];
     }
-    if (window.__onboardingOverride && Array.isArray(window.__onboardingOverride)
-        && window.__onboardingOverride.length > 0
-        && !state.search && !state.hsk && !state.subject) {
-        return window.__onboardingOverride;
-    }
 
     var info = getTierInfo();
+    
+    // 1. Admin / Active -> Xem full toàn bộ
     if (info.tier === 'active') return RAW_DATA;
 
-    var max = (typeof info.maxQuestions === 'number' && info.maxQuestions > 0)
-              ? info.maxQuestions
-              : ((typeof DEMO_LIMIT === 'number') ? DEMO_LIMIT : 60);
+    var currentDataset = (typeof CURRENT_DATASET !== 'undefined') ? CURRENT_DATASET : 'tonghop';
 
-    var allowedHsk = getAllowedHskList();
-    if (!allowedHsk || allowedHsk.length === 0) {
-        return RAW_DATA.slice(0, max);
+    // ═══════════════════════════════════════════════════════════
+    // TAB TỔNG HỢP: Lấy full câu theo HSK được phép
+    // ═══════════════════════════════════════════════════════════
+    if (currentDataset === 'tonghop') {
+        var allowedHsk = getAllowedHskList();
+        if (!allowedHsk || allowedHsk.length === 0) return RAW_DATA;
+        
+        // Lấy tất cả câu thuộc HSK cho phép (Không giới hạn số câu)
+        return RAW_DATA.filter(function(r) {
+            return allowedHsk.indexOf(normalizeHsk(r.hsk)) !== -1;
+        });
     }
 
-    // ⭐ DÙNG normalizeHsk ĐỂ SO SÁNH
-    var poolByHsk = RAW_DATA.filter(function(r) {
-        return allowedHsk.indexOf(normalizeHsk(r.hsk)) !== -1;
-    });
+      
+    var max = info.maxQuestions;
+    if (max === -1 || max === Infinity || max <= 0) max = 30; 
 
-    var maxPerTopic = getMaxPerTopic(max, RAW_DATA);
-
-    var topicCount = {};
-    var result = [];
-    var perHsk = Math.ceil(max / allowedHsk.length);
-    var hskCount = {};
-    allowedHsk.forEach(function(h) { hskCount[h] = 0; });
-
-    for (var i = 0; i < poolByHsk.length && result.length < max; i++) {
-        var r = poolByHsk[i];
-        var s = (r.subject || '').trim() || '__no_subject__';
-        if ((topicCount[s] || 0) >= maxPerTopic) continue;
-
-        var rHskNorm = normalizeHsk(r.hsk);   // ⭐ CHUẨN HOÁ
-        if (rHskNorm && hskCount[rHskNorm] !== undefined && hskCount[rHskNorm] >= perHsk) continue;
-
-        result.push(r);
-        topicCount[s] = (topicCount[s] || 0) + 1;
-        if (rHskNorm && hskCount[rHskNorm] !== undefined) hskCount[rHskNorm]++;
-    }
-
-    if (result.length < max) {
-        var usedIds = {};
-        result.forEach(function(r) { usedIds[r.stt] = true; });
-        for (var j = 0; j < poolByHsk.length && result.length < max; j++) {
-            var r2 = poolByHsk[j];
-            if (usedIds[r2.stt]) continue;
-            var s2 = (r2.subject || '').trim() || '__no_subject__';
-            if ((topicCount[s2] || 0) >= maxPerTopic) continue;
-            result.push(r2);
-            usedIds[r2.stt] = true;
-            topicCount[s2] = (topicCount[s2] || 0) + 1;
-        }
-    }
-
-    return result;
+    return RAW_DATA.slice(0, max);
 }
 
 function getAllowedHskList() {
@@ -15342,51 +15309,10 @@ function saveOnboardingSelection(topics, autoPicked) {
 /* SỬA: MAYBE SHOW ONBOARDING — LUÔN VẼ BANNER NẾU CÓ SELECTION */
 /* ═══════════════════════════════════════════════════════════ */
 function maybeShowOnboarding() {
-    var info = getTierInfo();
-
-    // ⭐ Bỏ onboarding cho active + admin
-    if (info.tier === 'active') return;
-    if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin') return;
-
-    // Chỉ demo / trial / expired mới cần chọn chủ đề
-    if (info.tier !== 'demo' && info.tier !== 'trial'
-        && info.tier !== 'expired') return;
-
-    var cfg = getOnboardingConfig();
-    if (!cfg) return;
-
-    if (typeof RAW_DATA === 'undefined' || !RAW_DATA || RAW_DATA.length === 0) {
-        setTimeout(maybeShowOnboarding, 300);
-        return;
-    }
-
-    var mainContent = $('mainContent');
-    if (!mainContent || mainContent.style.display === 'none') {
-        setTimeout(maybeShowOnboarding, 300);
-        return;
-    }
-
-    // Neu da co override -> chi can goi applyFilter de render
-    if (window.__onboardingOverride
-        && Array.isArray(window.__onboardingOverride)
-        && window.__onboardingOverride.length > 0) {
-        if (typeof applyFilter === 'function') applyFilter();
-        if (typeof updateResultCount === 'function') updateResultCount();
-        return;
-    }
-
-    // Co selection cu -> apply + render lai
-    var saved = loadOnboardingSelection();
-    if (saved && Array.isArray(saved.topics) && saved.topics.length > 0) {
-        window.__onboardingAutoPicked = !!saved.auto_picked;
-        applyOnboardingSelection(saved.topics, false);
-        if (typeof applyFilter === 'function') applyFilter();
-        if (typeof updateResultCount === 'function') updateResultCount();
-        return;
-    }
-
-    // Chua co selection -> hien modal
-    showOnboardingModal();
+    // ⭐ ĐÃ VÔ HIỆU HÓA HOÀN TOÀN ONBOARDING
+    // Không hiện popup chọn chủ đề, không tạo banner gợi ý.
+    // Dữ liệu sẽ hiển thị đầy đủ dựa trên HSK được cấu hình (giống hệt Admin).
+    return; 
 }
 function showOnboardingModal() {
     var cfg = getOnboardingConfig();
@@ -19390,7 +19316,7 @@ function updateFloatingLeftVisibility() {
 /* ============ CONFIG INJECTED ============ */
 var TRIAL_DAYS = 3;
 var TRIAL_MAX_QUESTIONS = 100;
-var TRIAL_MAX_HSK = 5;
+var TRIAL_MAX_HSK = 3;
 var TRIAL_UNLIMITED_WRITING = true;
 var BANK_CONFIG = {"bank_id": "970418", "bank_name": "BIDV", "account_no": "8897014076", "account_name": "NGUYEN THI THAO"};
 var PACKAGES = [{"id": "1m", "label": "1 tháng", "amount": 50000, "days": 30, "popular": false}, {"id": "3m", "label": "3 tháng", "amount": 120000, "days": 90, "popular": true, "save": "Tiết kiệm 33%"}, {"id": "1y", "label": "1 năm", "amount": 300000, "days": 365, "popular": false, "save": "Tiết kiệm 58%"}, {"id": "forever", "label": "Premium", "amount": 1000000, "days": 36500, "popular": false, "save": "Premium - Admin Hỗ trợ trực tiếp", "permanent": true}];
@@ -22503,10 +22429,32 @@ function initAdminPanel() {
     if ($('importModal')) $('importModal').addEventListener('click', function(e) { if (e.target === this) { $('importModal').classList.remove('show'); importRows = []; } });
     if ($('importConfirmBtn')) $('importConfirmBtn').addEventListener('click', doImport);
 
-    if ($('showAddUserBtn')) $('showAddUserBtn').addEventListener('click', function() {
-        $('addUserForm').classList.toggle('show');
-        if ($('addUserForm').classList.contains('show')) $('newUserEmail').focus();
-    });
+    // ⭐ FIX CỨNG LỖI NÚT THÊM TÀI KHOẢN
+    var oldBtnAdd = $('showAddUserBtn');
+    if (oldBtnAdd) {
+        var newBtnAdd = oldBtnAdd.cloneNode(true);
+        oldBtnAdd.parentNode.replaceChild(newBtnAdd, oldBtnAdd);
+        
+        newBtnAdd.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Kiểm tra quyền
+            if (!isSuperAdmin() && !hasPermission('canAddUser')) {
+                alert('Bạn không có quyền thêm user!');
+                return;
+            }
+            
+            var form = $('addUserForm');
+            if (form) {
+                form.classList.toggle('show');
+                if (form.classList.contains('show') && $('newUserEmail')) {
+                    setTimeout(function() { $('newUserEmail').focus(); }, 100);
+                }
+            }
+        });
+    }
+
     if ($('cancelAddUser')) $('cancelAddUser').addEventListener('click', function() {
         $('addUserForm').classList.remove('show');
         $('newUserEmail').value = ''; $('newUserName').value = '';
@@ -22540,22 +22488,26 @@ function initAdminPanel() {
     if ($('refreshRenewalsBtn')) $('refreshRenewalsBtn').addEventListener('click', function() { loadRenewals(); });
     if ($('refreshRenewalHistoryBtn')) $('refreshRenewalHistoryBtn').addEventListener('click', function() { loadAdminRenewalHistory(); });
 
+    // ⭐ HÀM BIND TOGGLE AN TOÀN
     function bindSectionToggle(btnId, sectionId, label) {
         var btn = $(btnId);
         var sec = $(sectionId);
         if (!btn || !sec) return;
 
+        var newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
         function syncState() {
             var isVisible = !sec.classList.contains('collapsed');
-            var icon = btn.querySelector('i');
+            var icon = newBtn.querySelector('i');
             if (icon) icon.className = isVisible ? 'fas fa-eye' : 'fas fa-eye-slash';
-            btn.classList.toggle('active', isVisible);
-            btn.title = (isVisible ? 'Ẩn ' : 'Hiện ') + (label || 'khung');
+            newBtn.classList.toggle('active', isVisible);
+            newBtn.title = (isVisible ? 'Ẩn ' : 'Hiện ') + (label || 'khung');
         }
 
         syncState();
 
-        btn.addEventListener('click', function(e) {
+        newBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             sec.classList.toggle('collapsed');

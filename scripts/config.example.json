@@ -12,13 +12,13 @@
     "tiktok_avatar": "https://i.postimg.cc/QBD0vj6C/IMG-6296.jpg",
     "tiktok_url": "https://www.tiktok.com/@thaonoizhongwen",
 
-    "demo_limit": 30,
+    "demo_limit": 50,
     "demo_daily_glimit": 50,
-    "demo_hsk_max": 3,
+    "demo_hsk_max": 1,
 
     "trial_days": 3,
     "trial_max_questions": 100,
-    "trial_max_hsk": 5,
+    "trial_max_hsk": 3,
     "trial_unlimited_writing": true,
 
     "target_admins": 3,
@@ -55,19 +55,19 @@
     "onboarding": {
         "demo": {
             "enabled": true,
-            "max_questions": -1,
-            "hsk_allowed": [1],
-            "topics_per_user": -1,
+            "max_questions": 30,
+            "hsk_allowed": [1, 2, 3],
+            "topics_per_user": 10,
             "title": "Bạn quan tâm chủ đề nào?",
-            "subtitle": "Chọn chủ đề — chúng tôi sẽ gợi ý câu phù hợp nhất"
+            "subtitle": "Chọn tối đa 5 chủ đề — chúng tôi sẽ gợi ý 80 câu phù hợp nhất"
         },
         "trial": {
             "enabled": true,
-            "max_questions": -1,
-            "hsk_allowed": [1, 2],
-            "topics_per_user": -1,
+            "max_questions": 100,
+            "hsk_allowed": [1, 2, 3, 4, 5],
+            "topics_per_user": 20,
             "title": "Bạn quan tâm chủ đề nào?",
-            "subtitle": "Chọn chủ đề — chúng tôi sẽ gợi ý câu phù hợp nhất"
+            "subtitle": "Chọn tối đa 12 chủ đề — chúng tôi sẽ gợi ý 250 câu phù hợp nhất"
         },
         "active": {
             "enabled": true,
