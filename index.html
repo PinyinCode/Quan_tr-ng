@@ -24375,7 +24375,82 @@ function startUserUpdateListener() {
     
     console.log('👂 [Emergency] Đã đăng ký listener update cho:', currentUser.email);
 }
+/* ═══════════════════════════════════════════════════════════════
+   ⭐ LOAD USER TỪ RTDB (khi emergency ON)
+   ═══════════════════════════════════════════════════════════════ */
+window.loadEmergencyUsersFromRTDB = async function() {
+    if (typeof firebase === 'undefined' || !firebase.database) return [];
+    
+    try {
+        var snap = await firebase.database()
+            .ref('config/emergency-users')
+            .once('value');
+        
+        var users = snap.val() || {};
+        var list = [];
+        
+        Object.keys(users).forEach(function(key) {
+            var u = users[key];
+            if (u && u.email) {
+                list.push({
+                    email: u.email.toLowerCase(),
+                    name: u.name || u.email.split('@')[0],
+                    role: 'user',
+                    tier: 'active',
+                    isTrial: false,
+                    isPermanent: true,
+                    expiresAt: null,
+                    isEmergencyUser: true,        // ⭐ Đánh dấu
+                    registeredAt: u.registeredAt,
+                    registeredAtVN: u.registeredAtVN || ''
+                });
+            }
+        });
+        
+        console.log('📡 [Emergency] Load được', list.length, 'user từ RTDB');
+        return list;
+        
+    } catch(e) {
+        console.warn('Lỗi load user từ RTDB:', e.message);
+        return [];
+    }
+};
 
+/* ⭐ Merge users từ Firestore + RTDB */
+window.mergeEmergencyUsers = async function(firestoreUsers) {
+    // Nếu không phải emergency → không cần merge
+    if (typeof isEmergencyModeActive !== 'function' || !isEmergencyModeActive()) {
+        return firestoreUsers;
+    }
+    
+    try {
+        var rtdbUsers = await loadEmergencyUsersFromRTDB();
+        
+        if (rtdbUsers.length === 0) return firestoreUsers;
+        
+        // Tạo map email → user để check trùng
+        var existingEmails = {};
+        firestoreUsers.forEach(function(u) {
+            existingEmails[(u.email || '').toLowerCase()] = true;
+        });
+        
+        // Thêm user từ RTDB chưa có trong Firestore
+        var added = 0;
+        rtdbUsers.forEach(function(u) {
+            if (!existingEmails[u.email]) {
+                firestoreUsers.push(u);
+                added++;
+            }
+        });
+        
+        console.log('✅ [Emergency] Đã merge', added, 'user từ RTDB');
+        return firestoreUsers;
+        
+    } catch(e) {
+        console.warn('Lỗi merge users:', e.message);
+        return firestoreUsers;
+    }
+};
 /* ⭐ Khởi động listener emergency khi app load */
 (function initEmergencyListener() {
     function tryStart() {
