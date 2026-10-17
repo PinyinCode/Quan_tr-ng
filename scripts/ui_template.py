@@ -4463,7 +4463,7 @@ function getLimitedData() {
         return [];
     }
     
-    // Ưu tiên Onboarding (nếu có)
+    // Ưu tiên Onboarding
     if (window.__onboardingOverride && Array.isArray(window.__onboardingOverride)
         && window.__onboardingOverride.length > 0
         && !state.search && !state.hsk && !state.subject) {
@@ -4473,35 +4473,28 @@ function getLimitedData() {
     var info = getTierInfo();
     if (info.tier === 'active') return RAW_DATA;
 
+    // ⭐ LẤY ID TAB HIỆN TẠI (Đảm bảo biến này tồn tại trong code của bạn)
     var currentDataset = (typeof CURRENT_DATASET !== 'undefined') ? CURRENT_DATASET : 'tonghop';
 
     /* ═══════════════════════════════════════════════════════════════
-       NHÁNH 1: DÀNH RIÊNG CHO TAB TỔNG HỢP
-       Logic: Khách full HSK1, Trial full HSK1+2 (Không giới hạn số câu)
+       NHÁNH 1: NẾU LÀ TAB TỔNG HỢP (Mở full theo HSK, bỏ qua giới hạn câu)
        ═══════════════════════════════════════════════════════════════ */
     if (currentDataset === 'tonghop') {
-        // Xác định HSK tối đa dựa trên tier
-        var maxHskForTongHop = 6;
-        if (info.tier === 'demo') maxHskForTongHop = 1; // Khách: chỉ HSK1
-        else if (info.tier === 'trial') maxHskForTongHop = 2; // Trial: HSK1, 2
-        
-        // Lấy pool các câu thỏa mãn HSK
-        var pool = RAW_DATA.filter(function(r) {
+        var maxHsk = 6;
+        if (info.tier === 'demo') maxHsk = 1; // Khách: full HSK1
+        else if (info.tier === 'trial') maxHsk = 2; // Trial: full HSK1, 2
+
+        // Chỉ cần lọc đúng HSK, KHÔNG cắt số câu
+        return RAW_DATA.filter(function(r) {
             var rHsk = parseInt(String(r.hsk).replace(/[^0-9]/g, ''), 10);
-            if (isNaN(rHsk)) rHsk = 99; // Nếu không có HSK thì cho vào diện bị loại nếu không phải admin
-            
-            // Xử lý HSK7-9 đặc biệt (nếu có)
+            if (isNaN(rHsk)) rHsk = 99; 
             if (String(r.hsk).toUpperCase().indexOf('7-9') !== -1) rHsk = 7;
-            
-            return rHsk <= maxHskForTongHop;
+            return rHsk <= maxHsk;
         });
-        
-        return pool; // Trả về toàn bộ (không cắt theo demo_limit)
     }
 
     /* ═══════════════════════════════════════════════════════════════
-       NHÁNH 2: CÁC TAB KHÁC (Giao tiếp, Từ vựng, Chuyên ngành...)
-       Logic: Giữ nguyên như cũ (Tuân thủ config.json)
+       NHÁNH 2: CÁC TAB KHÁC (Giữ nguyên 100% logic gốc của bạn)
        ═══════════════════════════════════════════════════════════════ */
     var max = (typeof info.maxQuestions === 'number' && info.maxQuestions > 0)
               ? info.maxQuestions
@@ -4512,11 +4505,13 @@ function getLimitedData() {
         return RAW_DATA.slice(0, max);
     }
 
+    // ⭐ DÙNG normalizeHsk ĐỂ SO SÁNH
     var poolByHsk = RAW_DATA.filter(function(r) {
         return allowedHsk.indexOf(normalizeHsk(r.hsk)) !== -1;
     });
 
     var maxPerTopic = getMaxPerTopic(max, RAW_DATA);
+
     var topicCount = {};
     var result = [];
     var perHsk = Math.ceil(max / allowedHsk.length);
@@ -4528,7 +4523,7 @@ function getLimitedData() {
         var s = (r.subject || '').trim() || '__no_subject__';
         if ((topicCount[s] || 0) >= maxPerTopic) continue;
 
-        var rHskNorm = normalizeHsk(r.hsk);
+        var rHskNorm = normalizeHsk(r.hsk);   // ⭐ CHUẨN HOÁ
         if (rHskNorm && hskCount[rHskNorm] !== undefined && hskCount[rHskNorm] >= perHsk) continue;
 
         result.push(r);
