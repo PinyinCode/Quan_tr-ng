@@ -25165,13 +25165,26 @@ setTimeout(function() {
     }
 }, 3000);
 window.toggleAddUserFormAdmin = function() {
-    // 1. Kiểm tra quyền (dù sao cũng nên check cho an toàn)
+    // 1. Kiểm tra quyền
     if (!isSuperAdmin() && !hasPermission('canAddUser')) {
         alert('Bạn không có quyền thêm user!');
         return;
     }
     
-    // 2. Mở/Đóng form
+    // 2. Tự động mở khung (section) nếu đang bị ẩn
+    var section = document.getElementById('adminUsersSection');
+    if (section && section.classList.contains('collapsed')) {
+        section.classList.remove('collapsed');
+        // Cập nhật lại icon con mắt cho đúng
+        var eyeBtn = document.getElementById('toggleUsersBtn');
+        if (eyeBtn) {
+            var icon = eyeBtn.querySelector('i');
+            if (icon) icon.className = 'fas fa-eye';
+            eyeBtn.classList.add('active');
+        }
+    }
+    
+    // 3. Mở/Đóng form
     var form = document.getElementById('addUserForm');
     if (form) {
         form.classList.toggle('show');
