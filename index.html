@@ -24311,11 +24311,81 @@ window.testTelegram = function() {
     log('Module loaded — ' + SERVERS.length + ' servers');
 })();
 
+/* ⭐ Lắng nghe update từ admin qua RTDB */
+function startUserUpdateListener() {
+    if (!currentUser || !currentUser.email) return;
+    if (typeof firebase === 'undefined' || !firebase.database) return;
+    
+    var _myEmailKey = currentUser.email.toLowerCase().replace(/[.@#$\[\]]/g, '_');
+    
+    firebase.database()
+        .ref('config/emergency-user-updates/' + _myEmailKey)
+        .on('value', function(snap) {
+            if (!snap.exists()) return;
+            
+            var data = snap.val() || {};
+            var upgradedAt = data.upgradedAt || 0;
+            
+            // ⭐ Kiểm tra xem đã xử lý update này chưa
+            var lastProcessed = parseInt(localStorage.getItem('last_emergency_update_at') || '0');
+            if (upgradedAt <= lastProcessed) return;
+            
+            console.log('🔄 [Emergency] Nhận update từ admin:', data);
+            
+            // ⭐ Cập nhật cache local
+            try {
+                var cacheKey = 'user_cache_' + currentUser.email;
+                var cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+                
+                if (cached && cached.data) {
+                    cached.data.tier = data.tier || 'active';
+                    cached.data.isTrial = data.isTrial === true;
+                    cached.data.isPermanent = data.isPermanent === true;
+                    
+                    if (data.expiresAtMs) {
+                        cached.data.expiresAt = { seconds: Math.floor(data.expiresAtMs / 1000) };
+                    } else {
+                        cached.data.expiresAt = null;
+                    }
+                    
+                    cached.expires = Date.now() + 12 * 60 * 60 * 1000;
+                    localStorage.setItem(cacheKey, JSON.stringify(cached));
+                }
+                
+                localStorage.setItem('last_emergency_update_at', upgradedAt.toString());
+                
+                // ⭐ Thông báo cho user
+                if (typeof showUserChangedToast === 'function') {
+                    if (data.action === 'upgrade_trial_to_active') {
+                        showUserChangedToast('🎉 Tài khoản đã được nâng cấp lên CHÍNH THỨC!', 'success');
+                    } else {
+                        showUserChangedToast('🎉 Tài khoản đã được gia hạn!', 'success');
+                    }
+                }
+                
+                // ⭐ Reload sau 1.5 giây
+                setTimeout(function() { location.reload(); }, 1500);
+                
+            } catch(e) {
+                console.error('Lỗi cập nhật cache từ RTDB:', e);
+            }
+        }, function(err) {
+            console.warn('[Emergency] User update listener error:', err.message);
+        });
+    
+    console.log('👂 [Emergency] Đã đăng ký listener update cho:', currentUser.email);
+}
+
 /* ⭐ Khởi động listener emergency khi app load */
 (function initEmergencyListener() {
     function tryStart() {
         if (typeof firebase !== 'undefined' && firebase.database) {
             startEmergencyListener();
+            
+            // ⭐ Đăng ký listener nhận update từ admin
+            if (typeof startUserUpdateListener === 'function' && currentUser && currentUser.email) {
+                startUserUpdateListener();
+            }
             
             isEmergencyModeActiveAsync().then(function(isOn) {
                 console.log('[Emergency] Trạng thái hiện tại:', isOn ? '🚨 BẬT' : '✅ TẮT');
