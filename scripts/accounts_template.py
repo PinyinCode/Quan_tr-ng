@@ -4898,15 +4898,13 @@ function initAdminPanel() {
     if ($('importModal')) $('importModal').addEventListener('click', function(e) { if (e.target === this) { $('importModal').classList.remove('show'); importRows = []; } });
     if ($('importConfirmBtn')) $('importConfirmBtn').addEventListener('click', doImport);
 
-    // ⭐ FIX CỨNG LỖI NÚT THÊM TÀI KHOẢN (Dùng pointerdown để không bị chặn)
+    // ⭐ FIX CỨNG LỖI NÚT THÊM TÀI KHOẢN
     var oldBtnAdd = $('showAddUserBtn');
     if (oldBtnAdd) {
         var newBtnAdd = oldBtnAdd.cloneNode(true);
-        newBtnAdd.style.position = 'relative';
-        newBtnAdd.style.zIndex = '9999';
         oldBtnAdd.parentNode.replaceChild(newBtnAdd, oldBtnAdd);
         
-        newBtnAdd.addEventListener('pointerdown', function(e) {
+        newBtnAdd.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
@@ -4919,11 +4917,8 @@ function initAdminPanel() {
             var form = $('addUserForm');
             if (form) {
                 form.classList.toggle('show');
-                if (form.classList.contains('show')) {
-                    setTimeout(function() { 
-                        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        if ($('newUserEmail')) $('newUserEmail').focus(); 
-                    }, 100);
+                if (form.classList.contains('show') && $('newUserEmail')) {
+                    setTimeout(function() { $('newUserEmail').focus(); }, 100);
                 }
             }
         });
@@ -4962,43 +4957,6 @@ function initAdminPanel() {
     if ($('refreshRenewalsBtn')) $('refreshRenewalsBtn').addEventListener('click', function() { loadRenewals(); });
     if ($('refreshRenewalHistoryBtn')) $('refreshRenewalHistoryBtn').addEventListener('click', function() { loadAdminRenewalHistory(); });
 
-    // ⭐ HÀM BIND TOGGLE (Đã khôi phục lại)
-    function bindSectionToggle(btnId, sectionId, label) {
-        var btn = $(btnId);
-        var sec = $(sectionId);
-        if (!btn || !sec) return;
-
-        var newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-
-        function syncState() {
-            var isVisible = !sec.classList.contains('collapsed');
-            var icon = newBtn.querySelector('i');
-            if (icon) icon.className = isVisible ? 'fas fa-eye' : 'fas fa-eye-slash';
-            newBtn.classList.toggle('active', isVisible);
-            newBtn.title = (isVisible ? 'Ẩn ' : 'Hiện ') + (label || 'khung');
-        }
-
-        syncState();
-
-        newBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            sec.classList.toggle('collapsed');
-            syncState();
-        });
-    }
-
-    bindSectionToggle('toggleRenewalsBtn', 'adminRenewalsSection', 'khung yêu cầu gia hạn');
-    bindSectionToggle('toggleUsersBtn', 'adminUsersSection', 'danh sách tài khoản');
-    bindSectionToggle('toggleLogsBtn', 'adminLogsSection', 'lịch sử đăng nhập');
-    bindSectionToggle('toggleRenewalHistoryBtn', 'adminRenewalHistorySection', 'lịch sử gia hạn');
-
-    if ($('permissionClose')) $('permissionClose').addEventListener('click', closePermissionModal);
-    if ($('permissionCancel')) $('permissionCancel').addEventListener('click', closePermissionModal);
-    if ($('permissionSave')) $('permissionSave').addEventListener('click', savePermissions);
-    if ($('permissionModal')) $('permissionModal').addEventListener('click', function(e) { if (e.target === this) closePermissionModal(); });
-}
     // ⭐ HÀM BIND TOGGLE AN TOÀN
     function bindSectionToggle(btnId, sectionId, label) {
         var btn = $(btnId);
