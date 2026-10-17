@@ -12,6 +12,20 @@ jobs:
   run-updater:
     runs-on: ubuntu-latest
 
+    name: Run New Story Updater
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit_words:
+        description: 'Số từ muốn xử lý (Nhập 20 để chạy thử, nhập 0 để chạy hết 11237 từ)'
+        required: true
+        default: '20'
+
+jobs:
+  run-updater:
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
