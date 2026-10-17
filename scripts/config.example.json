@@ -12,13 +12,13 @@
     "tiktok_avatar": "https://i.postimg.cc/QBD0vj6C/IMG-6296.jpg",
     "tiktok_url": "https://www.tiktok.com/@thaonoizhongwen",
 
-    "demo_limit": 30,
+    "demo_limit": -1,
     "demo_daily_glimit": 50,
-    "demo_hsk_max": 3,
+    "demo_hsk_max": 1,
 
     "trial_days": 3,
-    "trial_max_questions": 100,
-    "trial_max_hsk": 5,
+    "trial_max_questions": -1,
+    "trial_max_hsk": 2,
     "trial_unlimited_writing": true,
 
     "target_admins": 3,
