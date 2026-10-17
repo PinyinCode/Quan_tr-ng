@@ -14981,8 +14981,6 @@ function getLimitedData() {
     if (!window.__dataLoaded || !RAW_DATA || RAW_DATA.length === 0) {
         return [];
     }
-    
-    // Ưu tiên Onboarding
     if (window.__onboardingOverride && Array.isArray(window.__onboardingOverride)
         && window.__onboardingOverride.length > 0
         && !state.search && !state.hsk && !state.subject) {
@@ -14992,29 +14990,6 @@ function getLimitedData() {
     var info = getTierInfo();
     if (info.tier === 'active') return RAW_DATA;
 
-    // ⭐ LẤY ID TAB HIỆN TẠI (Đảm bảo biến này tồn tại trong code của bạn)
-    var currentDataset = (typeof CURRENT_DATASET !== 'undefined') ? CURRENT_DATASET : 'tonghop';
-
-    /* ═══════════════════════════════════════════════════════════════
-       NHÁNH 1: NẾU LÀ TAB TỔNG HỢP (Mở full theo HSK, bỏ qua giới hạn câu)
-       ═══════════════════════════════════════════════════════════════ */
-    if (currentDataset === 'tonghop') {
-        var maxHsk = 6;
-        if (info.tier === 'demo') maxHsk = 1; // Khách: full HSK1
-        else if (info.tier === 'trial') maxHsk = 2; // Trial: full HSK1, 2
-
-        // Chỉ cần lọc đúng HSK, KHÔNG cắt số câu
-        return RAW_DATA.filter(function(r) {
-            var rHsk = parseInt(String(r.hsk).replace(/[^0-9]/g, ''), 10);
-            if (isNaN(rHsk)) rHsk = 99; 
-            if (String(r.hsk).toUpperCase().indexOf('7-9') !== -1) rHsk = 7;
-            return rHsk <= maxHsk;
-        });
-    }
-
-    /* ═══════════════════════════════════════════════════════════════
-       NHÁNH 2: CÁC TAB KHÁC (Giữ nguyên 100% logic gốc của bạn)
-       ═══════════════════════════════════════════════════════════════ */
     var max = (typeof info.maxQuestions === 'number' && info.maxQuestions > 0)
               ? info.maxQuestions
               : ((typeof DEMO_LIMIT === 'number') ? DEMO_LIMIT : 60);
