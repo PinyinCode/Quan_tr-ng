@@ -24417,6 +24417,30 @@ window.tatKhanCap = async function() {
                 'color:#f59e0b;font-weight:bold;font-size:14px');
 
     /* ═══════════════════════════════════════════════════════════
+       ⭐ BƯỚC 0: TẮT LOCAL + GHI RTDB NGAY (TẮT TOÀN HỆ THỐNG TRƯỚC)
+       ═══════════════════════════════════════════════════════════ */
+    localStorage.setItem('EMERGENCY_QUOTA_MODE', 'false');
+    console.log('%c✅ ĐÃ TẮT CHẾ ĐỘ KHẨN CẤP (local)', 
+                'color:#16a34a;font-weight:bold;font-size:16px');
+
+    try {
+        if (typeof firebase !== 'undefined' && firebase.database) {
+            await firebase.database().ref('config/emergency').set({
+                enabled: false,
+                updatedAt: Date.now(),
+                updatedBy: currentUser.email,
+                updatedAtVN: new Date().toLocaleString('vi-VN')
+            });
+            console.log('%c✅ ĐÃ ĐỒNG BỘ TOÀN HỆ THỐNG (RTDB)', 
+                        'color:#16a34a;font-weight:bold;font-size:14px');
+        } else {
+            console.warn('⚠️ RTDB không khả dụng — chỉ tắt local');
+        }
+    } catch(e) {
+        console.error('❌ Lỗi sync RTDB:', e.message);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
        BƯỚC 1: QUÉT LOCALSTORAGE TÌM USER TẠO TRONG EMERGENCY
        ═══════════════════════════════════════════════════════════ */
     var emergencyUsers = [];
@@ -24454,32 +24478,11 @@ window.tatKhanCap = async function() {
                 'color:#4f46e5;font-weight:bold;font-size:13px');
 
     /* ═══════════════════════════════════════════════════════════
-       NẾU KHÔNG CÓ USER NÀO → TẮT LUÔN
+       NẾU KHÔNG CÓ USER → CHỈ CẦN RELOAD
        ═══════════════════════════════════════════════════════════ */
     if (emergencyUsers.length === 0) {
-        console.log('%c→ Không có user nào cần sync, tắt trực tiếp', 'color:#94a3b8');
-        localStorage.setItem('EMERGENCY_QUOTA_MODE', 'false');
-        console.log('%c✅ ĐÃ TẮT CHẾ ĐỘ KHẨN CẤP (local)', 
-                    'color:#16a34a;font-weight:bold;font-size:16px');
-
-        /* ⭐ Sync lên RTDB */
-        try {
-            if (typeof firebase !== 'undefined' && firebase.database) {
-                await firebase.database().ref('config/emergency').set({
-                    enabled: false,
-                    updatedAt: Date.now(),
-                    updatedBy: currentUser.email,
-                    updatedAtVN: new Date().toLocaleString('vi-VN')
-                });
-                console.log('%c✅ ĐÃ ĐỒNG BỘ TOÀN HỆ THỐNG (RTDB)', 
-                            'color:#16a34a;font-weight:bold;font-size:14px');
-            } else {
-                console.warn('⚠️ RTDB không khả dụng — chỉ tắt local');
-            }
-        } catch(e) {
-            console.error('❌ Lỗi sync RTDB:', e.message);
-        }
-
+        console.log('%c→ Không có user nào cần sync, hoàn tất', 'color:#94a3b8');
+        console.log('%c→ Reload sau 1.5 giây...', 'color:#f59e0b');
         setTimeout(function() { location.reload(); }, 1500);
         return;
     }
@@ -24661,44 +24664,26 @@ window.tatKhanCap = async function() {
     console.log('%c═══════════════════════════════════════', 'color:#4f46e5');
 
     /* ═══════════════════════════════════════════════════════════
-       BƯỚC 6: TẮT EMERGENCY MODE
+       BƯỚC 6: BÁO LỖI NẾU CÓ (RTDB ĐÃ TẮT Ở BƯỚC 0)
        ═══════════════════════════════════════════════════════════ */
     if (failed === 0 && renewalsFailed === 0 && approvedFailed === 0) {
-        // ⭐ Sync thành công hoàn toàn → tắt
-        localStorage.setItem('EMERGENCY_QUOTA_MODE', 'false');
-        console.log('%c✅ ĐÃ TẮT CHẾ ĐỘ KHẨN CẤP (local)', 
-                    'color:#16a34a;font-weight:bold;font-size:16px');
-
-        /* ⭐ Sync lên RTDB — TẮT toàn hệ thống */
-        try {
-            if (typeof firebase !== 'undefined' && firebase.database) {
-                await firebase.database().ref('config/emergency').set({
-                    enabled: false,
-                    updatedAt: Date.now(),
-                    updatedBy: currentUser.email,
-                    updatedAtVN: new Date().toLocaleString('vi-VN')
-                });
-                console.log('%c✅ ĐÃ ĐỒNG BỘ TOÀN HỆ THỐNG (RTDB)', 
-                            'color:#16a34a;font-weight:bold;font-size:14px');
-            } else {
-                console.warn('⚠️ RTDB không khả dụng — chỉ tắt local');
-            }
-        } catch(e) {
-            console.error('❌ Lỗi sync RTDB:', e.message);
-        }
-
+        console.log('%c✅ HOÀN TẤT TẮT KHẨN CẤP', 
+                    'color:#16a34a;font-weight:bold;font-size:14px');
+        console.log('%c→ Reload sau 1.5 giây...', 'color:#f59e0b');
         setTimeout(function() { location.reload(); }, 1500);
     } else {
-        // ⚠️ Có lỗi → KHÔNG tắt, để admin xử lý
-        console.error('%c⚠️ CÓ LỖI KHI SYNC — CHƯA TẮT CHẾ ĐỘ KHẨN CẤP!', 
+        console.error('%c⚠️ CÓ LỖI KHI SYNC FIRESTORE', 
                      'color:#dc2626;font-weight:bold;font-size:14px');
-        console.error('→ Vẫn giữ emergency mode để tránh mất dữ liệu.');
-        console.error('→ Kiểm tra Firestore quota rồi chạy lại tatKhanCap().');
+        console.error('→ RTDB đã tắt (toàn hệ thống OK).');
+        console.error('→ Nhưng Firestore sync có lỗi. Kiểm tra Console để xem chi tiết.');
         
         var failedList = results.filter(function(r) { return r.status === 'failed'; });
         if (failedList.length > 0) {
             console.table(failedList);
         }
+        
+        console.log('%c→ Reload sau 3 giây...', 'color:#f59e0b');
+        setTimeout(function() { location.reload(); }, 3000);
     }
 };
 window.checkKhanCap = function() {
