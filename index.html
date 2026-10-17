@@ -15342,51 +15342,10 @@ function saveOnboardingSelection(topics, autoPicked) {
 /* SỬA: MAYBE SHOW ONBOARDING — LUÔN VẼ BANNER NẾU CÓ SELECTION */
 /* ═══════════════════════════════════════════════════════════ */
 function maybeShowOnboarding() {
-    var info = getTierInfo();
-
-    // ⭐ Bỏ onboarding cho active + admin
-    if (info.tier === 'active') return;
-    if (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin') return;
-
-    // Chỉ demo / trial / expired mới cần chọn chủ đề
-    if (info.tier !== 'demo' && info.tier !== 'trial'
-        && info.tier !== 'expired') return;
-
-    var cfg = getOnboardingConfig();
-    if (!cfg) return;
-
-    if (typeof RAW_DATA === 'undefined' || !RAW_DATA || RAW_DATA.length === 0) {
-        setTimeout(maybeShowOnboarding, 300);
-        return;
-    }
-
-    var mainContent = $('mainContent');
-    if (!mainContent || mainContent.style.display === 'none') {
-        setTimeout(maybeShowOnboarding, 300);
-        return;
-    }
-
-    // Neu da co override -> chi can goi applyFilter de render
-    if (window.__onboardingOverride
-        && Array.isArray(window.__onboardingOverride)
-        && window.__onboardingOverride.length > 0) {
-        if (typeof applyFilter === 'function') applyFilter();
-        if (typeof updateResultCount === 'function') updateResultCount();
-        return;
-    }
-
-    // Co selection cu -> apply + render lai
-    var saved = loadOnboardingSelection();
-    if (saved && Array.isArray(saved.topics) && saved.topics.length > 0) {
-        window.__onboardingAutoPicked = !!saved.auto_picked;
-        applyOnboardingSelection(saved.topics, false);
-        if (typeof applyFilter === 'function') applyFilter();
-        if (typeof updateResultCount === 'function') updateResultCount();
-        return;
-    }
-
-    // Chua co selection -> hien modal
-    showOnboardingModal();
+    // ⭐ ĐÃ VÔ HIỆU HÓA HOÀN TOÀN ONBOARDING
+    // Không hiện popup chọn chủ đề, không tạo banner gợi ý.
+    // Dữ liệu sẽ hiển thị đầy đủ dựa trên HSK được cấu hình (giống hệt Admin).
+    return; 
 }
 function showOnboardingModal() {
     var cfg = getOnboardingConfig();
