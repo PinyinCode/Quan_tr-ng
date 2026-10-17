@@ -24630,6 +24630,7 @@ window.mergeEmergencyUsers = async function(firestoreUsers) {
 
 
 
+
 /* ⭐ Ẩn #expiryBanner khi #vocabWarningBanner đang hiện (tránh trùng) */
 (function hideExpiryWhenMerged() {
     function sync() {
@@ -25164,6 +25165,7 @@ setTimeout(function() {
         console.log('  checkKhanCap()  → Kiểm tra trạng thái');
     }
 }, 3000);
+
 window.toggleAddUserFormAdmin = function() {
     // 1. Kiểm tra quyền (dù sao cũng nên check cho an toàn)
     if (!isSuperAdmin() && !hasPermission('canAddUser')) {

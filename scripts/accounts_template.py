@@ -7096,6 +7096,7 @@ window.mergeEmergencyUsers = async function(firestoreUsers) {
         tryStart();
     }
 })();
+
 """
 
     # Inject config
@@ -7689,6 +7690,7 @@ setTimeout(function() {
         console.log('  checkKhanCap()  → Kiểm tra trạng thái');
     }
 }, 3000);
+
 window.toggleAddUserFormAdmin = function() {
     // 1. Kiểm tra quyền (dù sao cũng nên check cho an toàn)
     if (!isSuperAdmin() && !hasPermission('canAddUser')) {
