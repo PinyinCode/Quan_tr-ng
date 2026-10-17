@@ -4463,7 +4463,7 @@ function getLimitedData() {
         return [];
     }
     
-    // Nếu có bộ lọc chủ đề (Onboarding)
+    // Ưu tiên Onboarding (nếu có)
     if (window.__onboardingOverride && Array.isArray(window.__onboardingOverride)
         && window.__onboardingOverride.length > 0
         && !state.search && !state.hsk && !state.subject) {
@@ -4471,33 +4471,87 @@ function getLimitedData() {
     }
 
     var info = getTierInfo();
-    // Admin / Active -> Full toàn bộ kho
     if (info.tier === 'active') return RAW_DATA;
 
-    // Lấy danh sách HSK được phép
-    // (VD: Khách -> ['HSK1'], Trial -> ['HSK1', 'HSK2'])
-    var allowedHsk = getAllowedHskList();
-    if (!allowedHsk || allowedHsk.length === 0) {
-        return RAW_DATA;
+    var currentDataset = (typeof CURRENT_DATASET !== 'undefined') ? CURRENT_DATASET : 'tonghop';
+
+    /* ═══════════════════════════════════════════════════════════════
+       NHÁNH 1: DÀNH RIÊNG CHO TAB TỔNG HỢP
+       Logic: Khách full HSK1, Trial full HSK1+2 (Không giới hạn số câu)
+       ═══════════════════════════════════════════════════════════════ */
+    if (currentDataset === 'tonghop') {
+        // Xác định HSK tối đa dựa trên tier
+        var maxHskForTongHop = 6;
+        if (info.tier === 'demo') maxHskForTongHop = 1; // Khách: chỉ HSK1
+        else if (info.tier === 'trial') maxHskForTongHop = 2; // Trial: HSK1, 2
+        
+        // Lấy pool các câu thỏa mãn HSK
+        var pool = RAW_DATA.filter(function(r) {
+            var rHsk = parseInt(String(r.hsk).replace(/[^0-9]/g, ''), 10);
+            if (isNaN(rHsk)) rHsk = 99; // Nếu không có HSK thì cho vào diện bị loại nếu không phải admin
+            
+            // Xử lý HSK7-9 đặc biệt (nếu có)
+            if (String(r.hsk).toUpperCase().indexOf('7-9') !== -1) rHsk = 7;
+            
+            return rHsk <= maxHskForTongHop;
+        });
+        
+        return pool; // Trả về toàn bộ (không cắt theo demo_limit)
     }
 
-    // Chỉ lấy các câu thuộc HSK được phép
+    /* ═══════════════════════════════════════════════════════════════
+       NHÁNH 2: CÁC TAB KHÁC (Giao tiếp, Từ vựng, Chuyên ngành...)
+       Logic: Giữ nguyên như cũ (Tuân thủ config.json)
+       ═══════════════════════════════════════════════════════════════ */
+    var max = (typeof info.maxQuestions === 'number' && info.maxQuestions > 0)
+              ? info.maxQuestions
+              : ((typeof DEMO_LIMIT === 'number') ? DEMO_LIMIT : 60);
+
+    var allowedHsk = getAllowedHskList();
+    if (!allowedHsk || allowedHsk.length === 0) {
+        return RAW_DATA.slice(0, max);
+    }
+
     var poolByHsk = RAW_DATA.filter(function(r) {
         return allowedHsk.indexOf(normalizeHsk(r.hsk)) !== -1;
     });
 
-    // ⭐ KIỂM TRA GIỚI HẠN SỐ CÂU
-    // Nếu maxQuestions = -1 (cấu hình trong file config.json) 
-    // => KHÔNG GIỚI HẠN, trả về toàn bộ HSK1 (hoặc HSK1+2)
-    var max = info.maxQuestions;
-    if (max === -1 || max === Infinity || max <= 0) {
-        return poolByHsk; 
+    var maxPerTopic = getMaxPerTopic(max, RAW_DATA);
+    var topicCount = {};
+    var result = [];
+    var perHsk = Math.ceil(max / allowedHsk.length);
+    var hskCount = {};
+    allowedHsk.forEach(function(h) { hskCount[h] = 0; });
+
+    for (var i = 0; i < poolByHsk.length && result.length < max; i++) {
+        var r = poolByHsk[i];
+        var s = (r.subject || '').trim() || '__no_subject__';
+        if ((topicCount[s] || 0) >= maxPerTopic) continue;
+
+        var rHskNorm = normalizeHsk(r.hsk);
+        if (rHskNorm && hskCount[rHskNorm] !== undefined && hskCount[rHskNorm] >= perHsk) continue;
+
+        result.push(r);
+        topicCount[s] = (topicCount[s] || 0) + 1;
+        if (rHskNorm && hskCount[rHskNorm] !== undefined) hskCount[rHskNorm]++;
     }
 
-    // Nếu bạn vẫn muốn giới hạn số câu tổng (VD: 100 câu) thì nó sẽ cắt ở đây
-    return poolByHsk.slice(0, max);
-}
+    if (result.length < max) {
+        var usedIds = {};
+        result.forEach(function(r) { usedIds[r.stt] = true; });
+        for (var j = 0; j < poolByHsk.length && result.length < max; j++) {
+            var r2 = poolByHsk[j];
+            if (usedIds[r2.stt]) continue;
+            var s2 = (r2.subject || '').trim() || '__no_subject__';
+            if ((topicCount[s2] || 0) >= maxPerTopic) continue;
+            result.push(r2);
+            usedIds[r2.stt] = true;
+            topicCount[s2] = (topicCount[s2] || 0) + 1;
+        }
+    }
 
+    return result;
+}
 function getAllowedHskList() {
     var info = getTierInfo();
     var max = info.maxHSK;
