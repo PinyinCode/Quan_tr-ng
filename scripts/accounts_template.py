@@ -7690,27 +7690,15 @@ setTimeout(function() {
         console.log('  checkKhanCap()  → Kiểm tra trạng thái');
     }
 }, 3000);
+
 window.toggleAddUserFormAdmin = function() {
-    // 1. Kiểm tra quyền
+    // 1. Kiểm tra quyền (dù sao cũng nên check cho an toàn)
     if (!isSuperAdmin() && !hasPermission('canAddUser')) {
         alert('Bạn không có quyền thêm user!');
         return;
     }
     
-    // 2. Tự động mở khung (section) nếu đang bị ẩn
-    var section = document.getElementById('adminUsersSection');
-    if (section && section.classList.contains('collapsed')) {
-        section.classList.remove('collapsed');
-        // Cập nhật lại icon con mắt cho đúng
-        var eyeBtn = document.getElementById('toggleUsersBtn');
-        if (eyeBtn) {
-            var icon = eyeBtn.querySelector('i');
-            if (icon) icon.className = 'fas fa-eye';
-            eyeBtn.classList.add('active');
-        }
-    }
-    
-    // 3. Mở/Đóng form
+    // 2. Mở/Đóng form
     var form = document.getElementById('addUserForm');
     if (form) {
         form.classList.toggle('show');
@@ -7723,47 +7711,6 @@ window.toggleAddUserFormAdmin = function() {
         }
     }
 };
-
-/* ⭐ BỘ ĐỘI ĐỎ FIX NÚT THÊM (Đảm bảo 100% hoạt động) */
-setTimeout(function() {
-    var btnAdd = document.getElementById('showAddUserBtn');
-    if (btnAdd) {
-        // Xóa mọi sự kiện cũ
-        var newBtn = btnAdd.cloneNode(true);
-        btnAdd.parentNode.replaceChild(newBtn, btnAdd);
-        
-        // Gắn sự kiện mới tinh
-        newBtn.onclick = function(e) {
-            if(e) { e.preventDefault(); e.stopPropagation(); }
-            
-            // Tự động mở khung nếu đang bị ẩn
-            var section = document.getElementById('adminUsersSection');
-            if (section && section.classList.contains('collapsed')) {
-                section.classList.remove('collapsed');
-                var eyeBtn = document.getElementById('toggleUsersBtn');
-                if (eyeBtn) {
-                    var icon = eyeBtn.querySelector('i');
-                    if (icon) icon.className = 'fas fa-eye';
-                    eyeBtn.classList.add('active');
-                }
-            }
-            
-            // Hiển thị form
-            var form = document.getElementById('addUserForm');
-            if (form) {
-                form.classList.toggle('show');
-                if (form.classList.contains('show')) {
-                    setTimeout(function() { 
-                        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        var emailInput = document.getElementById('newUserEmail');
-                        if (emailInput) emailInput.focus(); 
-                    }, 100);
-                }
-            }
-        };
-        console.log('✅ Đã gắn lại sự kiện nút Thêm thành công!');
-    }
-}, 2000); // Đợi 2 giây để đảm bảo toàn bộ giao diện đã load xong
 """
 
     return js
