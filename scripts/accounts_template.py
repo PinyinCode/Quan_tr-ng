@@ -1581,7 +1581,7 @@ def build_accounts_html():
                         </div>
                     </div>
                     <div class="ash-actions">
-                        <button class="btn-add" id="showAddUserBtn"><i class="fas fa-plus"></i> Thêm</button>
+                        <button class="btn-add" id="showAddUserBtn" onclick="document.getElementById('addUserForm').classList.toggle('show')"><i class="fas fa-plus"></i> Thêm</button>
                         <button class="admin-toggle-btn active" id="toggleUsersBtn" title="Ẩn danh sách tài khoản"><i class="fas fa-eye"></i></button>
                     </div>
                 </div>
@@ -4898,30 +4898,39 @@ function initAdminPanel() {
     if ($('importModal')) $('importModal').addEventListener('click', function(e) { if (e.target === this) { $('importModal').classList.remove('show'); importRows = []; } });
     if ($('importConfirmBtn')) $('importConfirmBtn').addEventListener('click', doImport);
 
-    // ⭐ FIX CỨNG LỖI NÚT THÊM TÀI KHOẢN
-    var oldBtnAdd = $('showAddUserBtn');
-    if (oldBtnAdd) {
-        var newBtnAdd = oldBtnAdd.cloneNode(true);
-        oldBtnAdd.parentNode.replaceChild(newBtnAdd, oldBtnAdd);
+    // ⭐ FIX CỨNG LỖI NÚT THÊM TÀI KHOẢN (Đảm bảo hoạt động 100% cho Admin thường)
+    var btnAdd = $('showAddUserBtn');
+    if (btnAdd) {
+        // 1. Đảm bảo nút này LUÔN HIỂN THỊ (không bị ẩn bởi bất kỳ logic nào)
+        btnAdd.style.display = 'inline-flex';
         
-        newBtnAdd.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Kiểm tra quyền
-            if (!isSuperAdmin() && !hasPermission('canAddUser')) {
-                alert('Bạn không có quyền thêm user!');
-                return;
+        // 2. Gắn sự kiện click trực tiếp, ghi đè mọi sự kiện cũ
+        btnAdd.onclick = function(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
             }
             
+            // 3. Kiểm tra quyền
+            if (typeof isSuperAdmin === 'function' && typeof hasPermission === 'function') {
+                if (!isSuperAdmin() && !hasPermission('canAddUser')) {
+                    alert('Bạn không có quyền thêm user!');
+                    return;
+                }
+            }
+            
+            // 4. Mở/Đóng form
             var form = $('addUserForm');
             if (form) {
                 form.classList.toggle('show');
-                if (form.classList.contains('show') && $('newUserEmail')) {
-                    setTimeout(function() { $('newUserEmail').focus(); }, 100);
+                if (form.classList.contains('show')) {
+                    setTimeout(function() { 
+                        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        if ($('newUserEmail')) $('newUserEmail').focus(); 
+                    }, 100);
                 }
             }
-        });
+        };
     }
 
     if ($('cancelAddUser')) $('cancelAddUser').addEventListener('click', function() {
@@ -4994,7 +5003,6 @@ function initAdminPanel() {
     if ($('permissionSave')) $('permissionSave').addEventListener('click', savePermissions);
     if ($('permissionModal')) $('permissionModal').addEventListener('click', function(e) { if (e.target === this) closePermissionModal(); });
 }
-
 async function doAddUser() {
     if (!isSuperAdmin() && !hasPermission('canAddUser')) {
         alert('Bạn không có quyền thêm user!');
@@ -7681,6 +7689,26 @@ setTimeout(function() {
         console.log('  checkKhanCap()  → Kiểm tra trạng thái');
     }
 }, 3000);
+window.toggleAddUserFormAdmin = function() {
+    // 1. Kiểm tra quyền (dù sao cũng nên check cho an toàn)
+    if (!isSuperAdmin() && !hasPermission('canAddUser')) {
+        alert('Bạn không có quyền thêm user!');
+        return;
+    }
+    
+    // 2. Mở/Đóng form
+    var form = document.getElementById('addUserForm');
+    if (form) {
+        form.classList.toggle('show');
+        if (form.classList.contains('show')) {
+            setTimeout(function() { 
+                form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                var emailInput = document.getElementById('newUserEmail');
+                if (emailInput) emailInput.focus(); 
+            }, 100);
+        }
+    }
+};
 """
 
     return js
