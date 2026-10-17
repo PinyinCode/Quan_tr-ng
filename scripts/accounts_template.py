@@ -2371,6 +2371,38 @@ async function handleAuthChange(user) {
 
         isDemo = false;
 
+        /* ⭐ GHI USER LÊN RTDB — ĐỂ ADMIN TÌM THẤY */
+        try {
+            if (typeof firebase !== 'undefined' && firebase.database && !isSuper) {
+                var emailKeyRT = email.replace(/[.@#$\[\]]/g, '_');
+                var rtdbUserRef = firebase.database().ref('config/emergency-users/' + emailKeyRT);
+                
+                rtdbUserRef.once('value').then(function(snap) {
+                    if (!snap.exists()) {
+                        rtdbUserRef.set({
+                            email: email,
+                            name: currentUser.name || email.split('@')[0],
+                            photo: currentUser.photo || '',
+                            registeredAt: Date.now(),
+                            registeredAtVN: new Date().toLocaleString('vi-VN'),
+                            source: 'emergency_register',
+                            userAgent: navigator.userAgent.substring(0, 150)
+                        }).then(function() {
+                            console.log('✅ [Emergency] Đã ghi user mới lên RTDB:', email);
+                        }).catch(function(err) {
+                            console.warn('⚠️ Lỗi ghi RTDB:', err.message);
+                        });
+                    } else {
+                        console.log('ℹ️ [Emergency] User đã có trên RTDB:', email);
+                    }
+                }).catch(function(err) {
+                    console.warn('Lỗi check RTDB:', err.message);
+                });
+            }
+        } catch(e) {
+            console.warn('Lỗi emergency RTDB:', e);
+        }
+
         /* ⭐ Báo banner_fix */
         try {
             if (typeof window.__bannerFixResolveTimer === 'function') {
@@ -2396,6 +2428,7 @@ async function handleAuthChange(user) {
 
         return; // ⛔ Dừng lại hoàn toàn, không gọi Firestore
     }
+    /* ═══ END CHẾ ĐỘ KHẨN CẤP ═══ */
     /* ═══ END CHẾ ĐỘ KHẨN CẤP ═══ */
 
     var cacheKey = 'user_cache_' + email;
