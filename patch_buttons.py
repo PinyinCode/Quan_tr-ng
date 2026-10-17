@@ -43,13 +43,13 @@ DEFAULT_CONFIG = {
 # =================================================================
 BUTTONS_CSS = r"""
 /* ═══════════════════════════════════════════════════════════ */
-/* PATCH_BUTTONS: DATASET BUTTONS — 2 HÀNG GỌN                 */
+/* PATCH_BUTTONS: DATASET BUTTONS — TỐI ƯU GIAO DIỆN PC & MOBILE */
 /* ═══════════════════════════════════════════════════════════ */
 
 .ds-main-row {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: .55rem;
+    gap: .75rem;
     align-items: stretch;
 }
 @media (max-width: 1100px) {
@@ -63,9 +63,9 @@ BUTTONS_CSS = r"""
 .ds-btn {
     display: flex;
     align-items: center;
-    gap: .65rem;
-    padding: .65rem .8rem;
-    min-height: 60px;
+    gap: .75rem;
+    padding: .75rem 1rem;
+    min-height: 66px;
     height: 100%;
     border: 1.5px solid var(--border);
     border-radius: 12px;
@@ -92,13 +92,13 @@ BUTTONS_CSS = r"""
 .ds-btn > i.fas,
 .ds-btn .ds-btn-icon {
     flex-shrink: 0;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.05rem;
+    font-size: 1.15rem;
     background: linear-gradient(135deg, rgba(99,102,241,.14), rgba(139,92,246,.08));
     color: var(--primary);
     transition: all .2s;
@@ -111,16 +111,16 @@ BUTTONS_CSS = r"""
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: .12rem;
+    gap: .2rem;
     pointer-events: auto;
     z-index: 2;
     position: relative;
 }
 .ds-btn .ds-btn-title {
-    font-size: clamp(.78rem, 1vw, .9rem);
+    font-size: clamp(.85rem, 1.1vw, 1rem);
     font-weight: 700;
     color: var(--text);
-    line-height: 1.2;
+    line-height: 1.25;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -132,14 +132,16 @@ BUTTONS_CSS = r"""
     margin-right: .15rem;
 }
 .ds-btn .ds-btn-sub {
-    font-size: clamp(.62rem, .78vw, .72rem);
+    font-size: clamp(.7rem, .85vw, .8rem);
     font-weight: 600;
     color: var(--text-3);
-    line-height: 1.25;
+    line-height: 1.3;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+
 
 /* ── Active ── */
 .ds-btn.active {
