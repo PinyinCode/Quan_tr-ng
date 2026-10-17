@@ -141,12 +141,12 @@ def build_vocab_js_patch():
         if (u && u.role === 'admin') {
             return { allowed: true, tier: 'admin',
                 hskAllowed: [1,2,3,4,5,6,7,8,9], maxQuestions: -1,
-                label: 'Admin - Toàn bộ HSK', warning: null };
+                label: 'Admin - Toan bo HSK', warning: null };
         }
         if (u && u.isPermanent === true) {
             return { allowed: true, tier: 'premium',
                 hskAllowed: [1,2,3,4,5,6,7,8,9], maxQuestions: -1,
-                label: 'Premium - Toàn bộ HSK', warning: null };
+                label: 'Premium - Toan bo HSK', warning: null };
         }
 
         var tier = 'demo';
@@ -168,19 +168,19 @@ def build_vocab_js_patch():
 
         var hskRange = hskArr.length
             ? 'HSK ' + hskArr[0] + '-' + hskArr[hskArr.length - 1]
-            : 'cơ bản';
+            : 'co ban';
 
         if (tier === 'expired') {
             return { allowed: false, tier: 'expired', hskAllowed: [], maxQuestions: 0,
-                label: 'Tài khoản hết hạn',
-                warning: 'Tài khoản đã hết hạn — gia hạn để tiếp tục dùng Từ vựng HSK.' };
+                label: 'Tai khoan het han',
+                warning: 'Tai khoan da het han - gia han de tiep tuc dung Tu vung HSK.' };
         }
         if (tier === 'demo') {
             return { allowed: true, tier: 'demo', hskAllowed: hskArr, maxQuestions: maxQ,
                 label: 'Demo - ' + hskRange,
-                warning: 'Bạn Demo giới hạn ' + hskRange + ' và tối đa ' +
-                         (maxQ > 0 ? maxQ + ' từ' : 'một số từ') +
-                         ' — đăng nhập để dùng đầy đủ.' };
+                warning: 'Ban Demo gioi han ' + hskRange + ' va toi da ' +
+                         (maxQ > 0 ? maxQ + ' tu' : 'mot so tu') +
+                         ' - dang nhap de dung day du.' };
         }
         if (tier === 'trial') {
             if (isUnlimited) {
@@ -191,9 +191,9 @@ def build_vocab_js_patch():
             }
             return { allowed: true, tier: 'trial', hskAllowed: hskArr, maxQuestions: maxQ,
                 label: 'Trial - ' + hskRange,
-                warning: 'Bạn Trial giới hạn ' + hskRange + ' và ' +
-                         (maxQ > 0 ? maxQ + ' từ' : 'một số từ') +
-                         ' — nâng cấp Premium để mở toàn bộ.' };
+                warning: 'Ban Trial gioi han ' + hskRange + ' va ' +
+                         (maxQ > 0 ? maxQ + ' tu' : 'mot so tu') +
+                         ' - nang cap Premium de mo toan bo.' };
         }
         if (isUnlimited) {
             return { allowed: true, tier: 'active',
@@ -203,15 +203,31 @@ def build_vocab_js_patch():
         }
         return { allowed: true, tier: 'active', hskAllowed: hskArr, maxQuestions: maxQ,
             label: 'Active - ' + hskRange,
-            warning: 'Bạn Active giới hạn ' + hskRange + ' và ' +
-                     (maxQ > 0 ? maxQ + ' từ' : 'một số từ') +
-                     ' — nâng cấp Premium để mở toàn bộ.' };
+            warning: 'Ban Active gioi han ' + hskRange + ' va ' +
+                     (maxQ > 0 ? maxQ + ' tu' : 'mot so tu') +
+                     ' - nang cap Premium de mo toan bo.' };
     }
 
-    def applyVocabLimits(list, access):
+    function applyVocabLimits(list, access) {
         var result = list;
-        // Tạm thời bỏ qua lọc HSK để giữ nguyên số câu
-        
+        if (access.hskAllowed && access.hskAllowed.length &&
+            access.hskAllowed.length < 9) {
+            var allowSet = {};
+            access.hskAllowed.forEach(function(h) {
+                allowSet['HSK' + h] = true;
+                allowSet[String(h)] = true;
+            });
+            result = result.filter(function(r) {
+                var h = (r.hsk || '').toString().toUpperCase().trim();
+                if (!h) return true;
+                if (h === 'HSK7-9') {
+                    return allowSet['HSK7-9'] === true;
+                }
+                var num = h.replace(/[^0-9]/g, '');
+                if (!num) return true;
+                return allowSet['HSK' + num] === true || allowSet[num] === true;
+            });
+        }
         var maxQ = access.maxQuestions;
         if (typeof maxQ === 'number' && maxQ > 0 && result.length > maxQ) {
             result = result.slice(0, maxQ);
@@ -255,10 +271,8 @@ def build_vocab_js_patch():
         }
     }
 
-    /* ⭐ BANNER GỘP — hiện ở mọi tab, gộp thông tin lượt Nghe + Viết */
     function injectVocabWarningBanner() {
-        var acc = getVocabAccess();
-        if (!acc.warning) {
+        if (!_isVocabMode()) {
             var oldOut = document.getElementById('vocabWarningBanner');
             if (oldOut) oldOut.remove();
             return;
@@ -266,70 +280,36 @@ def build_vocab_js_patch():
         var old = document.getElementById('vocabWarningBanner');
         if (old) old.remove();
 
+        var acc = getVocabAccess();
+        if (!acc.warning) return;
+
         var main = document.getElementById('mainContent');
         if (!main) return;
 
-        /* ⭐ Tính thông tin hiển thị tuỳ tab */
         var limitedCount = 0, totalCount = 0;
-        var unit = _isVocabMode() ? 'từ' : 'câu';
-
         try {
-            if (_isVocabMode() && window.FIXPY_DATASETS && window.FIXPY_DATASETS[VOCAB_ID]) {
+            if (window.FIXPY_DATASETS && window.FIXPY_DATASETS[VOCAB_ID]) {
                 var full = window.FIXPY_DATASETS[VOCAB_ID].data || [];
                 totalCount = full.length;
                 limitedCount = applyVocabLimits(full, acc).length;
-            } else {
-                var info = (typeof getTierInfo === 'function') ? getTierInfo() : {};
-                var maxQ = info.maxQuestions || 60;
-                var fullCount = (typeof RAW_DATA !== 'undefined' && Array.isArray(RAW_DATA)) ? RAW_DATA.length : 0;
-                totalCount = fullCount;
-                limitedCount = Math.min(maxQ, fullCount);
             }
         } catch(e) {}
-
-        /* ⭐ Thông tin lượt Nghe + Viết còn lại */
-        var remaining = 0;
-        try {
-            if (typeof getDemoRemaining === 'function') {
-                remaining = getDemoRemaining();
-            }
-        } catch(e) {}
-        var showRemaining = (acc.tier === 'demo' || acc.tier === 'expired')
-                            && remaining !== Infinity && remaining >= 0;
 
         var limitInfo = '';
         if (acc.maxQuestions > 0 && limitedCount > 0 && totalCount > limitedCount) {
             limitInfo = ' <span style="opacity:.75">(' +
-                        limitedCount + '/' + totalCount + ' ' + unit + ')</span>';
+                        limitedCount + '/' + totalCount + ' tu)</span>';
         }
 
         var icon = acc.tier === 'expired' ? 'fa-exclamation-triangle'
                  : acc.tier === 'trial' ? 'fa-hourglass-half'
                  : acc.tier === 'demo' ? 'fa-user'
                  : 'fa-info-circle';
-        var btnLabel = acc.tier === 'expired' ? 'Gia hạn ngay'
-                     : acc.tier === 'demo' ? 'Đăng nhập'
-                     : 'Nâng cấp Premium';
+        var btnLabel = acc.tier === 'expired' ? 'Gia han ngay'
+                     : acc.tier === 'demo' ? 'Dang nhap'
+                     : 'Nang cap Premium';
         var btnFn = acc.tier === 'demo' ? 'vocabUpgradeLogin()'
                   : 'vocabUpgradeRenew()';
-
-        /* ⭐ Warning message có dấu + ngắn gọn */
-        var descText = '';
-        if (acc.tier === 'demo') {
-            descText = 'Đăng nhập bằng Gmail để dùng toàn bộ kho câu, không giới hạn.';
-        } else if (acc.tier === 'expired') {
-            descText = 'Tài khoản đã hết hạn — gia hạn để tiếp tục dùng toàn bộ tính năng.';
-        } else if (acc.tier === 'trial') {
-            descText = 'Nâng cấp Premium để mở toàn bộ nội dung, không giới hạn.';
-        } else {
-            descText = acc.warning || '';
-        }
-
-        var remainingHtml = '';
-        if (showRemaining) {
-            remainingHtml = ' · <span style="color:#16a34a;font-weight:800">Nghe + Viết còn ' +
-                            remaining + ' lượt</span>';
-        }
 
         var banner = document.createElement('div');
         banner.id = 'vocabWarningBanner';
@@ -337,13 +317,43 @@ def build_vocab_js_patch():
         banner.innerHTML =
             '<div class="vocab-warning-icon"><i class="fas ' + icon + '"></i></div>' +
             '<div class="vocab-warning-text">' +
-                '<strong>' + _esc(acc.label) + limitInfo + remainingHtml + '</strong>' +
-                '<span>' + _esc(descText) + '</span>' +
+                '<strong>' + _esc(acc.label) + limitInfo + '</strong>' +
+                '<span>' + _esc(acc.warning) + '</span>' +
             '</div>' +
             '<button class="vocab-warning-btn" onclick="' + btnFn + '">' +
                 '<i class="fas fa-crown"></i> ' + btnLabel +
             '</button>';
         main.insertBefore(banner, main.firstChild);
+    }
+
+    function patchSubjectLock() {
+        if (window.__vocabSubjectLockPatched) return;
+        if (typeof window.buildFilters !== 'function') {
+            setTimeout(patchSubjectLock, 200);
+            return;
+        }
+        var orig = window.buildFilters;
+        window.buildFilters = function() {
+            var result = orig.apply(this, arguments);
+            try {
+                var sf = document.getElementById('subjectFilter');
+                if (!sf) return result;
+                if (_isVocabMode()) {
+                    sf.disabled = true;
+                    sf.value = '';
+                    sf.style.opacity = '0.5';
+                    sf.style.cursor = 'not-allowed';
+                    sf.title = 'Khong kha dung cho Tu vung';
+                } else {
+                    sf.disabled = false;
+                    sf.style.opacity = '';
+                    sf.style.cursor = '';
+                    sf.title = '';
+                }
+            } catch(e) {}
+            return result;
+        };
+        window.__vocabSubjectLockPatched = true;
     }
 
     function watchVocabMode() {
@@ -366,7 +376,7 @@ def build_vocab_js_patch():
                 sf.value = '';
                 sf.style.opacity = '0.5';
                 sf.style.cursor = 'not-allowed';
-                sf.title = 'Không khả dụng cho Từ vựng';
+                sf.title = 'Khong kha dung cho Tu vung';
             } else if (!isVocab && sf.disabled) {
                 sf.disabled = false;
                 sf.style.opacity = '';
@@ -447,7 +457,7 @@ def build_vocab_js_patch():
                         pfSubj.value = '';
                         pfSubj.style.opacity = '0.5';
                         pfSubj.style.cursor = 'not-allowed';
-                        pfSubj.title = 'Không khả dụng cho Từ vựng';
+                        pfSubj.title = 'Khong kha dung cho Tu vung';
                     }
                 }
                 return result;
@@ -479,10 +489,9 @@ def build_vocab_js_patch():
 
         updateTabLockState();
 
-        /* ⭐ Luôn inject banner ở MỌI TAB (không chỉ vocab) */
         setInterval(function() {
             updateTabLockState();
-            injectVocabWarningBanner();
+            if (_isVocabMode()) injectVocabWarningBanner();
         }, 2000);
 
         watchVocabMode();
@@ -824,7 +833,7 @@ def scan_data_dir():
 
 
 # =================================================================
-#  BUILD JS OVERRIDE (CẬP NHẬT LOAD PREVIEW TRƯỚC, DATA ĐẦY ĐỦ SAU)
+#  BUILD JS OVERRIDE
 # =================================================================
 def build_js_override(ids_js, datasets_meta_json):
     L = []
@@ -832,80 +841,30 @@ def build_js_override(ids_js, datasets_meta_json):
 
     add("")
     add("<script>")
-    add("/* FIX.PY - Lazy load preview + full data tu JSON (Co thong bao loading) */")
+    add("/* FIX.PY - Lazy load data tu JSON */")
     add("(function() {")
     add("    'use strict';")
     add("    var NEW_IDS = " + ids_js + ";")
     add("")
 
     add("    window.FIXPY_DATASETS = {};")
-    add("    window.__fixpyFullLoaded = false;")
+    add("    window.__fixpyDataLoaded = false;")
     add("    window.__fixpyMeta = " + datasets_meta_json + ";")
-    add("    window.__fixpyPendingSwitch = null;")
-
-    add("    /* Hàm hiển thị thông báo trực quan */")
-    add("    function showFixToast(msg, isError, duration) {")
-    add("        var existing = document.getElementById('fixToastBanner');")
-    add("        if (existing) existing.remove();")
-    add("        var toast = document.createElement('div');")
-    add("        toast.id = 'fixToastBanner';")
-    add("        toast.style.cssText = 'position:fixed; bottom:24px; right:24px; z-index:999999; background:' + (isError ? '#dc2626' : '#2563eb') + '; color:#fff; padding:12px 20px; border-radius:12px; font-size:14px; font-weight:600; box-shadow:0 6px 20px rgba(0,0,0,0.25); display:flex; align-items:center; gap:8px; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);';")
-    add("        toast.innerHTML = '<i class=\"fas ' + (isError ? 'fa-exclamation-circle' : 'fa-spinner fa-spin') + '\"></i><span>' + msg + '</span>';")
-    add("        document.body.appendChild(toast);")
-    add("        if (duration) {")
-    add("            setTimeout(function() {")
-    add("                toast.style.opacity = '0';")
-    add("                setTimeout(function() { toast.remove(); }, 300);")
-    add("            }, duration);")
-    add("        }")
-    add("    }")
-
-    add("    /* Hiển thị thông báo đang tải ngầm ban đầu */")
-    add("    showFixToast('Đang tải dữ liệu trang web...', false, null);")
-
-    add("    /* 1. LOAD NHANH PREVIEW (1/10 data) TRUOC DE GIAO DIEN HIEN THI NGAY */")
-    add("    (function() {")
-    add("        fetch('data/fixpy_preview.json?t=' + Math.floor(Date.now() / 60000))")
-    add("            .then(function(r) { return r.ok ? r.json() : {}; })")
-    add("            .then(function(d) {")
-    add("                if (!window.__fixpyFullLoaded) {")
-    add("                    window.FIXPY_DATASETS = d || {};")
-    add("                }")
-    add("                console.log('[fix.py] preview loaded');")
-    add("                if (typeof window.__fixpyOnDataReady === 'function') {")
-    add("                    window.__fixpyOnDataReady();")
-    add("                }")
-    add("            })")
-    add("            .catch(function(e) {")
-    add("                console.error('[fix.py] preview load error:', e);")
-    add("            });")
-    add("    })();")
     add("")
-
-    add("    /* 2. LOAD NGẦM TOÀN BỘ DỮ LIỆU ĐẦY ĐỦ PHÍA SAU */")
     add("    (function() {")
     add("        fetch('data/fixpy_datasets.json?t=' + Math.floor(Date.now() / 60000))")
     add("            .then(function(r) { return r.ok ? r.json() : {}; })")
     add("            .then(function(d) {")
     add("                window.FIXPY_DATASETS = d || {};")
-    add("                window.__fixpyFullLoaded = true;")
-    add("                console.log('[fix.py] FULL data loaded');")
-    add("                ")
-    add("                /* Nếu người dùng đã bấm chuyển tab trước đó, giờ load xong thì tự động chuyển và thông báo thành công */")
-    add("                if (window.__fixpyPendingSwitch) {")
-    add("                    var targetId = window.__fixpyPendingSwitch;")
-    add("                    window.__fixpyPendingSwitch = null;")
-    add("                    if (typeof window.__switchRawData === 'function') {")
-    add("                        window.__switchRawData(targetId);")
-    add("                        if (typeof applyFilter === 'function') applyFilter();")
-    add("                        if (typeof updateResultCount === 'function') updateResultCount();")
-    add("                    }")
+    add("                window.__fixpyDataLoaded = true;")
+    add("                console.log('[fix.py] loaded', Object.keys(d).length, 'datasets');")
+    add("                if (typeof window.__fixpyOnDataReady === 'function') {")
+    add("                    window.__fixpyOnDataReady();")
     add("                }")
-    add("                showFixToast('Đã sẵn sàng toàn bộ dữ liệu!', false, 2500);")
     add("            })")
     add("            .catch(function(e) {")
-    add("                console.error('[fix.py] full data load error:', e);")
-    add("                showFixToast('Lỗi tải dữ liệu đầy đủ!', true, 4000);")
+    add("                console.error('[fix.py] load error:', e);")
+    add("                window.__fixpyDataLoaded = true;")
     add("            });")
     add("    })();")
     add("")
@@ -947,17 +906,16 @@ def build_js_override(ids_js, datasets_meta_json):
     add("            return;")
     add("        }")
     add("        window.__switchRawData = function(datasetId) {")
+    add("            if (!window.__fixpyDataLoaded && window.__fixpyMeta && window.__fixpyMeta[datasetId]) {")
+    add("                console.log('[fix.py] data chua load, doi...');")
+    add("                if (!window.__fixpyPendingSwitch) window.__fixpyPendingSwitch = [];")
+    add("                window.__fixpyPendingSwitch.push(datasetId);")
+    add("                return true;")
+    add("            }")
     add("            if (window.FIXPY_DATASETS && window.FIXPY_DATASETS[datasetId]) {")
-    add("                /* Nếu file full chưa tải xong mà người dùng bấm đổi tab */")
-    add("                if (!window.__fixpyFullLoaded && datasetId !== 'tonghop') {")
-    add("                    window.__fixpyPendingSwitch = datasetId;")
-    add("                    showFixToast('Đang tải dữ liệu đầy đủ, vui lòng đợi giây lát...', false, null);")
-    add("                    RAW_DATA = window.FIXPY_DATASETS[datasetId].data || [];")
-    add("                    CURRENT_DATASET = datasetId;")
-    add("                    return true;")
-    add("                }")
     add("                RAW_DATA = window.FIXPY_DATASETS[datasetId].data || [];")
     add("                CURRENT_DATASET = datasetId;")
+    add("                console.log('[fix.py] switch FIXPY:', datasetId, '->', RAW_DATA.length, 'cau');")
     add("                return true;")
     add("            }")
     add("            return origSwitch.apply(this, arguments);")
@@ -968,6 +926,11 @@ def build_js_override(ids_js, datasets_meta_json):
     add("")
 
     add("    window.__fixpyOnDataReady = function() {")
+    add("        var pending = window.__fixpyPendingSwitch || [];")
+    add("        window.__fixpyPendingSwitch = [];")
+    add("        pending.forEach(function(dsId) {")
+    add("            window.__switchRawData(dsId);")
+    add("        });")
     add("        var curDs = (typeof CURRENT_DATASET !== 'undefined') ? CURRENT_DATASET : 'tonghop';")
     add("        if (window.FIXPY_DATASETS && window.FIXPY_DATASETS[curDs]) {")
     add("            if (typeof applyFilter === 'function') applyFilter();")
@@ -1009,6 +972,7 @@ def build_js_override(ids_js, datasets_meta_json):
     add("                    || (typeof getLimitedData !== 'undefined' ? getLimitedData : null);")
     add("        if (typeof origGet !== 'function') return;")
     add("        window.getLimitedData = function() {")
+    add("            if (!window.__fixpyDataLoaded) return [];")
     add("            var currentDs = (typeof CURRENT_DATASET !== 'undefined')")
     add("                            ? CURRENT_DATASET : 'tonghop';")
     add("            if (currentDs === 'tonghop') {")
@@ -1022,7 +986,20 @@ def build_js_override(ids_js, datasets_meta_json):
     add("            if (info.tier === 'active') {")
     add("                return RAW_DATA;")
     add("            }")
-    add("            /* Tắt hoàn toàn logic chia đều chủ đề của Onboarding */")
+    add("            var override = window.__onboardingOverride;")
+    add("            if (override && Array.isArray(override) && override.length > 0")
+    add("                && typeof state !== 'undefined' && state")
+    add("                && !state.search && !state.hsk && !state.subject) {")
+    add("                var currentStts = {};")
+    add("                RAW_DATA.forEach(function(r) { currentStts[r.stt] = true; });")
+    add("                var filtered = override.filter(function(r) {")
+    add("                    return currentStts[r.stt];")
+    add("                });")
+    add("                if (filtered.length > 0) {")
+    add("                    var max = info.maxQuestions || 60;")
+    add("                    return filtered.slice(0, max);")
+    add("                }")
+    add("            }")
     add("            var max2 = info.maxQuestions || 60;")
     add("            return RAW_DATA.slice(0, max2);")
     add("        };")
@@ -1087,6 +1064,7 @@ def build_js_override(ids_js, datasets_meta_json):
     add("            return;")
     add("        }")
     add("        window.applyFilter = function() {")
+    add("            if (!window.__fixpyDataLoaded) return;")
     add("            var curDs = (typeof CURRENT_DATASET !== 'undefined')")
     add("                        ? CURRENT_DATASET : 'tonghop';")
     add("            if (curDs === 'tonghop') {")
@@ -1142,6 +1120,7 @@ def build_js_override(ids_js, datasets_meta_json):
     add("            return;")
     add("        }")
     add("        window.pfApplyFilter = function() {")
+    add("            if (!window.__fixpyDataLoaded) return;")
     add("            var curDs = (typeof CURRENT_DATASET !== 'undefined')")
     add("                        ? CURRENT_DATASET : 'tonghop';")
     add("            if (curDs === 'tonghop') {")
@@ -1193,18 +1172,16 @@ def build_js_override(ids_js, datasets_meta_json):
     add("")
     
     add("    function bindTab(dsId) {")
-    add("        /* ⭐ FIX_CONFLICT: Bỏ qua nút chuyen-nganh — không clone */")
-    add("        if (dsId === 'chuyen-nganh') return;")
     add("        var btn = document.querySelector('.ds-btn[data-dataset=\"' + dsId + '\"]');")
-    add("        if (btn && btn.getAttribute('data-dataset-group') === 'chuyen-nganh') return;")
     add("        if (!btn) return;")
     add("        if (btn.__fixPyBound) return;")
     add("        var cloned = btn.cloneNode(true);")
     add("        btn.parentNode.replaceChild(cloned, btn);")
     add("        cloned.__fixPyBound = true;")
     add("        cloned.addEventListener('click', function(e) {")
-    add("            /* FIX_CONFLICT: bỏ stopImmediatePropagation */")
+    add("            e.stopImmediatePropagation();")
     add("            e.stopPropagation();")
+    add("            e.preventDefault();")
     add("            var sub = document.getElementById('dsSubWrap');")
     add("            if (sub) sub.style.display = 'none';")
     add("            document.querySelectorAll('.ds-btn, .ds-sub-btn').forEach(function(b) {")
@@ -1267,11 +1244,112 @@ def build_js_override(ids_js, datasets_meta_json):
     add("                    window.scrollTo({ top: yOffset, behavior: 'smooth' });")
     add("                }")
     add("            }, 100);")
-    add("        }, false); /* FIX_CONFLICT: bỏ capture */")
+    add("        }, true);")
     add("    }")
     add("")
 
-    
+    add("    function patchApplyOnboarding() {")
+    add("        if (window.__fixPyApplyOnbPatched) return;")
+    add("        var origApply = window.applyOnboardingSelection")
+    add("                      || (typeof applyOnboardingSelection !== 'undefined'")
+    add("                          ? applyOnboardingSelection : null);")
+    add("        if (typeof origApply !== 'function') return;")
+    add("        window.applyOnboardingSelection = function(topics, scrollTop) {")
+    add("            var currentDs = (typeof CURRENT_DATASET !== 'undefined')")
+    add("                            ? CURRENT_DATASET : 'tonghop';")
+    add("            if (!window.FIXPY_DATASETS || !window.FIXPY_DATASETS[currentDs]) {")
+    add("                return origApply.apply(this, arguments);")
+    add("            }")
+    add("            var cfg = (typeof getOnboardingConfig === 'function')")
+    add("                      ? getOnboardingConfig() : null;")
+    add("            if (!cfg) return;")
+    add("            var maxQ = cfg.max_questions;")
+    add("            var isUnlimitedQ = (maxQ === -1 || maxQ === Infinity);")
+    add("            var allowedHsk;")
+    add("            if (cfg.hsk_allowed && Array.isArray(cfg.hsk_allowed) && cfg.hsk_allowed.length > 0) {")
+    add("                allowedHsk = cfg.hsk_allowed.map(function(n) { return 'HSK' + n; });")
+    add("            } else {")
+    add("                allowedHsk = (typeof getAllowedHskList === 'function')")
+    add("                             ? getAllowedHskList()")
+    add("                             : ['HSK1','HSK2','HSK3','HSK4','HSK5','HSK6'];")
+    add("            }")
+    add("            var pool = RAW_DATA.filter(function(r) {")
+    add("                if (allowedHsk.indexOf(r.hsk) === -1) return false;")
+    add("                var s = (r.subject || '').trim();")
+    add("                return topics.indexOf(s) !== -1;")
+    add("            });")
+    add("            pool.sort(function(a, b) {")
+    add("                return (parseInt(a.stt) || 0) - (parseInt(b.stt) || 0);")
+    add("            });")
+    add("            var final = [];")
+    add("            if (isUnlimitedQ) {")
+    add("                final = pool.slice();")
+    add("            } else {")
+    add("                var maxPerTopic = (typeof getMaxPerTopic === 'function')")
+    add("                                 ? getMaxPerTopic(maxQ, RAW_DATA)")
+    add("                                 : Math.max(1, Math.ceil(maxQ / Math.max(1, topics.length)));")
+    add("                var topicCount = {};")
+    add("                var perHsk = Math.ceil(maxQ / allowedHsk.length);")
+    add("                var hskCount = {};")
+    add("                allowedHsk.forEach(function(h) { hskCount[h] = 0; });")
+    add("                for (var i = 0; i < pool.length && final.length < maxQ; i++) {")
+    add("                    var r = pool[i];")
+    add("                    var s = (r.subject || '').trim() || '__no_subject__';")
+    add("                    if ((topicCount[s] || 0) >= maxPerTopic) continue;")
+    add("                    if (r.hsk && hskCount[r.hsk] !== undefined && hskCount[r.hsk] >= perHsk) continue;")
+    add("                    final.push(r);")
+    add("                    topicCount[s] = (topicCount[s] || 0) + 1;")
+    add("                    if (r.hsk && hskCount[r.hsk] !== undefined) hskCount[r.hsk]++;")
+    add("                }")
+    add("                if (final.length < maxQ) {")
+    add("                    var usedIds = {};")
+    add("                    final.forEach(function(r) { usedIds[r.stt] = true; });")
+    add("                    for (var p = 0; p < pool.length && final.length < maxQ; p++) {")
+    add("                        var rp = pool[p];")
+    add("                        if (usedIds[rp.stt]) continue;")
+    add("                        var sp = (rp.subject || '').trim() || '__no_subject__';")
+    add("                        if ((topicCount[sp] || 0) >= maxPerTopic) continue;")
+    add("                        final.push(rp);")
+    add("                        usedIds[rp.stt] = true;")
+    add("                        topicCount[sp] = (topicCount[sp] || 0) + 1;")
+    add("                    }")
+    add("                }")
+    add("                if (final.length > maxQ) final = final.slice(0, maxQ);")
+    add("            }")
+    add("            final.sort(function(a, b) {")
+    add("                return (parseInt(a.stt) || 0) - (parseInt(b.stt) || 0);")
+    add("            });")
+    add("            window.__onboardingOverride = final;")
+    add("            if (typeof state !== 'undefined' && state) {")
+    add("                state.search = '';")
+    add("                state.hsk = '';")
+    add("                state.subject = '';")
+    add("            }")
+    add("            try {")
+    add("                var si = document.getElementById('searchInput');")
+    add("                if (si) si.value = '';")
+    add("                var cb = document.getElementById('clearSearchBtn');")
+    add("                if (cb) cb.classList.remove('show');")
+    add("            } catch(e) {}")
+    add("            if (typeof applyFilter === 'function') applyFilter();")
+    add("            if (typeof updateResultCount === 'function') updateResultCount();")
+    add("            if (typeof showOnboardingActiveBanner === 'function') {")
+    add("                showOnboardingActiveBanner(topics, final.length);")
+    add("            }")
+    add("            if (scrollTop) {")
+    add("                setTimeout(function() {")
+    add("                    var mainEl = document.getElementById('mainContent');")
+    add("                    if (mainEl) {")
+    add("                        var yOffset = mainEl.getBoundingClientRect().top")
+    add("                                    + window.scrollY - 100;")
+    add("                        window.scrollTo({ top: yOffset, behavior: 'smooth' });")
+    add("                    }")
+    add("                }, 200);")
+    add("            }")
+    add("        };")
+    add("        window.__fixPyApplyOnbPatched = true;")
+    add("    }")
+    add("")
 
     add("    function bindAll() {")
     add("        patchSwitchRawData();")
@@ -1281,7 +1359,7 @@ def build_js_override(ids_js, datasets_meta_json):
     add("        patchPfApplyFilter();")
     add("        NEW_IDS.forEach(bindTab);")
     add("        patchMarkActive();")
-    add("        bindFixedTabs();")
+    add("        bindFixedTabs();")   # ⭐ THÊM
     add("    }")
     add("    if (document.readyState === 'loading') {")
     add("        document.addEventListener('DOMContentLoaded', bindAll);")
@@ -1294,10 +1372,8 @@ def build_js_override(ids_js, datasets_meta_json):
     add("        clearTimeout(_timer);")
     add("        _timer = setTimeout(bindAll, 200);")
     add("    });")
-    add("    /* FIX_CONFLICT: chỉ observe .ds-main-row */")
-    add("    var _dsRow = document.querySelector('.ds-main-row');")
-    add("    if (_dsRow) {")
-    add("        observer.observe(_dsRow, { childList: true });")
+    add("    if (document.body) {")
+    add("        observer.observe(document.body, { childList: true, subtree: true });")
     add("    }")
     add("")
     add("    /* === BIND LAI 2 TAB GOC (tonghop + chuyen-nganh) === */")
@@ -1306,6 +1382,7 @@ def build_js_override(ids_js, datasets_meta_json):
     add("        if (tonghopBtn && !tonghopBtn.__fixedBind) {")
     add("            tonghopBtn.__fixedBind = true;")
     add("            tonghopBtn.addEventListener('click', function(e) {")
+    add("                e.stopImmediatePropagation();")
     add("                e.stopPropagation();")
     add("                var sub = document.getElementById('dsSubWrap');")
     add("                if (sub) sub.style.display = 'none';")
@@ -1336,7 +1413,31 @@ def build_js_override(ids_js, datasets_meta_json):
     add("                } catch(err) {}")
     add("            }, true);")
     add("        }")
-    
+    add("        var cnBtn = document.querySelector('.ds-btn[data-dataset-group=\"chuyen-nganh\"]');")
+    add("        if (cnBtn && !cnBtn.__fixedBind) {")
+    add("            cnBtn.__fixedBind = true;")
+    add("            cnBtn.addEventListener('click', function(e) {")
+    add("                e.stopImmediatePropagation();")
+    add("                e.stopPropagation();")
+    add("                var sub = document.getElementById('dsSubWrap');")
+    add("                if (!sub) return;")
+    add("                var isOpen = sub.style.display === 'block';")
+    add("                if (isOpen) {")
+    add("                    sub.style.display = 'none';")
+    add("                    this.classList.remove('active');")
+    add("                } else {")
+    add("                    sub.style.display = 'block';")
+    add("                    document.querySelectorAll('.ds-btn').forEach(function(b) {")
+    add("                        b.classList.remove('active');")
+    add("                    });")
+    add("                    this.classList.add('active');")
+    add("                    /* ⭐ VẼ LẠI SUB BUTTONS VỚI ICON KHÓA */")
+    add("                    if (typeof initDatasetSelector === 'function') {")
+    add("                        try { initDatasetSelector(); } catch(err) {}")
+    add("                    }")
+    add("                }")
+    add("            }, true);")
+    add("        }")
     add("    }")
     add("    setTimeout(bindFixedTabs, 1500);")
     add("    setInterval(bindFixedTabs, 2000);")
@@ -1449,7 +1550,7 @@ def build_layout_css(new_datasets, add_vocab):
 
 
 # =================================================================
-#  MAIN (GHI CẢ 2 FILE: FULL VÀ PREVIEW)
+#  MAIN
 # =================================================================
 def main():
     print("=" * 62)
@@ -1490,75 +1591,59 @@ def main():
     vocab_exists_in_html = 'data-dataset="' + VOCAB_ID + '"' in html
     add_vocab = bool(vocab_data) and not vocab_exists_in_html
 
+    # ⭐ LUÔN ghi lại fixpy_datasets.json nếu có data mới (mnemonic update)
     _need_data_rewrite = bool(vocab_data) or bool(datasets)
     _need_patch_html = bool(all_new) or add_vocab
 
-    # Chuẩn bị dữ liệu để ghi ra file JSON
-    datasets_dict = {}
-    if vocab_data:
-        datasets_dict[VOCAB_ID] = {
-            "id": VOCAB_ID,
-            "name": VOCAB_LABEL,
-            "icon": "fa-book",
-            "color": "#f59e0b",
-            "data": vocab_data,
-            "count": len(vocab_data),
-            "source": (os.path.basename(vocab_real_path)
-                       if vocab_real_path else "tu_vung_hsk.xlsx"),
-            "type": "premium",
-            "group": "fixpy",
-        }
-
-    for ds in datasets:
-        datasets_dict[ds["id"]] = ds
-
-    for ds in all_new:
-        datasets_dict[ds["id"]] = ds
-
-    if _need_data_rewrite or _need_patch_html:
-        _data_dir = "data"
-        os.makedirs(_data_dir, exist_ok=True)
-        
-        # 1. Ghi file full 20MB
-        _fixpy_path = os.path.join(_data_dir, "fixpy_datasets.json")
-        with open(_fixpy_path, "w", encoding="utf-8") as _f:
-            json.dump(datasets_dict, _f, ensure_ascii=False, separators=(",", ":"))
-        _size_kb = os.path.getsize(_fixpy_path) / 1024
-        print(f"   [OK] Ghi data/fixpy_datasets.json ({_size_kb:.1f} KB)")
-
-        # 2. Ghi file preview siêu nhẹ (chỉ lấy 1/10 data ban đầu)
-        _preview_dict = {}
-        for _ds_id, _ds in datasets_dict.items():
-            _full = _ds.get("data", [])
-            _n = max(1, len(_full) // 10)
-            _preview_dict[_ds_id] = {
-                "id": _ds["id"],
-                "name": _ds["name"],
-                "icon": _ds["icon"],
-                "color": _ds["color"],
-                "count": _ds["count"],
-                "source": _ds["source"],
-                "type": _ds.get("type", "main"),
-                "group": _ds.get("group", "fixpy"),
-                "data": _full[:_n],
-                "preview": True,
-            }
-
-        _preview_path = os.path.join("data", "fixpy_preview.json")
-        with open(_preview_path, "w", encoding="utf-8") as _f:
-            json.dump(_preview_dict, _f, ensure_ascii=False, separators=(",", ":"))
-        _prev_kb = os.path.getsize(_preview_path) / 1024
-        print(f"   [OK] Ghi data/fixpy_preview.json ({_prev_kb:.1f} KB - Load nhanh)")
-
     if not _need_patch_html and not _need_data_rewrite:
         print("")
-        print("[fix.py] Tat ca da co - khong can patch HTML.")
+        print("[fix.py] Tat ca da co - khong can patch.")
         return
 
-    # CASE A: Tab da co -> chi ghi lai data JSON, khong patch HTML
+    # ⭐ CASE A: Tab đã có → chỉ ghi lại data JSON, KHÔNG patch HTML
     if not _need_patch_html and _need_data_rewrite:
         print("")
         print("[fix.py] Tab da co san -> CHI ghi lai data JSON (khong patch HTML)")
+
+        _data_dir = "data"
+        os.makedirs(_data_dir, exist_ok=True)
+        _fixpy_path = os.path.join(_data_dir, "fixpy_datasets.json")
+
+        # Load data cũ để giữ dataset đã có
+        datasets_dict = {}
+        if os.path.isfile(_fixpy_path):
+            try:
+                with open(_fixpy_path, "r", encoding="utf-8") as _f:
+                    datasets_dict = json.load(_f) or {}
+            except Exception as _e:
+                print("   [!] Khong doc duoc file cu: " + str(_e))
+                datasets_dict = {}
+
+        # ⭐ Update vocab với mnemonic MỚI
+        if vocab_data:
+            datasets_dict[VOCAB_ID] = {
+                "id": VOCAB_ID,
+                "name": VOCAB_LABEL,
+                "icon": "fa-book",
+                "color": "#f59e0b",
+                "data": vocab_data,
+                "count": len(vocab_data),
+                "source": (os.path.basename(vocab_real_path)
+                           if vocab_real_path else "tu_vung_hsk.xlsx"),
+                "type": "premium",
+                "group": "fixpy",
+            }
+            print("   [OK] Update vocab: " + str(len(vocab_data)) + " tu")
+
+        for ds in datasets:
+            datasets_dict[ds["id"]] = ds
+
+        with open(_fixpy_path, "w", encoding="utf-8") as _f:
+            json.dump(datasets_dict, _f, ensure_ascii=False, separators=(",", ":"))
+        _size_kb = os.path.getsize(_fixpy_path) / 1024
+        print("   [OK] Ghi data/fixpy_datasets.json (" + f"{_size_kb:.1f}" + " KB)")
+
+        # Chạy patch_buttons
         print("")
         print("=" * 62)
         print("[fix.py] Chay patch_buttons.py de cover 4 nut...")
@@ -1572,6 +1657,7 @@ def main():
             print("[fix.py] patch_buttons.py -> " + ("THANH CONG" if _ok else "THAT BAI"))
         except Exception as _e:
             print("[fix.py] Loi patch_buttons: " + str(_e))
+
         return
 
     print("")
@@ -1597,11 +1683,11 @@ def main():
     if add_vocab:
         new_btns += build_vocab_tab_html(VOCAB_ID, VOCAB_LABEL)
 
-    pat_tonghop = re.compile(
+    pat_after_tonghop = re.compile(
         r'(<button[^>]*class="[^"]*ds-btn[^"]*"[^>]*data-dataset="tonghop"[^>]*>.*?</button>)',
         re.MULTILINE | re.DOTALL
     )
-    html, n = pat_tonghop.subn(
+    html, n = pat_after_tonghop.subn(
         lambda m: m.group(1) + new_btns,
         html, count=1
     )
@@ -1640,6 +1726,42 @@ def main():
     print("[PATCH 4] JS binding...")
 
     ids_js = json.dumps([ds["id"] for ds in all_new])
+
+    datasets_dict = {}
+    for ds in all_new:
+        datasets_dict[ds["id"]] = ds
+
+    if add_vocab:
+        datasets_dict[VOCAB_ID] = {
+            "id": VOCAB_ID,
+            "name": VOCAB_LABEL,
+            "icon": "fa-book",
+            "color": "#f59e0b",
+            "data": vocab_data,
+            "count": len(vocab_data),
+            "source": os.path.basename(vocab_real_path),
+            "type": "premium",
+            "group": "fixpy",
+        }
+
+    # ⭐ Merge với data cũ để KHÔNG mất dataset đã có
+    _data_dir = "data"
+    os.makedirs(_data_dir, exist_ok=True)
+    _fixpy_path = os.path.join(_data_dir, "fixpy_datasets.json")
+    if os.path.isfile(_fixpy_path):
+        try:
+            with open(_fixpy_path, "r", encoding="utf-8") as _f:
+                _old_data = json.load(_f) or {}
+            for _k, _v in _old_data.items():
+                if _k not in datasets_dict:
+                    datasets_dict[_k] = _v
+        except Exception:
+            pass
+
+    with open(_fixpy_path, "w", encoding="utf-8") as _f:
+        json.dump(datasets_dict, _f, ensure_ascii=False, separators=(",", ":"))
+    _size_kb = os.path.getsize(_fixpy_path) / 1024
+    print(f"   Ghi data/fixpy_datasets.json ({_size_kb:.1f} KB)")
 
     datasets_meta = {}
     for _id, _ds in datasets_dict.items():
@@ -1687,6 +1809,9 @@ def main():
     print("=" * 62)
     print("[fix.py] HOAN TAT! Da patch " + INDEX_HTML)
     print("[fix.py] Kich thuoc HTML: " + str(round(size_kb, 1)) + " KB")
+    if add_vocab or all_new:
+        _fx_kb = os.path.getsize(_fixpy_path) / 1024
+        print(f"[fix.py] Data JSON (tai rieng): {_fx_kb:.1f} KB")
 
     if all_new:
         print("[fix.py] Tab thuong da them:")
