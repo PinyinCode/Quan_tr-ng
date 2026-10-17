@@ -48,16 +48,16 @@ def git_commit_and_push(count):
         print(f"   ⚠️ Lỗi git commit/push: {e}")
 
 # ═══════════════════════════════════════════════════════════════════
-#  PROMPT TẠO CÂU CHUYỆN CHƠI CHỮ / BẮT VẦN
+#  PROMPT TINH CHỈNH: TẠO MẸO CỰC KỲ NGẮN GỌN & BẮT VẦN
 # ═══════════════════════════════════════════════════════════════════
 def build_story_prompt(zh, pinyin, vi):
     vi_str = f" nghĩa là '{vi}'" if vi else ""
-    return f"""Từ cần nhớ: **{zh}** (phát âm: {pinyin}){vi_str}.
+    return f"""Từ cần nhớ: **{zh}** (pinyin: {pinyin}){vi_str}.
 
-Hãy tạo mẹo nhớ cực kỳ ngắn gọn, thông minh bằng cách chơi chữ/đồng âm/bắt vần tiếng Việt:
+Hãy tạo mẹo nhớ bằng cách chơi chữ/bắt vần siêu ngắn gọn (tối đa 1 câu duy nhất, hài hước):
 
-📌 Âm thanh: [Từ hoặc cụm từ tiếng Việt đồng âm/gần âm nhất với pinyin "{pinyin}"]
-🎬 Câu chuyện: [Đúng 1 câu ngắn gọn, hài hước ghép âm thanh trên với nghĩa để đọc lên nhớ ngay]
+📌 Âm thanh: [1 từ hoặc cụm từ tiếng Việt đồng âm/gần âm nhất với "{pinyin}"]
+🎬 Câu chuyện: [Đúng 1 câu ngắn gọn cực kỳ bắt vần để nhớ ngay nghĩa "{vi}"]
 
 Chỉ xuất ra đúng 2 dòng có emoji 📌 và 🎬:"""
 
@@ -72,8 +72,8 @@ def generate_new_story(zh, pinyin, vi):
         response = client.chat.completions.create(
             model=MODEL_ID,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            max_tokens=180,
+            temperature=0.6,
+            max_tokens=150,
         )
         if response and response.choices:
             msg = response.choices[0].message
@@ -164,7 +164,7 @@ def main():
             print(f"   ❌ Thất bại, giữ nguyên {zh}", flush=True)
 
         with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+            json.dump(data, f, ensure_ascii=False, indent=2)
 
         if updated_count > 0 and updated_count % 100 == 0:
             print(f"\n📦 [CHECKPOINT] Đã đạt {updated_count} từ. Tiến hành Push lên GitHub...")
