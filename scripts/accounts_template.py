@@ -5156,6 +5156,8 @@ function loadUsers(forceRefresh) {
     }
 
     $('userList').innerHTML = '<div class="no-data"><i class="fas fa-spinner fa-pulse"></i><span>Đang tải...</span></div>';
+    
+    // 1. Đọc dữ liệu từ Firestore
     db.collection('allowed_users').get().then(function(snapshot) {
         usersCache = [];
         snapshot.forEach(function(doc) {
@@ -5172,13 +5174,57 @@ function loadUsers(forceRefresh) {
                 permissions: data.permissions || null
             });
         });
-        usersCache.sort(function(a, b) { return (a.email || '').localeCompare(b.email || ''); });
-        try {
-            localStorage.setItem(cacheKey, JSON.stringify({ data: usersCache, expires: Date.now() + 5 * 60 * 1000 }));
-        } catch(e) {}
-        renderUsers(usersCache);
-        renderAdminStats();
-        return loadLastLoginMap();
+        
+        // 2. ⭐ NẾU ĐANG EMERGENCY → MERGE THÊM TỪ RTDB
+        var mergePromise = Promise.resolve();
+        if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+            mergePromise = firebase.database().ref('config/emergency-users').once('value').then(function(rtdbSnap) {
+                var rtdbUsers = rtdbSnap.val() || {};
+                var addedCount = 0;
+                
+                Object.keys(rtdbUsers).forEach(function(key) {
+                    var u = rtdbUsers[key];
+                    if (u && u.email) {
+                        // Check xem user này đã có trong Firestore chưa
+                        var exists = usersCache.some(function(fUser) { 
+                            return fUser.email === u.email.toLowerCase(); 
+                        });
+                        
+                        // Nếu chưa có thì thêm vào danh sách
+                        if (!exists) {
+                            usersCache.push({
+                                email: u.email.toLowerCase(),
+                                name: u.name || u.email.split('@')[0],
+                                role: 'user',
+                                tier: 'active',
+                                isTrial: false,
+                                isPermanent: true,
+                                expiresAt: null,
+                                isEmergencyUser: true // ⭐ Đánh dấu để hiện badge
+                            });
+                            addedCount++;
+                        }
+                    }
+                });
+                if (addedCount > 0) {
+                    console.log('✅ [Emergency] Đã merge', addedCount, 'user từ RTDB');
+                }
+            }).catch(function(err) {
+                console.warn('Lỗi đọc RTDB:', err.message);
+            });
+        }
+        
+        // 3. Render sau khi merge xong
+        return mergePromise.then(function() {
+            usersCache.sort(function(a, b) { return (a.email || '').localeCompare(b.email || ''); });
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify({ data: usersCache, expires: Date.now() + 5 * 60 * 1000 }));
+            } catch(e) {}
+            renderUsers(usersCache);
+            renderAdminStats();
+            loadLastLoginMap();
+        });
+        
     }).catch(function(err) {
         $('userList').innerHTML = '<div class="no-data" style="color:#dc2626"><i class="fas fa-exclamation-triangle"></i><span>Lỗi: ' + err.message + '</span></div>';
     });
