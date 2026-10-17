@@ -24442,9 +24442,14 @@ window.tatKhanCap = async function() {
 
     /* ═══════════════════════════════════════════════════════════
        BƯỚC 1: QUÉT LOCALSTORAGE TÌM USER TẠO TRONG EMERGENCY
+       (CHỈ BỎ QUA SUPER ADMIN)
        ═══════════════════════════════════════════════════════════ */
     var emergencyUsers = [];
     var syncKeysToRemove = [];
+    
+    var _superEmail = (typeof SUPER_ADMIN !== 'undefined' && SUPER_ADMIN) 
+                      ? SUPER_ADMIN.toLowerCase() 
+                      : '';
 
     try {
         for (var i = 0; i < localStorage.length; i++) {
@@ -24452,6 +24457,13 @@ window.tatKhanCap = async function() {
             
             if (key && key.indexOf('user_cache_') === 0) {
                 var email = key.replace('user_cache_', '').toLowerCase();
+                
+                /* ⭐ CHỈ BỎ QUA SUPER ADMIN */
+                if (_superEmail && email === _superEmail) {
+                    console.log('%c  ⏭️  Bỏ qua Super Admin: ' + email, 'color:#94a3b8');
+                    continue;
+                }
+                
                 var syncKey = 'synced_emergency_' + email;
                 var alreadySynced = localStorage.getItem(syncKey) === 'true';
                 
@@ -24535,9 +24547,16 @@ window.tatKhanCap = async function() {
                 results.push({ email: email, status: 'created' });
             }
 
+            /* ⭐ Đánh dấu đã sync */
             localStorage.setItem(u.syncKey, 'true');
             syncKeysToRemove.push(u.syncKey);
-            localStorage.removeItem(u.cacheKey);
+            
+            /* ⭐ CHỈ BẢO VỆ SUPER ADMIN — KHÔNG XÓA CACHE */
+            if (_superEmail && email === _superEmail) {
+                console.log('%c  🛡️ Bảo vệ cache Super Admin: ' + email, 'color:#f59e0b');
+            } else {
+                localStorage.removeItem(u.cacheKey);
+            }
 
         } catch(err) {
             console.error('%c  ❌ ' + email + ' — Lỗi: ' + err.message, 
@@ -24664,7 +24683,7 @@ window.tatKhanCap = async function() {
     console.log('%c═══════════════════════════════════════', 'color:#4f46e5');
 
     /* ═══════════════════════════════════════════════════════════
-       BƯỚC 6: BÁO LỖI NẾU CÓ (RTDB ĐÃ TẮT Ở BƯỚC 0)
+       BƯỚC 6: KẾT THÚC (RTDB ĐÃ TẮT Ở BƯỚC 0)
        ═══════════════════════════════════════════════════════════ */
     if (failed === 0 && renewalsFailed === 0 && approvedFailed === 0) {
         console.log('%c✅ HOÀN TẤT TẮT KHẨN CẤP', 
