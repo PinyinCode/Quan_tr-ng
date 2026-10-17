@@ -41,7 +41,6 @@ def git_commit_and_push(count):
         status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
         if status.stdout.strip():
             msg = f"🔄 Auto-commit: Đã cập nhật {count} từ vựng mới [skip ci]"
-            
             # 1. Commit trước
             subprocess.run(["git", "commit", "-m", msg], check=True)
             # 2. Pull rebase sau khi index đã sạch
@@ -53,26 +52,21 @@ def git_commit_and_push(count):
         print(f"   ⚠️ Lỗi git commit/push: {e}")
 
 # ═══════════════════════════════════════════════════════════════════
-#  PROMPT TINH CHỈNH: TẠO MẸO CỰC KỲ NGẮN GỌN & BẮT VẦN
+#  PROMPT TINH CHỈNH: NGẮN GỌN NHƯNG CÓ CHỈ DẪN NGẦM
 # ═══════════════════════════════════════════════════════════════════
-def build_story_prompt(zh, pinyin, vi):
+def build_story_prompt(zh, pinyin, vi)
+):
     vi_str = vi if vi else "Không rõ"
-    return f"""Bạn là một chuyên gia giảng dạy tiếng Trung, chuyên tạo ra các mẹo nhớ (mnemonic) cực kỳ thông minh, ngắn gọn và hài hước cho người Việt.
+    return f"""Từ cần nhớ: **{zh}** (pinyin: {pinyin} | nghĩa: '{vi_str}').
 
-Nhiệm vụ: Tạo mẹo nhớ cho từ **{zh}** (Pinyin: {pinyin} | Nghĩa: {vi_str}).
+Hãy tạo mẹo nhớ bằng cách chơi chữ/bắt vần siêu ngắn gọn, hài hước. 
+Yêu cầu BẮT BUỘC:
+- Âm thanh: Phải là 1 từ/cụm từ tiếng Việt có phát âm GẦN GIỐNG NHẤT với "{pinyin}".
+- Câu chuyện: Chỉ 1 câu duy nhất. Phải chứa từ âm thanh vừa tìm được VÀ liên kết trực tiếp đến nghĩa '{vi_str}'. Không giải thích dài dòng.
 
-Hãy tư duy theo 2 bước:
-- Bước 1: Tìm một từ/cụm từ tiếng Việt có âm thanh GẦN GIỐNG NHẤT với "{pinyin}" (Ví dụ: pinyin "bā" -> "ba", "bá", "bà").
-- Bước 2: Dệt từ vừa tìm được vào một câu chuyện ngắn (1 câu) có liên quan trực tiếp đến nghĩa "{vi_str}". Bắt buộc câu chuyện phải chứa từ mang âm thanh đó.
-
-Yêu cầu định dạng đầu ra (BẮT BUỘC CHỈ XUẤT RA 2 DÒNG NÀY, KHÔNG GIẢI THÍCH THÊM):
-📌 Âm thanh: [Điền từ/cụm từ tiếng Việt đồng âm ở Bước 1]
-🎬 Câu chuyện: [Điền 1 câu chuyện ngắn gọn, vui vẻ, liên kết âm thanh và nghĩa]
-
-Ví dụ mẫu:
-📌 Âm thanh: ma
-🎬 Câu chuyện: Con ma nằm mơ (mā) thấy mẹ (mā).
-"""
+Chỉ xuất ra đúng 2 dòng có emoji 📌 và 🎬:
+📌 Âm thanh: [Điền từ/cụm từ]
+🎬 Câu chuyện: [Điền 1 câu]"""
 
 def generate_new_story(zh, pinyin, vi):
     if not API_KEY:
@@ -85,7 +79,7 @@ def generate_new_story(zh, pinyin, vi):
         response = client.chat.completions.create(
             model=MODEL_ID,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.7, # Tăng nhẹ temperature để AI sáng tạo hơn
+            temperature=0.7,
             max_tokens=150,
         )
         if response and response.choices:
@@ -103,8 +97,7 @@ def parse_info_from_content(content):
     
     match = re.search(r'\(([a-záàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵĐđ\s\-]+)\)', content, re.IGNORECASE)
     if match:
-        pinyin_raw = match.group(1)
-        parts = pinyin_raw.split('-')
+        pinyin_raw = match.group(1        parts = pinyin_raw.split('-')
         pinyin = parts[0].strip()
         if len(parts) > 1:
             vi_meaning = parts[1].strip()
@@ -124,12 +117,10 @@ def clean_and_update_content(old_text, new_story_text):
     lines = old_text.split("\n")
     cleaned_lines = []
     
-    # Xóa sạch các dòng chứa mẹo cũ (bao gồm cả icon và text)
     for line in lines:
         if not ("📌" in line or "🎬" in line or "Âm thanh:" in line or "Câu chuyện:" in line):
             cleaned_lines.append(line)
 
-    # Lấy 2 dòng mới
     new_lines = [l.strip() for l in new_story_text.split("\n") if l.strip() and ("📌" in l or "🎬" in l)]
     
     insert_idx = 0
@@ -178,7 +169,6 @@ def main():
         else:
             print(f"   ❌ Thất bại, giữ nguyên {zh}", flush=True)
 
-        # Lưu file liên tục để tránh mất dữ liệu
         with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
@@ -188,7 +178,6 @@ def main():
 
         time.sleep(DELAY_BETWEEN)
 
-    # Push những từ lẻ còn sót lại cuối cùng (nếu chưa đủ 100)
     if updated_count % 100 != 0 and updated_count > 0:
         git_commit_and_push(updated_count)
 
