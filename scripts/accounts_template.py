@@ -4898,10 +4898,32 @@ function initAdminPanel() {
     if ($('importModal')) $('importModal').addEventListener('click', function(e) { if (e.target === this) { $('importModal').classList.remove('show'); importRows = []; } });
     if ($('importConfirmBtn')) $('importConfirmBtn').addEventListener('click', doImport);
 
-    if ($('showAddUserBtn')) $('showAddUserBtn').addEventListener('click', function() {
-        $('addUserForm').classList.toggle('show');
-        if ($('addUserForm').classList.contains('show')) $('newUserEmail').focus();
-    });
+    // ⭐ FIX CỨNG LỖI NÚT THÊM TÀI KHOẢN
+    var oldBtnAdd = $('showAddUserBtn');
+    if (oldBtnAdd) {
+        var newBtnAdd = oldBtnAdd.cloneNode(true);
+        oldBtnAdd.parentNode.replaceChild(newBtnAdd, oldBtnAdd);
+        
+        newBtnAdd.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Kiểm tra quyền
+            if (!isSuperAdmin() && !hasPermission('canAddUser')) {
+                alert('Bạn không có quyền thêm user!');
+                return;
+            }
+            
+            var form = $('addUserForm');
+            if (form) {
+                form.classList.toggle('show');
+                if (form.classList.contains('show') && $('newUserEmail')) {
+                    setTimeout(function() { $('newUserEmail').focus(); }, 100);
+                }
+            }
+        });
+    }
+
     if ($('cancelAddUser')) $('cancelAddUser').addEventListener('click', function() {
         $('addUserForm').classList.remove('show');
         $('newUserEmail').value = ''; $('newUserName').value = '';
@@ -4935,22 +4957,26 @@ function initAdminPanel() {
     if ($('refreshRenewalsBtn')) $('refreshRenewalsBtn').addEventListener('click', function() { loadRenewals(); });
     if ($('refreshRenewalHistoryBtn')) $('refreshRenewalHistoryBtn').addEventListener('click', function() { loadAdminRenewalHistory(); });
 
+    // ⭐ HÀM BIND TOGGLE AN TOÀN
     function bindSectionToggle(btnId, sectionId, label) {
         var btn = $(btnId);
         var sec = $(sectionId);
         if (!btn || !sec) return;
 
+        var newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
         function syncState() {
             var isVisible = !sec.classList.contains('collapsed');
-            var icon = btn.querySelector('i');
+            var icon = newBtn.querySelector('i');
             if (icon) icon.className = isVisible ? 'fas fa-eye' : 'fas fa-eye-slash';
-            btn.classList.toggle('active', isVisible);
-            btn.title = (isVisible ? 'Ẩn ' : 'Hiện ') + (label || 'khung');
+            newBtn.classList.toggle('active', isVisible);
+            newBtn.title = (isVisible ? 'Ẩn ' : 'Hiện ') + (label || 'khung');
         }
 
         syncState();
 
-        btn.addEventListener('click', function(e) {
+        newBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             sec.classList.toggle('collapsed');
