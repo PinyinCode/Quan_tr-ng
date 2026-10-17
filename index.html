@@ -37913,75 +37913,29 @@ window.__switchRawData = function(datasetId) {
 
 
 <script>
-/* FIX.PY - Lazy load preview + full data tu JSON (Co thong bao loading) */
+/* FIX.PY - Lazy load data tu JSON */
 (function() {
     'use strict';
     var NEW_IDS = ["1k-cau-giao-tiep"];
 
     window.FIXPY_DATASETS = {};
-    window.__fixpyFullLoaded = false;
-    window.__fixpyMeta = {"tu-vung":{"id":"tu-vung","name":"11000+ Từ vựng HSK","icon":"fa-book","color":"#f59e0b","count":11747,"source":"tu_vung_hsk.xlsx","type":"premium","group":"fixpy"},"1k-cau-giao-tiep":{"id":"1k-cau-giao-tiep","name":"1K+ Câu giao tiếp","icon":"fa-comments","color":"#0891b2","count":1060,"source":"1K+_Câu_giao_tiếp.xlsx","type":"main","group":"fixpy"}};
-    window.__fixpyPendingSwitch = null;
-    /* Hàm hiển thị thông báo trực quan */
-    function showFixToast(msg, isError, duration) {
-        var existing = document.getElementById('fixToastBanner');
-        if (existing) existing.remove();
-        var toast = document.createElement('div');
-        toast.id = 'fixToastBanner';
-        toast.style.cssText = 'position:fixed; bottom:24px; right:24px; z-index:999999; background:' + (isError ? '#dc2626' : '#2563eb') + '; color:#fff; padding:12px 20px; border-radius:12px; font-size:14px; font-weight:600; box-shadow:0 6px 20px rgba(0,0,0,0.25); display:flex; align-items:center; gap:8px; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);';
-        toast.innerHTML = '<i class="fas ' + (isError ? 'fa-exclamation-circle' : 'fa-spinner fa-spin') + '"></i><span>' + msg + '</span>';
-        document.body.appendChild(toast);
-        if (duration) {
-            setTimeout(function() {
-                toast.style.opacity = '0';
-                setTimeout(function() { toast.remove(); }, 300);
-            }, duration);
-        }
-    }
-    /* Hiển thị thông báo đang tải ngầm ban đầu */
-    showFixToast('Đang tải dữ liệu trang web...', false, null);
-    /* 1. LOAD NHANH PREVIEW (1/10 data) TRUOC DE GIAO DIEN HIEN THI NGAY */
-    (function() {
-        fetch('data/fixpy_preview.json?t=' + Math.floor(Date.now() / 60000))
-            .then(function(r) { return r.ok ? r.json() : {}; })
-            .then(function(d) {
-                if (!window.__fixpyFullLoaded) {
-                    window.FIXPY_DATASETS = d || {};
-                }
-                console.log('[fix.py] preview loaded');
-                if (typeof window.__fixpyOnDataReady === 'function') {
-                    window.__fixpyOnDataReady();
-                }
-            })
-            .catch(function(e) {
-                console.error('[fix.py] preview load error:', e);
-            });
-    })();
+    window.__fixpyDataLoaded = false;
+    window.__fixpyMeta = {"1k-cau-giao-tiep":{"id":"1k-cau-giao-tiep","name":"1K+ Câu giao tiếp","icon":"fa-comments","color":"#0891b2","count":1060,"source":"1K+_Câu_giao_tiếp.xlsx","type":"main","group":"fixpy"},"tu-vung":{"id":"tu-vung","name":"11000+ Từ vựng HSK","icon":"fa-book","color":"#f59e0b","count":11747,"source":"tu_vung_hsk.xlsx","type":"premium","group":"fixpy"}};
 
-    /* 2. LOAD NGẦM TOÀN BỘ DỮ LIỆU ĐẦY ĐỦ PHÍA SAU */
     (function() {
         fetch('data/fixpy_datasets.json?t=' + Math.floor(Date.now() / 60000))
             .then(function(r) { return r.ok ? r.json() : {}; })
             .then(function(d) {
                 window.FIXPY_DATASETS = d || {};
-                window.__fixpyFullLoaded = true;
-                console.log('[fix.py] FULL data loaded');
-                
-                /* Nếu người dùng đã bấm chuyển tab trước đó, giờ load xong thì tự động chuyển và thông báo thành công */
-                if (window.__fixpyPendingSwitch) {
-                    var targetId = window.__fixpyPendingSwitch;
-                    window.__fixpyPendingSwitch = null;
-                    if (typeof window.__switchRawData === 'function') {
-                        window.__switchRawData(targetId);
-                        if (typeof applyFilter === 'function') applyFilter();
-                        if (typeof updateResultCount === 'function') updateResultCount();
-                    }
+                window.__fixpyDataLoaded = true;
+                console.log('[fix.py] loaded', Object.keys(d).length, 'datasets');
+                if (typeof window.__fixpyOnDataReady === 'function') {
+                    window.__fixpyOnDataReady();
                 }
-                showFixToast('Đã sẵn sàng toàn bộ dữ liệu!', false, 2500);
             })
             .catch(function(e) {
-                console.error('[fix.py] full data load error:', e);
-                showFixToast('Lỗi tải dữ liệu đầy đủ!', true, 4000);
+                console.error('[fix.py] load error:', e);
+                window.__fixpyDataLoaded = true;
             });
     })();
 
@@ -38022,17 +37976,16 @@ window.__switchRawData = function(datasetId) {
             return;
         }
         window.__switchRawData = function(datasetId) {
+            if (!window.__fixpyDataLoaded && window.__fixpyMeta && window.__fixpyMeta[datasetId]) {
+                console.log('[fix.py] data chua load, doi...');
+                if (!window.__fixpyPendingSwitch) window.__fixpyPendingSwitch = [];
+                window.__fixpyPendingSwitch.push(datasetId);
+                return true;
+            }
             if (window.FIXPY_DATASETS && window.FIXPY_DATASETS[datasetId]) {
-                /* Nếu file full chưa tải xong mà người dùng bấm đổi tab */
-                if (!window.__fixpyFullLoaded && datasetId !== 'tonghop') {
-                    window.__fixpyPendingSwitch = datasetId;
-                    showFixToast('Đang tải dữ liệu đầy đủ, vui lòng đợi giây lát...', false, null);
-                    RAW_DATA = window.FIXPY_DATASETS[datasetId].data || [];
-                    CURRENT_DATASET = datasetId;
-                    return true;
-                }
                 RAW_DATA = window.FIXPY_DATASETS[datasetId].data || [];
                 CURRENT_DATASET = datasetId;
+                console.log('[fix.py] switch FIXPY:', datasetId, '->', RAW_DATA.length, 'cau');
                 return true;
             }
             return origSwitch.apply(this, arguments);
@@ -38042,6 +37995,11 @@ window.__switchRawData = function(datasetId) {
     patchSwitchRawData();
 
     window.__fixpyOnDataReady = function() {
+        var pending = window.__fixpyPendingSwitch || [];
+        window.__fixpyPendingSwitch = [];
+        pending.forEach(function(dsId) {
+            window.__switchRawData(dsId);
+        });
         var curDs = (typeof CURRENT_DATASET !== 'undefined') ? CURRENT_DATASET : 'tonghop';
         if (window.FIXPY_DATASETS && window.FIXPY_DATASETS[curDs]) {
             if (typeof applyFilter === 'function') applyFilter();
@@ -38081,6 +38039,7 @@ window.__switchRawData = function(datasetId) {
                     || (typeof getLimitedData !== 'undefined' ? getLimitedData : null);
         if (typeof origGet !== 'function') return;
         window.getLimitedData = function() {
+            if (!window.__fixpyDataLoaded) return [];
             var currentDs = (typeof CURRENT_DATASET !== 'undefined')
                             ? CURRENT_DATASET : 'tonghop';
             if (currentDs === 'tonghop') {
@@ -38094,7 +38053,20 @@ window.__switchRawData = function(datasetId) {
             if (info.tier === 'active') {
                 return RAW_DATA;
             }
-            /* Tắt hoàn toàn logic chia đều chủ đề của Onboarding */
+            var override = window.__onboardingOverride;
+            if (override && Array.isArray(override) && override.length > 0
+                && typeof state !== 'undefined' && state
+                && !state.search && !state.hsk && !state.subject) {
+                var currentStts = {};
+                RAW_DATA.forEach(function(r) { currentStts[r.stt] = true; });
+                var filtered = override.filter(function(r) {
+                    return currentStts[r.stt];
+                });
+                if (filtered.length > 0) {
+                    var max = info.maxQuestions || 60;
+                    return filtered.slice(0, max);
+                }
+            }
             var max2 = info.maxQuestions || 60;
             return RAW_DATA.slice(0, max2);
         };
@@ -38156,6 +38128,7 @@ window.__switchRawData = function(datasetId) {
             return;
         }
         window.applyFilter = function() {
+            if (!window.__fixpyDataLoaded) return;
             var curDs = (typeof CURRENT_DATASET !== 'undefined')
                         ? CURRENT_DATASET : 'tonghop';
             if (curDs === 'tonghop') {
@@ -38210,6 +38183,7 @@ window.__switchRawData = function(datasetId) {
             return;
         }
         window.pfApplyFilter = function() {
+            if (!window.__fixpyDataLoaded) return;
             var curDs = (typeof CURRENT_DATASET !== 'undefined')
                         ? CURRENT_DATASET : 'tonghop';
             if (curDs === 'tonghop') {
@@ -38260,18 +38234,16 @@ window.__switchRawData = function(datasetId) {
     }
 
     function bindTab(dsId) {
-        /* ⭐ FIX_CONFLICT: Bỏ qua nút chuyen-nganh — không clone */
-        if (dsId === 'chuyen-nganh') return;
         var btn = document.querySelector('.ds-btn[data-dataset="' + dsId + '"]');
-        if (btn && btn.getAttribute('data-dataset-group') === 'chuyen-nganh') return;
         if (!btn) return;
         if (btn.__fixPyBound) return;
         var cloned = btn.cloneNode(true);
         btn.parentNode.replaceChild(cloned, btn);
         cloned.__fixPyBound = true;
         cloned.addEventListener('click', function(e) {
-            /* FIX_CONFLICT: bỏ stopImmediatePropagation */
+            e.stopImmediatePropagation();
             e.stopPropagation();
+            e.preventDefault();
             var sub = document.getElementById('dsSubWrap');
             if (sub) sub.style.display = 'none';
             document.querySelectorAll('.ds-btn, .ds-sub-btn').forEach(function(b) {
@@ -38334,7 +38306,109 @@ window.__switchRawData = function(datasetId) {
                     window.scrollTo({ top: yOffset, behavior: 'smooth' });
                 }
             }, 100);
-        }, false); /* FIX_CONFLICT: bỏ capture */
+        }, true);
+    }
+
+    function patchApplyOnboarding() {
+        if (window.__fixPyApplyOnbPatched) return;
+        var origApply = window.applyOnboardingSelection
+                      || (typeof applyOnboardingSelection !== 'undefined'
+                          ? applyOnboardingSelection : null);
+        if (typeof origApply !== 'function') return;
+        window.applyOnboardingSelection = function(topics, scrollTop) {
+            var currentDs = (typeof CURRENT_DATASET !== 'undefined')
+                            ? CURRENT_DATASET : 'tonghop';
+            if (!window.FIXPY_DATASETS || !window.FIXPY_DATASETS[currentDs]) {
+                return origApply.apply(this, arguments);
+            }
+            var cfg = (typeof getOnboardingConfig === 'function')
+                      ? getOnboardingConfig() : null;
+            if (!cfg) return;
+            var maxQ = cfg.max_questions;
+            var isUnlimitedQ = (maxQ === -1 || maxQ === Infinity);
+            var allowedHsk;
+            if (cfg.hsk_allowed && Array.isArray(cfg.hsk_allowed) && cfg.hsk_allowed.length > 0) {
+                allowedHsk = cfg.hsk_allowed.map(function(n) { return 'HSK' + n; });
+            } else {
+                allowedHsk = (typeof getAllowedHskList === 'function')
+                             ? getAllowedHskList()
+                             : ['HSK1','HSK2','HSK3','HSK4','HSK5','HSK6'];
+            }
+            var pool = RAW_DATA.filter(function(r) {
+                if (allowedHsk.indexOf(r.hsk) === -1) return false;
+                var s = (r.subject || '').trim();
+                return topics.indexOf(s) !== -1;
+            });
+            pool.sort(function(a, b) {
+                return (parseInt(a.stt) || 0) - (parseInt(b.stt) || 0);
+            });
+            var final = [];
+            if (isUnlimitedQ) {
+                final = pool.slice();
+            } else {
+                var maxPerTopic = (typeof getMaxPerTopic === 'function')
+                                 ? getMaxPerTopic(maxQ, RAW_DATA)
+                                 : Math.max(1, Math.ceil(maxQ / Math.max(1, topics.length)));
+                var topicCount = {};
+                var perHsk = Math.ceil(maxQ / allowedHsk.length);
+                var hskCount = {};
+                allowedHsk.forEach(function(h) { hskCount[h] = 0; });
+                for (var i = 0; i < pool.length && final.length < maxQ; i++) {
+                    var r = pool[i];
+                    var s = (r.subject || '').trim() || '__no_subject__';
+                    if ((topicCount[s] || 0) >= maxPerTopic) continue;
+                    if (r.hsk && hskCount[r.hsk] !== undefined && hskCount[r.hsk] >= perHsk) continue;
+                    final.push(r);
+                    topicCount[s] = (topicCount[s] || 0) + 1;
+                    if (r.hsk && hskCount[r.hsk] !== undefined) hskCount[r.hsk]++;
+                }
+                if (final.length < maxQ) {
+                    var usedIds = {};
+                    final.forEach(function(r) { usedIds[r.stt] = true; });
+                    for (var p = 0; p < pool.length && final.length < maxQ; p++) {
+                        var rp = pool[p];
+                        if (usedIds[rp.stt]) continue;
+                        var sp = (rp.subject || '').trim() || '__no_subject__';
+                        if ((topicCount[sp] || 0) >= maxPerTopic) continue;
+                        final.push(rp);
+                        usedIds[rp.stt] = true;
+                        topicCount[sp] = (topicCount[sp] || 0) + 1;
+                    }
+                }
+                if (final.length > maxQ) final = final.slice(0, maxQ);
+            }
+            final.sort(function(a, b) {
+                return (parseInt(a.stt) || 0) - (parseInt(b.stt) || 0);
+            });
+            window.__onboardingOverride = final;
+            if (typeof state !== 'undefined' && state) {
+                state.search = '';
+                state.hsk = '';
+                state.subject = '';
+            }
+            try {
+                var si = document.getElementById('searchInput');
+                if (si) si.value = '';
+                var cb = document.getElementById('clearSearchBtn');
+                if (cb) cb.classList.remove('show');
+            } catch(e) {}
+            if (typeof applyFilter === 'function') applyFilter();
+            if (typeof updateResultCount === 'function') updateResultCount();
+            if (typeof showOnboardingActiveBanner === 'function') {
+                showOnboardingActiveBanner(topics, final.length);
+            }
+            if (scrollTop) {
+                setTimeout(function() {
+                    var mainEl = document.getElementById('mainContent');
+                    if (mainEl) {
+                        var yOffset = mainEl.getBoundingClientRect().top
+                                    + window.scrollY - 100;
+                        window.scrollTo({ top: yOffset, behavior: 'smooth' });
+                    }
+                }, 200);
+            }
+        };
+        window.__fixPyApplyOnbPatched = true;
     }
 
     function bindAll() {
@@ -38358,10 +38432,8 @@ window.__switchRawData = function(datasetId) {
         clearTimeout(_timer);
         _timer = setTimeout(bindAll, 200);
     });
-    /* FIX_CONFLICT: chỉ observe .ds-main-row */
-    var _dsRow = document.querySelector('.ds-main-row');
-    if (_dsRow) {
-        observer.observe(_dsRow, { childList: true });
+    if (document.body) {
+        observer.observe(document.body, { childList: true, subtree: true });
     }
 
     /* === BIND LAI 2 TAB GOC (tonghop + chuyen-nganh) === */
@@ -38370,6 +38442,7 @@ window.__switchRawData = function(datasetId) {
         if (tonghopBtn && !tonghopBtn.__fixedBind) {
             tonghopBtn.__fixedBind = true;
             tonghopBtn.addEventListener('click', function(e) {
+                e.stopImmediatePropagation();
                 e.stopPropagation();
                 var sub = document.getElementById('dsSubWrap');
                 if (sub) sub.style.display = 'none';
@@ -38398,6 +38471,31 @@ window.__switchRawData = function(datasetId) {
                     if (typeof applyFilter === 'function') applyFilter();
                     if (typeof updateResultCount === 'function') updateResultCount();
                 } catch(err) {}
+            }, true);
+        }
+        var cnBtn = document.querySelector('.ds-btn[data-dataset-group="chuyen-nganh"]');
+        if (cnBtn && !cnBtn.__fixedBind) {
+            cnBtn.__fixedBind = true;
+            cnBtn.addEventListener('click', function(e) {
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+                var sub = document.getElementById('dsSubWrap');
+                if (!sub) return;
+                var isOpen = sub.style.display === 'block';
+                if (isOpen) {
+                    sub.style.display = 'none';
+                    this.classList.remove('active');
+                } else {
+                    sub.style.display = 'block';
+                    document.querySelectorAll('.ds-btn').forEach(function(b) {
+                        b.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    /* ⭐ VẼ LẠI SUB BUTTONS VỚI ICON KHÓA */
+                    if (typeof initDatasetSelector === 'function') {
+                        try { initDatasetSelector(); } catch(err) {}
+                    }
+                }
             }, true);
         }
     }
@@ -39767,12 +39865,12 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
         if (u && u.role === 'admin') {
             return { allowed: true, tier: 'admin',
                 hskAllowed: [1,2,3,4,5,6,7,8,9], maxQuestions: -1,
-                label: 'Admin - Toàn bộ HSK', warning: null };
+                label: 'Admin - Toan bo HSK', warning: null };
         }
         if (u && u.isPermanent === true) {
             return { allowed: true, tier: 'premium',
                 hskAllowed: [1,2,3,4,5,6,7,8,9], maxQuestions: -1,
-                label: 'Premium - Toàn bộ HSK', warning: null };
+                label: 'Premium - Toan bo HSK', warning: null };
         }
 
         var tier = 'demo';
@@ -39794,19 +39892,19 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
 
         var hskRange = hskArr.length
             ? 'HSK ' + hskArr[0] + '-' + hskArr[hskArr.length - 1]
-            : 'cơ bản';
+            : 'co ban';
 
         if (tier === 'expired') {
             return { allowed: false, tier: 'expired', hskAllowed: [], maxQuestions: 0,
-                label: 'Tài khoản hết hạn',
-                warning: 'Tài khoản đã hết hạn — gia hạn để tiếp tục dùng Từ vựng HSK.' };
+                label: 'Tai khoan het han',
+                warning: 'Tai khoan da het han - gia han de tiep tuc dung Tu vung HSK.' };
         }
         if (tier === 'demo') {
             return { allowed: true, tier: 'demo', hskAllowed: hskArr, maxQuestions: maxQ,
                 label: 'Demo - ' + hskRange,
-                warning: 'Bạn Demo giới hạn ' + hskRange + ' và tối đa ' +
-                         (maxQ > 0 ? maxQ + ' từ' : 'một số từ') +
-                         ' — đăng nhập để dùng đầy đủ.' };
+                warning: 'Ban Demo gioi han ' + hskRange + ' va toi da ' +
+                         (maxQ > 0 ? maxQ + ' tu' : 'mot so tu') +
+                         ' - dang nhap de dung day du.' };
         }
         if (tier === 'trial') {
             if (isUnlimited) {
@@ -39817,9 +39915,9 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
             }
             return { allowed: true, tier: 'trial', hskAllowed: hskArr, maxQuestions: maxQ,
                 label: 'Trial - ' + hskRange,
-                warning: 'Bạn Trial giới hạn ' + hskRange + ' và ' +
-                         (maxQ > 0 ? maxQ + ' từ' : 'một số từ') +
-                         ' — nâng cấp Premium để mở toàn bộ.' };
+                warning: 'Ban Trial gioi han ' + hskRange + ' va ' +
+                         (maxQ > 0 ? maxQ + ' tu' : 'mot so tu') +
+                         ' - nang cap Premium de mo toan bo.' };
         }
         if (isUnlimited) {
             return { allowed: true, tier: 'active',
@@ -39829,15 +39927,31 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
         }
         return { allowed: true, tier: 'active', hskAllowed: hskArr, maxQuestions: maxQ,
             label: 'Active - ' + hskRange,
-            warning: 'Bạn Active giới hạn ' + hskRange + ' và ' +
-                     (maxQ > 0 ? maxQ + ' từ' : 'một số từ') +
-                     ' — nâng cấp Premium để mở toàn bộ.' };
+            warning: 'Ban Active gioi han ' + hskRange + ' va ' +
+                     (maxQ > 0 ? maxQ + ' tu' : 'mot so tu') +
+                     ' - nang cap Premium de mo toan bo.' };
     }
 
-    def applyVocabLimits(list, access):
+    function applyVocabLimits(list, access) {
         var result = list;
-        // Tạm thời bỏ qua lọc HSK để giữ nguyên số câu
-        
+        if (access.hskAllowed && access.hskAllowed.length &&
+            access.hskAllowed.length < 9) {
+            var allowSet = {};
+            access.hskAllowed.forEach(function(h) {
+                allowSet['HSK' + h] = true;
+                allowSet[String(h)] = true;
+            });
+            result = result.filter(function(r) {
+                var h = (r.hsk || '').toString().toUpperCase().trim();
+                if (!h) return true;
+                if (h === 'HSK7-9') {
+                    return allowSet['HSK7-9'] === true;
+                }
+                var num = h.replace(/[^0-9]/g, '');
+                if (!num) return true;
+                return allowSet['HSK' + num] === true || allowSet[num] === true;
+            });
+        }
         var maxQ = access.maxQuestions;
         if (typeof maxQ === 'number' && maxQ > 0 && result.length > maxQ) {
             result = result.slice(0, maxQ);
@@ -39881,10 +39995,8 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
         }
     }
 
-    /* ⭐ BANNER GỘP — hiện ở mọi tab, gộp thông tin lượt Nghe + Viết */
     function injectVocabWarningBanner() {
-        var acc = getVocabAccess();
-        if (!acc.warning) {
+        if (!_isVocabMode()) {
             var oldOut = document.getElementById('vocabWarningBanner');
             if (oldOut) oldOut.remove();
             return;
@@ -39892,70 +40004,36 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
         var old = document.getElementById('vocabWarningBanner');
         if (old) old.remove();
 
+        var acc = getVocabAccess();
+        if (!acc.warning) return;
+
         var main = document.getElementById('mainContent');
         if (!main) return;
 
-        /* ⭐ Tính thông tin hiển thị tuỳ tab */
         var limitedCount = 0, totalCount = 0;
-        var unit = _isVocabMode() ? 'từ' : 'câu';
-
         try {
-            if (_isVocabMode() && window.FIXPY_DATASETS && window.FIXPY_DATASETS[VOCAB_ID]) {
+            if (window.FIXPY_DATASETS && window.FIXPY_DATASETS[VOCAB_ID]) {
                 var full = window.FIXPY_DATASETS[VOCAB_ID].data || [];
                 totalCount = full.length;
                 limitedCount = applyVocabLimits(full, acc).length;
-            } else {
-                var info = (typeof getTierInfo === 'function') ? getTierInfo() : {};
-                var maxQ = info.maxQuestions || 60;
-                var fullCount = (typeof RAW_DATA !== 'undefined' && Array.isArray(RAW_DATA)) ? RAW_DATA.length : 0;
-                totalCount = fullCount;
-                limitedCount = Math.min(maxQ, fullCount);
             }
         } catch(e) {}
-
-        /* ⭐ Thông tin lượt Nghe + Viết còn lại */
-        var remaining = 0;
-        try {
-            if (typeof getDemoRemaining === 'function') {
-                remaining = getDemoRemaining();
-            }
-        } catch(e) {}
-        var showRemaining = (acc.tier === 'demo' || acc.tier === 'expired')
-                            && remaining !== Infinity && remaining >= 0;
 
         var limitInfo = '';
         if (acc.maxQuestions > 0 && limitedCount > 0 && totalCount > limitedCount) {
             limitInfo = ' <span style="opacity:.75">(' +
-                        limitedCount + '/' + totalCount + ' ' + unit + ')</span>';
+                        limitedCount + '/' + totalCount + ' tu)</span>';
         }
 
         var icon = acc.tier === 'expired' ? 'fa-exclamation-triangle'
                  : acc.tier === 'trial' ? 'fa-hourglass-half'
                  : acc.tier === 'demo' ? 'fa-user'
                  : 'fa-info-circle';
-        var btnLabel = acc.tier === 'expired' ? 'Gia hạn ngay'
-                     : acc.tier === 'demo' ? 'Đăng nhập'
-                     : 'Nâng cấp Premium';
+        var btnLabel = acc.tier === 'expired' ? 'Gia han ngay'
+                     : acc.tier === 'demo' ? 'Dang nhap'
+                     : 'Nang cap Premium';
         var btnFn = acc.tier === 'demo' ? 'vocabUpgradeLogin()'
                   : 'vocabUpgradeRenew()';
-
-        /* ⭐ Warning message có dấu + ngắn gọn */
-        var descText = '';
-        if (acc.tier === 'demo') {
-            descText = 'Đăng nhập bằng Gmail để dùng toàn bộ kho câu, không giới hạn.';
-        } else if (acc.tier === 'expired') {
-            descText = 'Tài khoản đã hết hạn — gia hạn để tiếp tục dùng toàn bộ tính năng.';
-        } else if (acc.tier === 'trial') {
-            descText = 'Nâng cấp Premium để mở toàn bộ nội dung, không giới hạn.';
-        } else {
-            descText = acc.warning || '';
-        }
-
-        var remainingHtml = '';
-        if (showRemaining) {
-            remainingHtml = ' · <span style="color:#16a34a;font-weight:800">Nghe + Viết còn ' +
-                            remaining + ' lượt</span>';
-        }
 
         var banner = document.createElement('div');
         banner.id = 'vocabWarningBanner';
@@ -39963,13 +40041,43 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
         banner.innerHTML =
             '<div class="vocab-warning-icon"><i class="fas ' + icon + '"></i></div>' +
             '<div class="vocab-warning-text">' +
-                '<strong>' + _esc(acc.label) + limitInfo + remainingHtml + '</strong>' +
-                '<span>' + _esc(descText) + '</span>' +
+                '<strong>' + _esc(acc.label) + limitInfo + '</strong>' +
+                '<span>' + _esc(acc.warning) + '</span>' +
             '</div>' +
             '<button class="vocab-warning-btn" onclick="' + btnFn + '">' +
                 '<i class="fas fa-crown"></i> ' + btnLabel +
             '</button>';
         main.insertBefore(banner, main.firstChild);
+    }
+
+    function patchSubjectLock() {
+        if (window.__vocabSubjectLockPatched) return;
+        if (typeof window.buildFilters !== 'function') {
+            setTimeout(patchSubjectLock, 200);
+            return;
+        }
+        var orig = window.buildFilters;
+        window.buildFilters = function() {
+            var result = orig.apply(this, arguments);
+            try {
+                var sf = document.getElementById('subjectFilter');
+                if (!sf) return result;
+                if (_isVocabMode()) {
+                    sf.disabled = true;
+                    sf.value = '';
+                    sf.style.opacity = '0.5';
+                    sf.style.cursor = 'not-allowed';
+                    sf.title = 'Khong kha dung cho Tu vung';
+                } else {
+                    sf.disabled = false;
+                    sf.style.opacity = '';
+                    sf.style.cursor = '';
+                    sf.title = '';
+                }
+            } catch(e) {}
+            return result;
+        };
+        window.__vocabSubjectLockPatched = true;
     }
 
     function watchVocabMode() {
@@ -39992,7 +40100,7 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
                 sf.value = '';
                 sf.style.opacity = '0.5';
                 sf.style.cursor = 'not-allowed';
-                sf.title = 'Không khả dụng cho Từ vựng';
+                sf.title = 'Khong kha dung cho Tu vung';
             } else if (!isVocab && sf.disabled) {
                 sf.disabled = false;
                 sf.style.opacity = '';
@@ -40073,7 +40181,7 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
                         pfSubj.value = '';
                         pfSubj.style.opacity = '0.5';
                         pfSubj.style.cursor = 'not-allowed';
-                        pfSubj.title = 'Không khả dụng cho Từ vựng';
+                        pfSubj.title = 'Khong kha dung cho Tu vung';
                     }
                 }
                 return result;
@@ -40105,10 +40213,9 @@ window.__SIMILAR_CHARS__ = {"版": {"similar": ["板", "饭"], "diff": "版=bả
 
         updateTabLockState();
 
-        /* ⭐ Luôn inject banner ở MỌI TAB (không chỉ vocab) */
         setInterval(function() {
             updateTabLockState();
-            injectVocabWarningBanner();
+            if (_isVocabMode()) injectVocabWarningBanner();
         }, 2000);
 
         watchVocabMode();
