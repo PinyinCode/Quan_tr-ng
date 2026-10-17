@@ -19481,7 +19481,11 @@ function hasPermission(permKey) {
     }
     return perms[permKey] === true;
 }
-// Kiểm tra xem chế độ khẩn cấp có đang bật không
+/* ═══════════════════════════════════════════════════════════════
+   🚨 EMERGENCY MODE — Sync qua RTDB
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Sync version — dùng cho chỗ không await được */
 function isEmergencyModeActive() {
     try {
         return localStorage.getItem('EMERGENCY_QUOTA_MODE') === 'true';
@@ -19490,6 +19494,57 @@ function isEmergencyModeActive() {
     }
 }
 
+/* Async version — đọc từ RTDB */
+async function isEmergencyModeActiveAsync() {
+    if (typeof firebase === 'undefined' || typeof firebase.database !== 'function') {
+        return isEmergencyModeActive();
+    }
+    
+    try {
+        var snap = await firebase.database().ref('config/emergency').once('value');
+        var data = snap.val() || {};
+        var isOn = data.enabled === true;
+        
+        localStorage.setItem('EMERGENCY_QUOTA_MODE', isOn ? 'true' : 'false');
+        return isOn;
+    } catch(e) {
+        console.warn('[Emergency] Không đọc được RTDB:', e.message);
+        return isEmergencyModeActive();
+    }
+}
+
+/* ⭐ Lắng nghe thay đổi realtime từ RTDB */
+var _emergencyListenerStarted = false;
+function startEmergencyListener() {
+    if (_emergencyListenerStarted) return;
+    if (typeof firebase === 'undefined' || typeof firebase.database !== 'function') return;
+    
+    _emergencyListenerStarted = true;
+    console.log('🚨 [Emergency] Bắt đầu lắng nghe RTDB...');
+    
+    firebase.database().ref('config/emergency').on('value', function(snap) {
+        var data = snap.val() || {};
+        var isOn = data.enabled === true;
+        var current = localStorage.getItem('EMERGENCY_QUOTA_MODE') === 'true';
+        
+        if (isOn !== current) {
+            console.log('%c🔄 [Emergency] Cờ thay đổi: ' + (isOn ? 'BẬT' : 'TẮT'), 
+                        'color:#f59e0b;font-weight:bold;font-size:14px');
+            console.log('   → Do:', data.updatedBy || '(unknown)');
+            
+            localStorage.setItem('EMERGENCY_QUOTA_MODE', isOn ? 'true' : 'false');
+            
+            if (typeof showUserChangedToast === 'function') {
+                if (isOn) showUserChangedToast('🚨 Hệ thống chuyển sang chế độ bảo trì', 'info');
+                else showUserChangedToast('✅ Hệ thống đã hoạt động trở lại', 'success');
+            }
+            
+            setTimeout(function() { location.reload(); }, 1500);
+        }
+    }, function(err) {
+        console.warn('[Emergency] Listener error:', err.message);
+    });
+}
 // Hàm gạt công tắc (Chỉ Super Admin chạy được)
 function toggleEmergencyMode(checkbox) {
     var isSuperAdmin = currentUser && 
@@ -21692,6 +21747,8 @@ window.userConfirmPaid = async function() {
 
     /* ═══ 🚨 1. KIỂM TRA CHẾ ĐỘ KHẨN CẤP (EMERGENCY MODE) ═══ */
     if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+        var _emergencyReqData = null;
+
         try {
             var pending = [];
             try { pending = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]'); } catch(e) {}
@@ -21704,24 +21761,50 @@ window.userConfirmPaid = async function() {
                     item.status = 'user_paid';
                     item.userConfirmedAtMs = Date.now();
                     found = true;
+                    _emergencyReqData = item;   // ⭐ Lưu để gửi Telegram
                 }
             });
 
             // Nếu chưa có trong danh sách local thì tạo thêm record mới
             if (!found && emailClean) {
-                pending.push({
+                var _newReq = {
                     email: emailClean,
                     name: (currentUser && currentUser.name) ? currentUser.name : emailClean.split('@')[0],
                     transferCode: renewalCurrentReq.code || '',
                     status: 'user_paid',
                     userConfirmedAtMs: Date.now()
-                });
+                };
+                pending.push(_newReq);
+                _emergencyReqData = _newReq;   // ⭐ Lưu để gửi Telegram
             }
 
             localStorage.setItem('pending_renewals_local', JSON.stringify(pending));
             console.log('🚨 [Emergency] Đã lưu trạng thái user_paid vào LocalStorage cho:', emailClean);
         } catch(err) {
             console.warn('Lỗi ghi cache gia hạn khẩn cấp:', err);
+        }
+
+        /* ⭐ GỬI TELEGRAM CHO ADMIN — NGAY CẢ KHI EMERGENCY */
+        try {
+            if (_emergencyReqData && typeof window.notifyTelegramUserPaid === 'function') {
+                var _pkgData = renewalSelectedPkg || {};
+                
+                window.notifyTelegramUserPaid({
+                    email: _emergencyReqData.email || emailClean,
+                    name: _emergencyReqData.name || (currentUser && currentUser.name) || emailClean.split('@')[0],
+                    amount: _emergencyReqData.amount || _pkgData.amount || 0,
+                    package: _emergencyReqData.package || _pkgData.id || '',
+                    packageLabel: _emergencyReqData.packageLabel || _pkgData.label || '',
+                    days: _emergencyReqData.days || _pkgData.days || 0,
+                    isPermanent: _emergencyReqData.isPermanent || _pkgData.permanent || false,
+                    transferCode: _emergencyReqData.transferCode || (renewalCurrentReq ? renewalCurrentReq.code : '')
+                });
+                console.log('📱 [Emergency] Đã gửi Telegram cho admin');
+            } else {
+                console.warn('⚠️ Không gửi được Telegram — thiếu dữ liệu hoặc hàm notify chưa load');
+            }
+        } catch(_te) {
+            console.error('❌ Lỗi gửi Telegram (Emergency):', _te.message);
         }
 
         renderPendingConfirm();
@@ -21751,6 +21834,7 @@ window.userConfirmPaid = async function() {
                     isPermanent: _reqData.isPermanent || false,
                     transferCode: _reqData.transferCode
                 });
+                console.log('📱 Đã gửi Telegram cho admin');
             } catch(_te) {}
         }
 
@@ -21761,21 +21845,44 @@ window.userConfirmPaid = async function() {
         console.error('Lỗi xác nhận thanh toán trên Firestore (Quota/Network):', e);
 
         // 🛑 FALLBACK DỰ PHÒNG: Nếu dính lỗi QuotaExceeded bất ngờ khi công tắc chưa kịp bật
+        var _fallbackData = null;
         try {
             var pendingFallback = [];
             try { pendingFallback = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]'); } catch(err) {}
 
             var emailFallback = (currentUser && currentUser.email) ? currentUser.email.toLowerCase() : '';
-            pendingFallback.push({
+            _fallbackData = {
                 email: emailFallback,
                 name: (currentUser && currentUser.name) ? currentUser.name : emailFallback.split('@')[0],
                 transferCode: (renewalCurrentReq && renewalCurrentReq.code) ? renewalCurrentReq.code : '',
                 status: 'user_paid',
                 userConfirmedAtMs: Date.now()
-            });
+            };
+            pendingFallback.push(_fallbackData);
 
             localStorage.setItem('pending_renewals_local', JSON.stringify(pendingFallback));
         } catch(err) {}
+
+        /* ⭐ GỬI TELEGRAM CHO ADMIN — NGAY CẢ KHI FALLBACK */
+        try {
+            if (_fallbackData && typeof window.notifyTelegramUserPaid === 'function') {
+                var _pkgData2 = renewalSelectedPkg || {};
+                
+                window.notifyTelegramUserPaid({
+                    email: _fallbackData.email,
+                    name: _fallbackData.name,
+                    amount: _pkgData2.amount || 0,
+                    package: _pkgData2.id || '',
+                    packageLabel: _pkgData2.label || '',
+                    days: _pkgData2.days || 0,
+                    isPermanent: _pkgData2.permanent || false,
+                    transferCode: _fallbackData.transferCode
+                });
+                console.log('📱 [Fallback] Đã gửi Telegram cho admin');
+            }
+        } catch(_te) {
+            console.error('❌ Lỗi gửi Telegram (Fallback):', _te.message);
+        }
 
         // Vẫn chuyển giao diện sang màn hình chờ để user không bị khó chịu
         renderPendingConfirm();
@@ -23205,8 +23312,15 @@ window.setQuickExpiryPermanent = function() { $('editExpiryInput').value = ''; }
 
 async function doUpdateExpiry() {
     if (!editingExpiryEmail) return;
+    
     var dateVal = $('editExpiryInput').value;
     var updateData = {};
+    
+    /* ⭐ LẤY THÔNG TIN USER HIỆN TẠI */
+    var targetUser = usersCache.find(function(u) { return u.email === editingExpiryEmail; });
+    var wasTrial = targetUser && (targetUser.tier === 'trial' || targetUser.isTrial === true);
+    
+    /* ⭐ SET HẠN */
     if (dateVal) {
         var d = new Date(dateVal + 'T23:59:59');
         if (isNaN(d.getTime())) return alert('Ngày không hợp lệ!');
@@ -23216,21 +23330,112 @@ async function doUpdateExpiry() {
         updateData.expiresAt = null;
         updateData.isPermanent = true;
     }
+    
+    /* ⭐ NÂNG CẤP NẾU ĐANG TRIAL */
+    if (wasTrial) {
+        updateData.isTrial = false;
+        updateData.tier = 'active';
+        updateData.upgradedAt = firebase.firestore.FieldValue.serverTimestamp();
+        updateData.upgradedBy = currentUser.email;
+        updateData.upgradedFrom = 'trial';
+        updateData.upgradedTo = 'active';
+    }
+    
     var btn = $('editExpiryConfirm');
     btn.disabled = true;
     var originalHtml = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Đang lưu...';
+    
+    /* ═══════════════════════════════════════════════════════════
+       🚨 NHÁNH EMERGENCY — GHI VÀO RTDB
+       ═══════════════════════════════════════════════════════════ */
+    if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+        console.log('🚨 [Emergency] Admin duyệt qua RTDB');
+        
+        try {
+            // Chuẩn bị data để ghi RTDB
+            var rtdbData = {
+                email: editingExpiryEmail,
+                tier: updateData.tier || 'active',
+                isTrial: updateData.isTrial === undefined ? false : updateData.isTrial,
+                isPermanent: updateData.isPermanent || false,
+                expiresAtMs: updateData.expiresAt ? updateData.expiresAt.toDate().getTime() : null,
+                upgradedAt: Date.now(),
+                upgradedBy: currentUser.email,
+                upgradedFrom: wasTrial ? 'trial' : null,
+                action: wasTrial ? 'upgrade_trial_to_active' : 'update_expiry'
+            };
+            
+            // Ghi vào RTDB
+            await firebase.database()
+                .ref('config/emergency-user-updates/' + editingExpiryEmail.replace(/[.@#$\[\]]/g, '_'))
+                .set(rtdbData);
+            
+            console.log('✅ [Emergency] Đã ghi RTDB:', rtdbData);
+            
+            // Xóa cache admin để refresh
+            try { localStorage.removeItem('admin_users_cache'); } catch(e) {}
+            try { localStorage.removeItem('user_cache_' + editingExpiryEmail); } catch(e) {}
+            
+            // Đóng modal
+            $('editExpiryModal').classList.remove('show');
+            
+            // Thông báo
+            var msg = dateVal 
+                ? '✅ [Bảo trì] Đã cập nhật hạn đến ' + new Date(dateVal).toLocaleDateString('vi-VN')
+                : '💎 [Bảo trì] Đã đặt thành vĩnh viễn';
+            
+            if (wasTrial) {
+                msg += '\n\n⭐ ĐÃ NÂNG CẤP:\n   🎁 TRIAL → ✅ ACTIVE\n\n   User sẽ tự động cập nhật trong 1-2 giây.';
+            }
+            
+            alert(msg);
+            
+            // Reload danh sách
+            loadUsers(true);
+            
+        } catch(err) {
+            console.error('❌ [Emergency] Lỗi ghi RTDB:', err);
+            alert('❌ Lỗi ghi RTDB: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+        
+        return;   // ⛔ Dừng, không gọi Firestore
+    }
+    
+    /* ═══════════════════════════════════════════════════════════
+       🟢 NHÁNH BÌNH THƯỜNG — GHI FIRESTORE
+       ═══════════════════════════════════════════════════════════ */
     try {
         await db.collection('allowed_users').doc(editingExpiryEmail).update(updateData);
+        
         try { localStorage.removeItem('user_cache_' + editingExpiryEmail); } catch(e) {}
         try { localStorage.removeItem('admin_users_cache'); } catch(e) {}
+        try { localStorage.removeItem('synced_emergency_' + editingExpiryEmail); } catch(e) {}
+        
         $('editExpiryModal').classList.remove('show');
-        alert(dateVal ? '✅ Đã cập nhật hạn đến ' + new Date(dateVal).toLocaleDateString('vi-VN') : '💎 Đã đặt thành vĩnh viễn');
+        
+        var msg2 = dateVal 
+            ? '✅ Đã cập nhật hạn đến ' + new Date(dateVal).toLocaleDateString('vi-VN')
+            : '💎 Đã đặt thành vĩnh viễn';
+        
+        if (wasTrial) {
+            msg2 += '\n\n⭐ ĐÃ NÂNG CẤP:\n   🎁 TRIAL → ✅ ACTIVE';
+        }
+        
+        alert(msg2);
         loadUsers(true);
-    } catch(err) { alert('❌ Lỗi: ' + err.message); }
-    finally { btn.disabled = false; btn.innerHTML = originalHtml; }
+        
+    } catch(err) {
+        console.error('Lỗi cập nhật hạn:', err);
+        alert('❌ Lỗi: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
 }
-
 async function doChangeName() {
     if (!editingEmail) return;
     var newName = $('changeNameInput').value.trim();
@@ -24106,6 +24311,97 @@ window.testTelegram = function() {
     log('Module loaded — ' + SERVERS.length + ' servers');
 })();
 
+/* ⭐ Lắng nghe update từ admin qua RTDB */
+function startUserUpdateListener() {
+    if (!currentUser || !currentUser.email) return;
+    if (typeof firebase === 'undefined' || !firebase.database) return;
+    
+    var _myEmailKey = currentUser.email.toLowerCase().replace(/[.@#$\[\]]/g, '_');
+    
+    firebase.database()
+        .ref('config/emergency-user-updates/' + _myEmailKey)
+        .on('value', function(snap) {
+            if (!snap.exists()) return;
+            
+            var data = snap.val() || {};
+            var upgradedAt = data.upgradedAt || 0;
+            
+            // ⭐ Kiểm tra xem đã xử lý update này chưa
+            var lastProcessed = parseInt(localStorage.getItem('last_emergency_update_at') || '0');
+            if (upgradedAt <= lastProcessed) return;
+            
+            console.log('🔄 [Emergency] Nhận update từ admin:', data);
+            
+            // ⭐ Cập nhật cache local
+            try {
+                var cacheKey = 'user_cache_' + currentUser.email;
+                var cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+                
+                if (cached && cached.data) {
+                    cached.data.tier = data.tier || 'active';
+                    cached.data.isTrial = data.isTrial === true;
+                    cached.data.isPermanent = data.isPermanent === true;
+                    
+                    if (data.expiresAtMs) {
+                        cached.data.expiresAt = { seconds: Math.floor(data.expiresAtMs / 1000) };
+                    } else {
+                        cached.data.expiresAt = null;
+                    }
+                    
+                    cached.expires = Date.now() + 12 * 60 * 60 * 1000;
+                    localStorage.setItem(cacheKey, JSON.stringify(cached));
+                }
+                
+                localStorage.setItem('last_emergency_update_at', upgradedAt.toString());
+                
+                // ⭐ Thông báo cho user
+                if (typeof showUserChangedToast === 'function') {
+                    if (data.action === 'upgrade_trial_to_active') {
+                        showUserChangedToast('🎉 Tài khoản đã được nâng cấp lên CHÍNH THỨC!', 'success');
+                    } else {
+                        showUserChangedToast('🎉 Tài khoản đã được gia hạn!', 'success');
+                    }
+                }
+                
+                // ⭐ Reload sau 1.5 giây
+                setTimeout(function() { location.reload(); }, 1500);
+                
+            } catch(e) {
+                console.error('Lỗi cập nhật cache từ RTDB:', e);
+            }
+        }, function(err) {
+            console.warn('[Emergency] User update listener error:', err.message);
+        });
+    
+    console.log('👂 [Emergency] Đã đăng ký listener update cho:', currentUser.email);
+}
+
+/* ⭐ Khởi động listener emergency khi app load */
+(function initEmergencyListener() {
+    function tryStart() {
+        if (typeof firebase !== 'undefined' && firebase.database) {
+            startEmergencyListener();
+            
+            // ⭐ Đăng ký listener nhận update từ admin
+            if (typeof startUserUpdateListener === 'function' && currentUser && currentUser.email) {
+                startUserUpdateListener();
+            }
+            
+            isEmergencyModeActiveAsync().then(function(isOn) {
+                console.log('[Emergency] Trạng thái hiện tại:', isOn ? '🚨 BẬT' : '✅ TẮT');
+            });
+        } else {
+            setTimeout(tryStart, 1000);
+        }
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tryStart);
+    } else {
+        tryStart();
+    }
+})();
+
 
 
 /* ⭐ Ẩn #expiryBanner khi #vocabWarningBanner đang hiện (tránh trùng) */
@@ -24240,7 +24536,7 @@ function __isSuperAdminNow() {
     return currentUser.email.toLowerCase() === SUPER_ADMIN.toLowerCase();
 }
 
-window.batKhanCap = function() {
+window.batKhanCap = async function() {
     console.log('%c🎮 batKhanCap() được gọi', 'color:#94a3b8;font-style:italic');
     
     if (!currentUser || !currentUser.email) {
@@ -24255,20 +24551,17 @@ window.batKhanCap = function() {
     }
 
     /* ═══════════════════════════════════════════════════════════
-       ⭐ XÓA TẤT CẢ syncKey CŨ
-       Để lần tắt sau sẽ sync lại tất cả user (không bỏ sót)
+       BƯỚC 1: XÓA SYNCKEY CŨ
        ═══════════════════════════════════════════════════════════ */
     var syncKeysRemoved = 0;
-    var keysToRemove = [];
-    
     try {
+        var keysToRemove = [];
         for (var i = 0; i < localStorage.length; i++) {
             var k = localStorage.key(i);
             if (k && k.indexOf('synced_emergency_') === 0) {
                 keysToRemove.push(k);
             }
         }
-        
         keysToRemove.forEach(function(k) {
             localStorage.removeItem(k);
             syncKeysRemoved++;
@@ -24285,16 +24578,46 @@ window.batKhanCap = function() {
     }
 
     /* ═══════════════════════════════════════════════════════════
-       BẬT EMERGENCY MODE
+       BƯỚC 2: BẬT LOCAL
        ═══════════════════════════════════════════════════════════ */
     localStorage.setItem('EMERGENCY_QUOTA_MODE', 'true');
-    
-    console.log('%c🚨 ĐÃ BẬT CHẾ ĐỘ KHẨN CẤP', 
+    console.log('%c🚨 ĐÃ BẬT CHẾ ĐỘ KHẨN CẤP (local)', 
                 'color:#dc2626;font-weight:bold;font-size:16px');
-    console.log('%c→ Lần tắt sau sẽ sync lại tất cả user', 'color:#666');
-    console.log('%c→ Reload trang sau 1 giây...', 'color:#f59e0b');
-    
-    setTimeout(function() { location.reload(); }, 1000);
+
+    /* ═══════════════════════════════════════════════════════════
+       BƯỚC 3: SYNC LÊN RTDB — BẬT TOÀN HỆ THỐNG
+       ═══════════════════════════════════════════════════════════ */
+    try {
+        if (typeof firebase !== 'undefined' && firebase.database) {
+            await firebase.database().ref('config/emergency').set({
+                enabled: true,
+                updatedAt: Date.now(),
+                updatedBy: currentUser.email,
+                updatedAtVN: new Date().toLocaleString('vi-VN')
+            });
+            console.log('%c✅ ĐÃ ĐỒNG BỘ TOÀN HỆ THỐNG (RTDB)', 
+                        'color:#16a34a;font-weight:bold;font-size:14px');
+        } else {
+            console.warn('⚠️ RTDB không khả dụng — chỉ bật local');
+        }
+    } catch(e) {
+        console.error('❌ Lỗi sync RTDB:', e.message);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       BƯỚC 4: BÁO CÁO
+       ═══════════════════════════════════════════════════════════ */
+    console.log('%c═══════════════════════════════════════', 'color:#4f46e5');
+    console.log('%c✅ HOÀN TẤT BẬT KHẨN CẤP', 
+                'color:#4f46e5;font-weight:bold;font-size:14px');
+    console.log('%c═══════════════════════════════════════', 'color:#4f46e5');
+    console.log('  🧹 SyncKeys đã xóa:', syncKeysRemoved);
+    console.log('  📧 Email bật:', currentUser.email);
+    console.log('  ⏰ Thời gian:', new Date().toLocaleString('vi-VN'));
+    console.log('%c═══════════════════════════════════════', 'color:#4f46e5');
+    console.log('%c→ Reload sau 1.5 giây...', 'color:#f59e0b');
+
+    setTimeout(function() { location.reload(); }, 1500);
 };
 window.tatKhanCap = async function() {
     console.log('%c🎮 tatKhanCap() được gọi', 'color:#94a3b8;font-style:italic');
@@ -24304,7 +24627,8 @@ window.tatKhanCap = async function() {
         return;
     }
     if (!__isSuperAdminNow()) {
-        console.error('%c🚫 CHỈ SUPER ADMIN mới dùng được lệnh này!', 'color:#dc2626;font-weight:bold;font-size:14px');
+        console.error('%c🚫 CHỈ SUPER ADMIN mới dùng được lệnh này!', 
+                     'color:#dc2626;font-weight:bold;font-size:14px');
         console.error('Email của bạn:', currentUser.email);
         return;
     }
@@ -24313,26 +24637,57 @@ window.tatKhanCap = async function() {
                 'color:#f59e0b;font-weight:bold;font-size:14px');
 
     /* ═══════════════════════════════════════════════════════════
-       BƯỚC 1: QUÉT LOCALSTORAGE TÌM USER TẠO TRONG EMERGENCY
+       ⭐ BƯỚC 0: TẮT LOCAL + GHI RTDB NGAY
+       ═══════════════════════════════════════════════════════════ */
+    localStorage.setItem('EMERGENCY_QUOTA_MODE', 'false');
+    console.log('%c✅ ĐÃ TẮT CHẾ ĐỘ KHẨN CẤP (local)', 
+                'color:#16a34a;font-weight:bold;font-size:16px');
+
+    try {
+        if (typeof firebase !== 'undefined' && firebase.database) {
+            await firebase.database().ref('config/emergency').set({
+                enabled: false,
+                updatedAt: Date.now(),
+                updatedBy: currentUser.email,
+                updatedAtVN: new Date().toLocaleString('vi-VN')
+            });
+            console.log('%c✅ ĐÃ ĐỒNG BỘ TOÀN HỆ THỐNG (RTDB)', 
+                        'color:#16a34a;font-weight:bold;font-size:14px');
+        } else {
+            console.warn('⚠️ RTDB không khả dụng — chỉ tắt local');
+        }
+    } catch(e) {
+        console.error('❌ Lỗi sync RTDB:', e.message);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       BƯỚC 1: QUÉT LOCALSTORAGE TÌM USER CẦN SYNC
        ═══════════════════════════════════════════════════════════ */
     var emergencyUsers = [];
     var syncKeysToRemove = [];
+    
+    var _superEmail = (typeof SUPER_ADMIN !== 'undefined' && SUPER_ADMIN) 
+                      ? SUPER_ADMIN.toLowerCase() 
+                      : '';
 
     try {
         for (var i = 0; i < localStorage.length; i++) {
             var key = localStorage.key(i);
             
-            // Tìm các key dạng: user_cache_<email>
             if (key && key.indexOf('user_cache_') === 0) {
                 var email = key.replace('user_cache_', '').toLowerCase();
                 
-                // Check xem user này đã sync chưa
+                /* ⭐ Bỏ qua Super Admin */
+                if (_superEmail && email === _superEmail) {
+                    console.log('%c  ⏭️  Bỏ qua Super Admin: ' + email, 'color:#94a3b8');
+                    continue;
+                }
+                
                 var syncKey = 'synced_emergency_' + email;
                 var alreadySynced = localStorage.getItem(syncKey) === 'true';
                 
-                if (alreadySynced) continue; // Đã sync → bỏ qua
+                if (alreadySynced) continue;
                 
-                // Lấy data
                 try {
                     var cached = JSON.parse(localStorage.getItem(key) || 'null');
                     if (cached && cached.data) {
@@ -24353,12 +24708,13 @@ window.tatKhanCap = async function() {
     console.log('%c📋 Tìm thấy ' + emergencyUsers.length + ' user cần sync', 
                 'color:#4f46e5;font-weight:bold;font-size:13px');
 
+    /* ═══════════════════════════════════════════════════════════
+       NẾU KHÔNG CÓ USER → CHỈ CẦN RELOAD
+       ═══════════════════════════════════════════════════════════ */
     if (emergencyUsers.length === 0) {
-        console.log('%c→ Không có user nào cần sync, tắt trực tiếp', 'color:#94a3b8');
-        localStorage.setItem('EMERGENCY_QUOTA_MODE', 'false');
-        console.log('%c✅ ĐÃ TẮT CHẾ ĐỘ KHẨN CẤP', 
-                    'color:#16a34a;font-weight:bold;font-size:16px');
-        setTimeout(function() { location.reload(); }, 1000);
+        console.log('%c→ Không có user nào cần sync, hoàn tất', 'color:#94a3b8');
+        console.log('%c→ Reload sau 1.5 giây...', 'color:#f59e0b');
+        setTimeout(function() { location.reload(); }, 1500);
         return;
     }
 
@@ -24380,13 +24736,11 @@ window.tatKhanCap = async function() {
             var doc = await docRef.get();
 
             if (doc.exists) {
-                // ⭐ User đã tồn tại → KHÔNG ghi đè, chỉ đánh dấu đã sync
                 console.log('%c  ⏭️  ' + email + ' (đã tồn tại — bỏ qua)', 
                             'color:#94a3b8');
                 skipped++;
                 results.push({ email: email, status: 'skipped' });
             } else {
-                // ⭐ User mới → tạo trial
                 var days = (typeof TRIAL_DAYS === 'number' && TRIAL_DAYS > 0) ? TRIAL_DAYS : 3;
                 var expiresAt = new Date(Date.now() + days * 86400000);
                 expiresAt.setHours(23, 59, 59, 0);
@@ -24412,12 +24766,12 @@ window.tatKhanCap = async function() {
                 results.push({ email: email, status: 'created' });
             }
 
-            // ⭐ Đánh dấu đã sync
+            /* ⭐ Đánh dấu đã sync */
             localStorage.setItem(u.syncKey, 'true');
             syncKeysToRemove.push(u.syncKey);
-
-            // ⭐ Xóa cache cũ (để lần login sau đọc Firestore mới)
-            localStorage.removeItem(u.cacheKey);
+            
+            /* ⭐ GIỮ NGUYÊN CACHE — KHÔNG XÓA CỦA BẤT KỲ AI */
+            console.log('%c  🛡️ Giữ nguyên cache: ' + email, 'color:#16a34a');
 
         } catch(err) {
             console.error('%c  ❌ ' + email + ' — Lỗi: ' + err.message, 
@@ -24544,29 +24898,28 @@ window.tatKhanCap = async function() {
     console.log('%c═══════════════════════════════════════', 'color:#4f46e5');
 
     /* ═══════════════════════════════════════════════════════════
-       BƯỚC 6: TẮT EMERGENCY MODE
+       BƯỚC 6: KẾT THÚC
        ═══════════════════════════════════════════════════════════ */
     if (failed === 0 && renewalsFailed === 0 && approvedFailed === 0) {
-        // ⭐ Sync thành công hoàn toàn → tắt
-        localStorage.setItem('EMERGENCY_QUOTA_MODE', 'false');
-        console.log('%c✅ ĐÃ TẮT CHẾ ĐỘ KHẨN CẤP', 
-                    'color:#16a34a;font-weight:bold;font-size:16px');
+        console.log('%c✅ HOÀN TẤT TẮT KHẨN CẤP', 
+                    'color:#16a34a;font-weight:bold;font-size:14px');
+        console.log('%c→ Reload sau 1.5 giây...', 'color:#f59e0b');
         setTimeout(function() { location.reload(); }, 1500);
     } else {
-        // ⚠️ Có lỗi → KHÔNG tắt, để admin xử lý
-        console.error('%c⚠️ CÓ LỖI KHI SYNC — CHƯA TẮT CHẾ ĐỘ KHẨN CẤP!', 
+        console.error('%c⚠️ CÓ LỖI KHI SYNC FIRESTORE', 
                      'color:#dc2626;font-weight:bold;font-size:14px');
-        console.error('→ Vẫn giữ emergency mode để tránh mất dữ liệu.');
-        console.error('→ Kiểm tra Firestore quota rồi chạy lại tatKhanCap().');
+        console.error('→ RTDB đã tắt (toàn hệ thống OK).');
+        console.error('→ Nhưng Firestore sync có lỗi.');
         
-        // In danh sách lỗi
         var failedList = results.filter(function(r) { return r.status === 'failed'; });
         if (failedList.length > 0) {
             console.table(failedList);
         }
+        
+        console.log('%c→ Reload sau 3 giây...', 'color:#f59e0b');
+        setTimeout(function() { location.reload(); }, 3000);
     }
 };
-
 window.checkKhanCap = function() {
     var isOn = localStorage.getItem('EMERGENCY_QUOTA_MODE') === 'true';
     var email = currentUser ? currentUser.email : '(chưa đăng nhập)';
