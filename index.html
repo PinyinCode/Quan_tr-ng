@@ -38094,20 +38094,7 @@ window.__switchRawData = function(datasetId) {
             if (info.tier === 'active') {
                 return RAW_DATA;
             }
-            var override = window.__onboardingOverride;
-            if (override && Array.isArray(override) && override.length > 0
-                && typeof state !== 'undefined' && state
-                && !state.search && !state.hsk && !state.subject) {
-                var currentStts = {};
-                RAW_DATA.forEach(function(r) { currentStts[r.stt] = true; });
-                var filtered = override.filter(function(r) {
-                    return currentStts[r.stt];
-                });
-                if (filtered.length > 0) {
-                    var max = info.maxQuestions || 60;
-                    return filtered.slice(0, max);
-                }
-            }
+            /* Tắt hoàn toàn logic chia đều chủ đề của Onboarding */
             var max2 = info.maxQuestions || 60;
             return RAW_DATA.slice(0, max2);
         };
