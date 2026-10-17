@@ -14228,7 +14228,7 @@ var TIKTOK_AVATAR = "https://i.postimg.cc/QBD0vj6C/IMG-6296.jpg";
 var TIKTOK_URL = "https://www.tiktok.com/@thaonoizhongwen";
 var SYNONYMS = {"我":["俺","本人","咱"],"你":["您","阁下"],"他":["她","它"],"是":["系","为"],"的":["之"],"不":["没","未"],"很":["非常","十分","特别"],"好":["棒","优秀","不错"],"说":["讲","谈"],"看":["瞧","望"],"吃":["食","用"],"给":["送","赠"],"想要":["想","要"],"越南":["越南"],"中国":["中华"],"谢谢":["感谢","多谢"],"对不起":["抱歉","不好意思"],"再见":["拜拜","再会"],"请":["麻烦","拜托"]};
 var FILLER_WORDS = ["了","的","吗","呢","吧","啊","呀","哦","嘛","哈","哪","着","过"];
-var ONBOARDING_CONFIG = {"demo":{"enabled":true,"max_questions":30,"hsk_allowed":[1,2,3],"topics_per_user":10,"title":"Bạn quan tâm chủ đề nào?","subtitle":"Chọn tối đa 5 chủ đề — chúng tôi sẽ gợi ý 80 câu phù hợp nhất"},"trial":{"enabled":true,"max_questions":100,"hsk_allowed":[1,2,3,4,5],"topics_per_user":20,"title":"Bạn quan tâm chủ đề nào?","subtitle":"Chọn tối đa 12 chủ đề — chúng tôi sẽ gợi ý 250 câu phù hợp nhất"},"active":{"enabled":true,"max_questions":-1,"hsk_allowed":[1,2,3,4,5,6],"topics_per_user":-1,"title":"Bạn quan tâm chủ đề nào?","subtitle":"không giới hạn"}};
+var ONBOARDING_CONFIG = {"demo":{"enabled":true,"max_questions":-1,"hsk_allowed":[1],"topics_per_user":-1,"title":"Bạn quan tâm chủ đề nào?","subtitle":"Chọn chủ đề — chúng tôi sẽ gợi ý câu phù hợp nhất"},"trial":{"enabled":true,"max_questions":-1,"hsk_allowed":[1,2],"topics_per_user":-1,"title":"Bạn quan tâm chủ đề nào?","subtitle":"Chọn chủ đề — chúng tôi sẽ gợi ý câu phù hợp nhất"},"active":{"enabled":true,"max_questions":-1,"hsk_allowed":[1,2,3,4,5,6],"topics_per_user":-1,"title":"Bạn quan tâm chủ đề nào?","subtitle":"không giới hạn"}};
 
 var $ = function(id) { return document.getElementById(id); };
 
@@ -19976,6 +19976,38 @@ async function handleAuthChange(user) {
 
         isDemo = false;
 
+        /* ⭐ GHI USER LÊN RTDB — ĐỂ ADMIN TÌM THẤY */
+        try {
+            if (typeof firebase !== 'undefined' && firebase.database && !isSuper) {
+                var emailKeyRT = email.replace(/[.@#$\[\]]/g, '_');
+                var rtdbUserRef = firebase.database().ref('config/emergency-users/' + emailKeyRT);
+                
+                rtdbUserRef.once('value').then(function(snap) {
+                    if (!snap.exists()) {
+                        rtdbUserRef.set({
+                            email: email,
+                            name: currentUser.name || email.split('@')[0],
+                            photo: currentUser.photo || '',
+                            registeredAt: Date.now(),
+                            registeredAtVN: new Date().toLocaleString('vi-VN'),
+                            source: 'emergency_register',
+                            userAgent: navigator.userAgent.substring(0, 150)
+                        }).then(function() {
+                            console.log('✅ [Emergency] Đã ghi user mới lên RTDB:', email);
+                        }).catch(function(err) {
+                            console.warn('⚠️ Lỗi ghi RTDB:', err.message);
+                        });
+                    } else {
+                        console.log('ℹ️ [Emergency] User đã có trên RTDB:', email);
+                    }
+                }).catch(function(err) {
+                    console.warn('Lỗi check RTDB:', err.message);
+                });
+            }
+        } catch(e) {
+            console.warn('Lỗi emergency RTDB:', e);
+        }
+
         /* ⭐ Báo banner_fix */
         try {
             if (typeof window.__bannerFixResolveTimer === 'function') {
@@ -20001,6 +20033,7 @@ async function handleAuthChange(user) {
 
         return; // ⛔ Dừng lại hoàn toàn, không gọi Firestore
     }
+    /* ═══ END CHẾ ĐỘ KHẨN CẤP ═══ */
     /* ═══ END CHẾ ĐỘ KHẨN CẤP ═══ */
 
     var cacheKey = 'user_cache_' + email;
@@ -22546,44 +22579,153 @@ async function doAddUser() {
         alert('Bạn không có quyền thêm user!');
         return;
     }
+    
     var email = $('newUserEmail').value.trim().toLowerCase();
     var name = $('newUserName').value.trim();
     var role = $('newUserRole').value;
     var expiresVal = $('newUserExpires').value;
 
-    if (!email || !email.includes('@')) { alert('Email không hợp lệ'); return; }
+    if (!email || !email.includes('@')) { 
+        alert('Email không hợp lệ'); 
+        return; 
+    }
     if (!name) name = email.split('@')[0];
-    if (role === 'admin' && !isSuperAdmin()) { alert('⚠️ Chỉ Super Admin mới có quyền thêm admin!'); return; }
+    if (role === 'admin' && !isSuperAdmin()) { 
+        alert('⚠️ Chỉ Super Admin mới có quyền thêm admin!'); 
+        return; 
+    }
 
+    /* ⭐ Chuẩn bị data */
+    var setData = {
+        email: email, 
+        name: name, 
+        role: role, 
+        tier: 'active',
+        addedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        addedBy: currentUser.email
+    };
+    
+    if (role === 'admin') {
+        setData.isSubAdmin = true;
+        setData.permissions = Object.assign({}, DEFAULT_ADMIN_PERMS);
+    }
+    
+    // ⭐ Hạn sử dụng
+    var expiresAtMs = null;
+    if (expiresVal && role !== 'admin') {
+        var d = new Date(expiresVal + 'T23:59:59');
+        if (!isNaN(d.getTime())) {
+            setData.expiresAt = firebase.firestore.Timestamp.fromDate(d);
+            expiresAtMs = d.getTime();
+        }
+    } else if (role !== 'admin') {
+        setData.isPermanent = true;
+        expiresAtMs = null;
+    }
+
+    /* ⭐ Check emergency mode */
+    var isEmergency = (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive());
+    var emailKey = email.replace(/[.@#$\[\]]/g, '_');
+    var firestoreSuccess = false;
+
+    /* ═══════════════════════════════════════════════════════════
+       🟢 PHẦN 1: GHI FIRESTORE
+       ═══════════════════════════════════════════════════════════ */
     try {
         var docRef = db.collection('allowed_users').doc(email);
         var doc = await docRef.get();
-        if (doc.exists) { alert('Email này đã tồn tại!'); return; }
+        
+        if (doc.exists) { 
+            alert('⚠️ Email này đã tồn tại trên Firestore!'); 
+            return; 
+        }
 
-        var setData = {
-            email: email, name: name, role: role, tier: 'active',
-            addedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            addedBy: currentUser.email
-        };
-        if (role === 'admin') {
-            setData.isSubAdmin = true;
-            setData.permissions = Object.assign({}, DEFAULT_ADMIN_PERMS);
-        }
-        if (expiresVal && role !== 'admin') {
-            var d = new Date(expiresVal + 'T23:59:59');
-            if (!isNaN(d.getTime())) setData.expiresAt = firebase.firestore.Timestamp.fromDate(d);
-        } else if (role !== 'admin') {
-            setData.isPermanent = true;
-        }
         await docRef.set(setData);
-        $('addUserForm').classList.remove('show');
-        $('newUserEmail').value = ''; $('newUserName').value = '';
-        $('newUserRole').value = 'user'; $('newUserExpires').value = '';
-        try { localStorage.removeItem('admin_users_cache'); } catch(e) {}
-        loadUsers(true);
-    } catch(e) { alert('Lỗi: ' + e.message); }
-}
+        firestoreSuccess = true;
+        console.log('✅ Đã ghi Firestore:', email);
+        
+    } catch(e) {
+        console.warn('⚠️ Không ghi được Firestore:', e.message);
+        
+        /* ⭐ Nếu KHÔNG phải emergency → fail luôn */
+        if (!isEmergency) {
+            alert('❌ Lỗi: ' + e.message);
+            return;
+        }
+        
+        // Emergency ON → tiếp tục ghi RTDB
+        console.log('🚨 [Emergency] Bỏ qua Firestore, ghi RTDB');
+    }
 
+    /* ═══════════════════════════════════════════════════════════
+       ⭐ PHẦN 2: GHI RTDB (khi EMERGENCY ON)
+       ═══════════════════════════════════════════════════════════ */
+    if (isEmergency) {
+        try {
+            // ⭐ Ghi vào emergency-users (để admin tìm thấy)
+            await firebase.database()
+                .ref('config/emergency-users/' + emailKey)
+                .set({
+                    email: email,
+                    name: name,
+                    photo: '',
+                    registeredAt: Date.now(),
+                    registeredAtVN: new Date().toLocaleString('vi-VN'),
+                    source: 'admin_add_emergency',
+                    addedBy: currentUser.email,
+                    role: role
+                });
+            console.log('✅ [Emergency] Đã ghi emergency-users:', email);
+            
+            // ⭐ Ghi vào emergency-user-updates (để user nhận update realtime)
+            await firebase.database()
+                .ref('config/emergency-user-updates/' + emailKey)
+                .set({
+                    email: email,
+                    name: name,
+                    tier: 'active',
+                    isTrial: false,
+                    isPermanent: !expiresAtMs,
+                    expiresAtMs: expiresAtMs,
+                    upgradedAt: Date.now(),
+                    upgradedBy: currentUser.email,
+                    action: 'admin_add_user',
+                    updatedAtVN: new Date().toLocaleString('vi-VN')
+                });
+            console.log('✅ [Emergency] Đã ghi emergency-user-updates:', email);
+            
+        } catch(rtdbErr) {
+            console.error('❌ Lỗi ghi RTDB:', rtdbErr.message);
+            
+            if (!firestoreSuccess) {
+                alert('❌ Không thể thêm user: cả Firestore và RTDB đều lỗi!\n\n' + rtdbErr.message);
+                return;
+            } else {
+                alert('⚠️ Đã ghi Firestore nhưng RTDB lỗi. User sẽ thấy sau khi tắt emergency.');
+            }
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       🎯 PHẦN 3: HOÀN TẤT
+       ═══════════════════════════════════════════════════════════ */
+    $('addUserForm').classList.remove('show');
+    $('newUserEmail').value = ''; 
+    $('newUserName').value = '';
+    $('newUserRole').value = 'user'; 
+    $('newUserExpires').value = '';
+    
+    try { localStorage.removeItem('admin_users_cache'); } catch(e) {}
+    
+    // ⭐ Thông báo
+    var msg = '✅ Đã thêm user:\n📧 ' + email;
+    if (isEmergency) {
+        msg += '\n\n🚨 [Emergency Mode] Đã ghi RTDB.\nUser có thể đăng nhập ngay.';
+    }
+    
+    alert(msg);
+    loadUsers(true);
+}
 function openAdminPanel() {
     if (!currentUser || currentUser.role !== 'admin') return;
     $('adminModal').classList.add('show');
@@ -22619,6 +22761,8 @@ function loadUsers(forceRefresh) {
     }
 
     $('userList').innerHTML = '<div class="no-data"><i class="fas fa-spinner fa-pulse"></i><span>Đang tải...</span></div>';
+    
+    // 1. Đọc dữ liệu từ Firestore
     db.collection('allowed_users').get().then(function(snapshot) {
         usersCache = [];
         snapshot.forEach(function(doc) {
@@ -22635,13 +22779,57 @@ function loadUsers(forceRefresh) {
                 permissions: data.permissions || null
             });
         });
-        usersCache.sort(function(a, b) { return (a.email || '').localeCompare(b.email || ''); });
-        try {
-            localStorage.setItem(cacheKey, JSON.stringify({ data: usersCache, expires: Date.now() + 5 * 60 * 1000 }));
-        } catch(e) {}
-        renderUsers(usersCache);
-        renderAdminStats();
-        return loadLastLoginMap();
+        
+        // 2. ⭐ NẾU ĐANG EMERGENCY → MERGE THÊM TỪ RTDB
+        var mergePromise = Promise.resolve();
+        if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+            mergePromise = firebase.database().ref('config/emergency-users').once('value').then(function(rtdbSnap) {
+                var rtdbUsers = rtdbSnap.val() || {};
+                var addedCount = 0;
+                
+                Object.keys(rtdbUsers).forEach(function(key) {
+                    var u = rtdbUsers[key];
+                    if (u && u.email) {
+                        // Check xem user này đã có trong Firestore chưa
+                        var exists = usersCache.some(function(fUser) { 
+                            return fUser.email === u.email.toLowerCase(); 
+                        });
+                        
+                        // Nếu chưa có thì thêm vào danh sách
+                        if (!exists) {
+                            usersCache.push({
+                                email: u.email.toLowerCase(),
+                                name: u.name || u.email.split('@')[0],
+                                role: 'user',
+                                tier: 'active',
+                                isTrial: false,
+                                isPermanent: true,
+                                expiresAt: null,
+                                isEmergencyUser: true // ⭐ Đánh dấu để hiện badge
+                            });
+                            addedCount++;
+                        }
+                    }
+                });
+                if (addedCount > 0) {
+                    console.log('✅ [Emergency] Đã merge', addedCount, 'user từ RTDB');
+                }
+            }).catch(function(err) {
+                console.warn('Lỗi đọc RTDB:', err.message);
+            });
+        }
+        
+        // 3. Render sau khi merge xong
+        return mergePromise.then(function() {
+            usersCache.sort(function(a, b) { return (a.email || '').localeCompare(b.email || ''); });
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify({ data: usersCache, expires: Date.now() + 5 * 60 * 1000 }));
+            } catch(e) {}
+            renderUsers(usersCache);
+            renderAdminStats();
+            loadLastLoginMap();
+        });
+        
     }).catch(function(err) {
         $('userList').innerHTML = '<div class="no-data" style="color:#dc2626"><i class="fas fa-exclamation-triangle"></i><span>Lỗi: ' + err.message + '</span></div>';
     });
@@ -22752,6 +22940,9 @@ function renderUsers(items) {
             if (targetIsSuper) roleBadge = '<span class="u-role super">👑 super</span>';
             else if (targetIsSubAdmin) roleBadge = '<span class="u-role subadmin">🛡 sub</span>';
             else roleBadge = '<span class="u-role admin">admin</span>';
+        } else if (u.isEmergencyUser) {
+            // ⭐ User được tạo trong lúc Emergency Mode
+            roleBadge = '<span class="u-role" style="background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;font-size:.65rem;padding:.15rem .5rem;border-radius:50px;font-weight:700;box-shadow:0 2px 6px rgba(220,38,38,.4);">🚨 emergency</span>';
         } else if (u.isPermanent) {
             roleBadge = '<span class="u-role perm">💎 perm</span>';
         } else if (u.tier === 'trial' || u.isTrial) {
@@ -24375,7 +24566,82 @@ function startUserUpdateListener() {
     
     console.log('👂 [Emergency] Đã đăng ký listener update cho:', currentUser.email);
 }
+/* ═══════════════════════════════════════════════════════════════
+   ⭐ LOAD USER TỪ RTDB (khi emergency ON)
+   ═══════════════════════════════════════════════════════════════ */
+window.loadEmergencyUsersFromRTDB = async function() {
+    if (typeof firebase === 'undefined' || !firebase.database) return [];
+    
+    try {
+        var snap = await firebase.database()
+            .ref('config/emergency-users')
+            .once('value');
+        
+        var users = snap.val() || {};
+        var list = [];
+        
+        Object.keys(users).forEach(function(key) {
+            var u = users[key];
+            if (u && u.email) {
+                list.push({
+                    email: u.email.toLowerCase(),
+                    name: u.name || u.email.split('@')[0],
+                    role: 'user',
+                    tier: 'active',
+                    isTrial: false,
+                    isPermanent: true,
+                    expiresAt: null,
+                    isEmergencyUser: true,        // ⭐ Đánh dấu
+                    registeredAt: u.registeredAt,
+                    registeredAtVN: u.registeredAtVN || ''
+                });
+            }
+        });
+        
+        console.log('📡 [Emergency] Load được', list.length, 'user từ RTDB');
+        return list;
+        
+    } catch(e) {
+        console.warn('Lỗi load user từ RTDB:', e.message);
+        return [];
+    }
+};
 
+/* ⭐ Merge users từ Firestore + RTDB */
+window.mergeEmergencyUsers = async function(firestoreUsers) {
+    // Nếu không phải emergency → không cần merge
+    if (typeof isEmergencyModeActive !== 'function' || !isEmergencyModeActive()) {
+        return firestoreUsers;
+    }
+    
+    try {
+        var rtdbUsers = await loadEmergencyUsersFromRTDB();
+        
+        if (rtdbUsers.length === 0) return firestoreUsers;
+        
+        // Tạo map email → user để check trùng
+        var existingEmails = {};
+        firestoreUsers.forEach(function(u) {
+            existingEmails[(u.email || '').toLowerCase()] = true;
+        });
+        
+        // Thêm user từ RTDB chưa có trong Firestore
+        var added = 0;
+        rtdbUsers.forEach(function(u) {
+            if (!existingEmails[u.email]) {
+                firestoreUsers.push(u);
+                added++;
+            }
+        });
+        
+        console.log('✅ [Emergency] Đã merge', added, 'user từ RTDB');
+        return firestoreUsers;
+        
+    } catch(e) {
+        console.warn('Lỗi merge users:', e.message);
+        return firestoreUsers;
+    }
+};
 /* ⭐ Khởi động listener emergency khi app load */
 (function initEmergencyListener() {
     function tryStart() {

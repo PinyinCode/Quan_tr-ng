@@ -55,19 +55,19 @@
     "onboarding": {
         "demo": {
             "enabled": true,
-            "max_questions": 30,
-            "hsk_allowed": [1, 2, 3],
-            "topics_per_user": 10,
+            "max_questions": -1,
+            "hsk_allowed": [1],
+            "topics_per_user": -1,
             "title": "Bạn quan tâm chủ đề nào?",
-            "subtitle": "Chọn tối đa 5 chủ đề — chúng tôi sẽ gợi ý 80 câu phù hợp nhất"
+            "subtitle": "Chọn chủ đề — chúng tôi sẽ gợi ý câu phù hợp nhất"
         },
         "trial": {
             "enabled": true,
-            "max_questions": 100,
-            "hsk_allowed": [1, 2, 3, 4, 5],
-            "topics_per_user": 20,
+            "max_questions": -1,
+            "hsk_allowed": [1, 2],
+            "topics_per_user": -1,
             "title": "Bạn quan tâm chủ đề nào?",
-            "subtitle": "Chọn tối đa 12 chủ đề — chúng tôi sẽ gợi ý 250 câu phù hợp nhất"
+            "subtitle": "Chọn chủ đề — chúng tôi sẽ gợi ý câu phù hợp nhất"
         },
         "active": {
             "enabled": true,
