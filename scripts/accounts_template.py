@@ -4142,6 +4142,8 @@ window.userConfirmPaid = async function() {
 
     /* ═══ 🚨 1. KIỂM TRA CHẾ ĐỘ KHẨN CẤP (EMERGENCY MODE) ═══ */
     if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+        var _emergencyReqData = null;
+
         try {
             var pending = [];
             try { pending = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]'); } catch(e) {}
@@ -4154,24 +4156,50 @@ window.userConfirmPaid = async function() {
                     item.status = 'user_paid';
                     item.userConfirmedAtMs = Date.now();
                     found = true;
+                    _emergencyReqData = item;   // ⭐ Lưu để gửi Telegram
                 }
             });
 
             // Nếu chưa có trong danh sách local thì tạo thêm record mới
             if (!found && emailClean) {
-                pending.push({
+                var _newReq = {
                     email: emailClean,
                     name: (currentUser && currentUser.name) ? currentUser.name : emailClean.split('@')[0],
                     transferCode: renewalCurrentReq.code || '',
                     status: 'user_paid',
                     userConfirmedAtMs: Date.now()
-                });
+                };
+                pending.push(_newReq);
+                _emergencyReqData = _newReq;   // ⭐ Lưu để gửi Telegram
             }
 
             localStorage.setItem('pending_renewals_local', JSON.stringify(pending));
             console.log('🚨 [Emergency] Đã lưu trạng thái user_paid vào LocalStorage cho:', emailClean);
         } catch(err) {
             console.warn('Lỗi ghi cache gia hạn khẩn cấp:', err);
+        }
+
+        /* ⭐ GỬI TELEGRAM CHO ADMIN — NGAY CẢ KHI EMERGENCY */
+        try {
+            if (_emergencyReqData && typeof window.notifyTelegramUserPaid === 'function') {
+                var _pkgData = renewalSelectedPkg || {};
+                
+                window.notifyTelegramUserPaid({
+                    email: _emergencyReqData.email || emailClean,
+                    name: _emergencyReqData.name || (currentUser && currentUser.name) || emailClean.split('@')[0],
+                    amount: _emergencyReqData.amount || _pkgData.amount || 0,
+                    package: _emergencyReqData.package || _pkgData.id || '',
+                    packageLabel: _emergencyReqData.packageLabel || _pkgData.label || '',
+                    days: _emergencyReqData.days || _pkgData.days || 0,
+                    isPermanent: _emergencyReqData.isPermanent || _pkgData.permanent || false,
+                    transferCode: _emergencyReqData.transferCode || (renewalCurrentReq ? renewalCurrentReq.code : '')
+                });
+                console.log('📱 [Emergency] Đã gửi Telegram cho admin');
+            } else {
+                console.warn('⚠️ Không gửi được Telegram — thiếu dữ liệu hoặc hàm notify chưa load');
+            }
+        } catch(_te) {
+            console.error('❌ Lỗi gửi Telegram (Emergency):', _te.message);
         }
 
         renderPendingConfirm();
@@ -4201,6 +4229,7 @@ window.userConfirmPaid = async function() {
                     isPermanent: _reqData.isPermanent || false,
                     transferCode: _reqData.transferCode
                 });
+                console.log('📱 Đã gửi Telegram cho admin');
             } catch(_te) {}
         }
 
@@ -4211,21 +4240,44 @@ window.userConfirmPaid = async function() {
         console.error('Lỗi xác nhận thanh toán trên Firestore (Quota/Network):', e);
 
         // 🛑 FALLBACK DỰ PHÒNG: Nếu dính lỗi QuotaExceeded bất ngờ khi công tắc chưa kịp bật
+        var _fallbackData = null;
         try {
             var pendingFallback = [];
             try { pendingFallback = JSON.parse(localStorage.getItem('pending_renewals_local') || '[]'); } catch(err) {}
 
             var emailFallback = (currentUser && currentUser.email) ? currentUser.email.toLowerCase() : '';
-            pendingFallback.push({
+            _fallbackData = {
                 email: emailFallback,
                 name: (currentUser && currentUser.name) ? currentUser.name : emailFallback.split('@')[0],
                 transferCode: (renewalCurrentReq && renewalCurrentReq.code) ? renewalCurrentReq.code : '',
                 status: 'user_paid',
                 userConfirmedAtMs: Date.now()
-            });
+            };
+            pendingFallback.push(_fallbackData);
 
             localStorage.setItem('pending_renewals_local', JSON.stringify(pendingFallback));
         } catch(err) {}
+
+        /* ⭐ GỬI TELEGRAM CHO ADMIN — NGAY CẢ KHI FALLBACK */
+        try {
+            if (_fallbackData && typeof window.notifyTelegramUserPaid === 'function') {
+                var _pkgData2 = renewalSelectedPkg || {};
+                
+                window.notifyTelegramUserPaid({
+                    email: _fallbackData.email,
+                    name: _fallbackData.name,
+                    amount: _pkgData2.amount || 0,
+                    package: _pkgData2.id || '',
+                    packageLabel: _pkgData2.label || '',
+                    days: _pkgData2.days || 0,
+                    isPermanent: _pkgData2.permanent || false,
+                    transferCode: _fallbackData.transferCode
+                });
+                console.log('📱 [Fallback] Đã gửi Telegram cho admin');
+            }
+        } catch(_te) {
+            console.error('❌ Lỗi gửi Telegram (Fallback):', _te.message);
+        }
 
         // Vẫn chuyển giao diện sang màn hình chờ để user không bị khó chịu
         renderPendingConfirm();
