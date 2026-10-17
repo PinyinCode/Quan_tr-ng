@@ -4522,6 +4522,7 @@ function getLimitedData() {
 
     return result;
 }
+
 function getAllowedHskList() {
     var info = getTierInfo();
     var max = info.maxHSK;
