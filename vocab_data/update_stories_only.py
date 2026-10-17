@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 r"""
-Script CẬP NHẬT RIÊNG Âm thanh & Câu chuyện (Kiểu chơi chữ, bắt vần, siêu ngắn gọn).
-Tự động commit và push sau mỗi 100 từ để lưu tiến trình trực tiếp lên GitHub.
+Script CẬP NHẬT TỐI ƯU Âm thanh & Câu chuyện (Chơi chữ, bắt vần, không lặp dòng).
+Tự động commit và push sau mỗi 100 từ lên GitHub.
 """
 import os
 import sys
@@ -21,17 +21,16 @@ BASE_URL = os.getenv(
 )
 MODEL_ID = os.getenv("QWEN_MODEL", "qwen-plus-character")
 
-# Số từ xử lý từ biến môi trường (0 = tất cả, 20 = chạy thử)
 LIMIT_WORDS = int(os.getenv("LIMIT_WORDS", "20"))
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 DATA_DIR = os.path.join(ROOT_DIR, "data")
 OUTPUT_FILE = os.path.join(DATA_DIR, "ai_mnemonics.json")
-DELAY_BETWEEN = float(os.getenv("DELAY_BETWEEN", "1.5"))
+DELAY_BETWEEN = float(os.getenv("DELAY_BETWEEN", "1.2"))
 
 # ═══════════════════════════════════════════════════════════════════
-#  HÀM TỰ ĐỘNG COMMIT & PUSH BẰNG GIT
+#  GIT AUTOMATION
 # ═══════════════════════════════════════════════════════════════════
 def git_commit_and_push(count):
     try:
@@ -39,28 +38,28 @@ def git_commit_and_push(count):
         subprocess.run(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
         subprocess.run(["git", "add", OUTPUT_FILE], check=True)
         
-        # Kiểm tra xem có thay đổi gì để commit không
         status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
         if status.stdout.strip():
-            msg = f"🔄 Auto-commit: Đã làm mới {count} từ vựng [skip ci]"
+            msg = f"🔄 Auto-commit: Đã cập nhật {count} từ vựng mới [skip ci]"
             subprocess.run(["git", "commit", "-m", msg], check=True)
             subprocess.run(["git", "push"], check=True)
-            print(f"   🚀 [GIT] Đã push tiến trình ({count} từ) lên GitHub thành công!")
+            print(f"   🚀 [GIT] Đã push tiến trình ({count} từ) lên GitHub!")
     except Exception as e:
-        print(f"   ⚠️ Lỗi khi git commit/push: {e}")
+        print(f"   ⚠️ Lỗi git commit/push: {e}")
 
 # ═══════════════════════════════════════════════════════════════════
-#  PROMPT DỄ NHỚ, CHƠI CHỮ, BẮT VẦN
+#  PROMPT TẠO CÂU CHUYỆN CHƠI CHỮ / BẮT VẦN
 # ═══════════════════════════════════════════════════════════════════
 def build_story_prompt(zh, pinyin, vi):
-    return f"""Từ cần nhớ: **{zh}** (pinyin: {pinyin}) - nghĩa: {vi}
+    vi_str = f" nghĩa là '{vi}'" if vi else ""
+    return f"""Từ cần nhớ: **{zh}** (phát âm: {pinyin}){vi_str}.
 
-Viết mẹo cực kỳ dễ nhớ bằng cách chơi chữ, hình ảnh tượng hình độc đáo hoặc bắt vần ngắn gọn (phần câu chuyện chỉ đúng 1 câu duy nhất):
+Hãy tạo mẹo nhớ cực kỳ ngắn gọn, thông minh bằng cách chơi chữ/đồng âm/bắt vần tiếng Việt:
 
-📌 Âm thanh: [1 từ tiếng Việt đồng âm hoặc gần âm nhất với pinyin]
-🎬 Câu chuyện: [1 câu chơi chữ hoặc hình ảnh phóng đại, hài hước, bắt vần giúp não nhớ ngay nghĩa "{vi}" thông qua âm thanh].
+📌 Âm thanh: [Từ hoặc cụm từ tiếng Việt đồng âm/gần âm nhất với pinyin "{pinyin}"]
+🎬 Câu chuyện: [Đúng 1 câu ngắn gọn, hài hước ghép âm thanh trên với nghĩa để đọc lên nhớ ngay]
 
-Output đúng 2 dòng có emoji 📌 và 🎬:"""
+Chỉ xuất ra đúng 2 dòng có emoji 📌 và 🎬:"""
 
 def generate_new_story(zh, pinyin, vi):
     if not API_KEY:
@@ -74,7 +73,7 @@ def generate_new_story(zh, pinyin, vi):
             model=MODEL_ID,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
-            max_tokens=200,
+            max_tokens=180,
         )
         if response and response.choices:
             msg = response.choices[0].message
@@ -84,26 +83,48 @@ def generate_new_story(zh, pinyin, vi):
         print(f"      ⚠️ Lỗi API: {e}")
     return ""
 
-def update_mnemonic_content(old_text, new_story_text):
+def parse_info_from_content(content):
+    """ Trích xuất Pinyin và Nghĩa tiếng Việt từ nội dung cũ """
+    pinyin = ""
+    vi_meaning = ""
+    
+    match = re.search(r'\(([a-záàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵĐđ\s\-]+)\)', content, re.IGNORECASE)
+    if match:
+        pinyin_raw = match.group(1)
+        parts = pinyin_raw.split('-')
+        pinyin = parts[0].strip()
+        if len(parts) > 1:
+            vi_meaning = parts[1].strip()
+
+    if not vi_meaning:
+        match_eq = re.search(r'=\s*([A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÊẾỀỂỄỆÔỐỒỔỖỘƠỚỜỞỠỢƯỨỪỬỮỰÍÌỈĨỊÝỲỶỸỴ\s\/]+)', content)
+        if match_eq:
+            vi_meaning = match_eq.group(1).strip().lower()
+
+    return pinyin, vi_meaning
+
+def clean_and_update_content(old_text, new_story_text):
+    """ Xóa toàn bộ các dòng Âm thanh/Câu chuyện cũ để tránh lặp và chèn dòng mới vào """
     if not new_story_text:
         return old_text
 
     lines = old_text.split("\n")
-    new_story_lines = new_story_text.split("\n")
-
-    new_sound = next((l for l in new_story_lines if "📌" in l or "Âm thanh" in l), None)
-    new_story = next((l for l in new_story_lines if "🎬" in l or "Câu chuyện" in l), None)
-
-    updated_lines = []
+    cleaned_lines = []
+    
     for line in lines:
-        if ("📌" in line or "Âm thanh" in line) and new_sound:
-            updated_lines.append(new_sound)
-        elif ("🎬" in line or "Câu chuyện" in line) and new_story:
-            updated_lines.append(new_story)
-        else:
-            updated_lines.append(line)
+        if not ("📌" in line or "🎬" in line or "Âm thanh:" in line or "Câu chuyện:" in line):
+            cleaned_lines.append(line)
 
-    return "\n".join(updated_lines)
+    new_lines = [l.strip() for l in new_story_text.split("\n") if l.strip()]
+    
+    insert_idx = 0
+    for idx, l in enumerate(cleaned_lines):
+        if "Chiết tự:" in l or "💡" in l:
+            insert_idx = idx + 1
+            break
+            
+    final_lines = cleaned_lines[:insert_idx] + new_lines + cleaned_lines[insert_idx:]
+    return "\n".join(final_lines)
 
 def main():
     if not os.path.exists(OUTPUT_FILE):
@@ -117,8 +138,7 @@ def main():
     target_count = total_words if LIMIT_WORDS == 0 else min(LIMIT_WORDS, total_words)
 
     print(f"📦 Đã load {total_words} từ từ file JSON")
-    print(f"🎯 MỤC TIÊU: Xử lý {target_count} từ {'(Chạy thử)' if LIMIT_WORDS > 0 else '(Tất cả)'}")
-    print("🔄 Đang tiến hành làm mới Âm thanh & Câu chuyện...\n")
+    print(f"🎯 MỤC TIÊU: Xử lý {target_count} từ {'(Chạy thử)' if LIMIT_WORDS > 0 else '(Toàn bộ)'}\n")
 
     updated_count = 0
 
@@ -130,32 +150,29 @@ def main():
         parts = key.split("|")
         zh = parts[-1] if len(parts) >= 3 else key
         
-        pinyin_match = re.search(r'\(([^)]+)\)', content)
-        pinyin = pinyin_match.group(1) if pinyin_match else ""
+        pinyin, vi_meaning = parse_info_from_content(content)
 
-        print(f"[{idx}/{target_count}] Đang làm mới: {zh}...", flush=True)
+        print(f"[{idx}/{target_count}] Đang xử lý: {zh} (pinyin: {pinyin} | nghĩa: {vi_meaning})...", flush=True)
         
-        new_story = generate_new_story(zh, pinyin, "")
+        new_story = generate_new_story(zh, pinyin, vi_meaning)
         if new_story:
-            updated_content = update_mnemonic_content(content, new_story)
+            updated_content = clean_and_update_content(content, new_story)
             data[key] = updated_content
             updated_count += 1
-            print(f"   ✅ Xong {zh}", flush=True)
+            print(f"   ✅ Hoàn tất {zh}", flush=True)
         else:
             print(f"   ❌ Thất bại, giữ nguyên {zh}", flush=True)
 
-        # Lưu file JSON
         with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
 
-        # 🔄 TỰ ĐỘNG COMMIT MỖI KHI ĐẠT CỘT MỐC 100 TỪ
         if updated_count > 0 and updated_count % 100 == 0:
-            print(f"\n📦 [CHECKPOINT] Đã đạt {updated_count} từ. Tiến hành commit & push lên GitHub...")
+            print(f"\n📦 [CHECKPOINT] Đã đạt {updated_count} từ. Tiến hành Push lên GitHub...")
             git_commit_and_push(updated_count)
 
         time.sleep(DELAY_BETWEEN)
 
-    print(f"\n🎉 HOÀN TẤT BƯỚC NÀY! Đã cập nhật câu chuyện mới cho {updated_count} từ.")
+    print(f"\n🎉 HOÀN TẤT! Đã làm mới câu chuyện cho {updated_count} từ.")
 
 if __name__ == "__main__":
     main()
