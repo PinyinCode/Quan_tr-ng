@@ -4902,6 +4902,10 @@ function initAdminPanel() {
     var oldBtnAdd = $('showAddUserBtn');
     if (oldBtnAdd) {
         var newBtnAdd = oldBtnAdd.cloneNode(true);
+        // Thêm style z-index để không bị tooltip đè
+        newBtnAdd.style.position = 'relative';
+        newBtnAdd.style.zIndex = '999';
+        
         oldBtnAdd.parentNode.replaceChild(newBtnAdd, oldBtnAdd);
         
         newBtnAdd.addEventListener('click', function(e) {
@@ -4917,8 +4921,12 @@ function initAdminPanel() {
             var form = $('addUserForm');
             if (form) {
                 form.classList.toggle('show');
-                if (form.classList.contains('show') && $('newUserEmail')) {
-                    setTimeout(function() { $('newUserEmail').focus(); }, 100);
+                // Nếu form đang hiện thì cuộn xuống cho dễ nhìn
+                if (form.classList.contains('show')) {
+                    setTimeout(function() { 
+                        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        if ($('newUserEmail')) $('newUserEmail').focus(); 
+                    }, 100);
                 }
             }
         });
