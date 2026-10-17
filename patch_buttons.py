@@ -25,7 +25,7 @@ BUTTON_CONFIG = {
         "sub": "Văn phòng · Công xưởng",
     },
     "tu-vung": {
-        "icon": "",
+        "icon": "fa-graduation-cap",
         "title_html": "<b>11000+</b> Từ vựng HSK",
         "sub": "Mẹo nhớ · Bộ thủ",
     },
@@ -222,21 +222,7 @@ BUTTONS_CSS = r"""
 .ds-btn[data-dataset="tu-vung"].active .ds-btn-title b { color: #fff; }
 .ds-btn[data-dataset="tu-vung"].active .ds-btn-sub { color: rgba(255,255,255,.85); }
 
-/* ⭐ Ẩn icon vương miện — MỌI LOẠI ICON */
-.ds-btn[data-dataset="tu-vung"] > i,
-.ds-btn[data-dataset="tu-vung"] > i.fas,
-.ds-btn[data-dataset="tu-vung"] > i[class*="fa-"],
-.ds-btn[data-dataset="tu-vung"] .ds-btn-icon,
-.ds-btn[data-dataset="tu-vung"] .vocab-icon,
-.ds-btn[data-dataset="tu-vung"] .vocab-crown {
-    display: none !important;
-    visibility: hidden !important;
-    width: 0 !important;
-    height: 0 !important;
-    opacity: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
+
 
 /* ⭐ Badge PREMIUM */
 .ds-btn[data-dataset="tu-vung"] .ds-vocab-badge,
