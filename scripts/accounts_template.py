@@ -5335,6 +5335,9 @@ function renderUsers(items) {
             if (targetIsSuper) roleBadge = '<span class="u-role super">👑 super</span>';
             else if (targetIsSubAdmin) roleBadge = '<span class="u-role subadmin">🛡 sub</span>';
             else roleBadge = '<span class="u-role admin">admin</span>';
+        } else if (u.isEmergencyUser) {
+            // ⭐ User được tạo trong lúc Emergency Mode
+            roleBadge = '<span class="u-role" style="background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;font-size:.65rem;padding:.15rem .5rem;border-radius:50px;font-weight:700;box-shadow:0 2px 6px rgba(220,38,38,.4);">🚨 emergency</span>';
         } else if (u.isPermanent) {
             roleBadge = '<span class="u-role perm">💎 perm</span>';
         } else if (u.tier === 'trial' || u.isTrial) {
