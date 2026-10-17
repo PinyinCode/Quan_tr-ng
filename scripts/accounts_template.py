@@ -6868,7 +6868,7 @@ window.tatKhanCap = async function() {
                 'color:#f59e0b;font-weight:bold;font-size:14px');
 
     /* ═══════════════════════════════════════════════════════════
-       ⭐ BƯỚC 0: TẮT LOCAL + GHI RTDB NGAY (TẮT TOÀN HỆ THỐNG TRƯỚC)
+       ⭐ BƯỚC 0: TẮT LOCAL + GHI RTDB NGAY
        ═══════════════════════════════════════════════════════════ */
     localStorage.setItem('EMERGENCY_QUOTA_MODE', 'false');
     console.log('%c✅ ĐÃ TẮT CHẾ ĐỘ KHẨN CẤP (local)', 
@@ -6892,8 +6892,7 @@ window.tatKhanCap = async function() {
     }
 
     /* ═══════════════════════════════════════════════════════════
-       BƯỚC 1: QUÉT LOCALSTORAGE TÌM USER TẠO TRONG EMERGENCY
-       (CHỈ BỎ QUA SUPER ADMIN)
+       BƯỚC 1: QUÉT LOCALSTORAGE TÌM USER CẦN SYNC
        ═══════════════════════════════════════════════════════════ */
     var emergencyUsers = [];
     var syncKeysToRemove = [];
@@ -6909,7 +6908,7 @@ window.tatKhanCap = async function() {
             if (key && key.indexOf('user_cache_') === 0) {
                 var email = key.replace('user_cache_', '').toLowerCase();
                 
-                /* ⭐ CHỈ BỎ QUA SUPER ADMIN */
+                /* ⭐ Bỏ qua Super Admin */
                 if (_superEmail && email === _superEmail) {
                     console.log('%c  ⏭️  Bỏ qua Super Admin: ' + email, 'color:#94a3b8');
                     continue;
@@ -7002,12 +7001,8 @@ window.tatKhanCap = async function() {
             localStorage.setItem(u.syncKey, 'true');
             syncKeysToRemove.push(u.syncKey);
             
-            /* ⭐ CHỈ BẢO VỆ SUPER ADMIN — KHÔNG XÓA CACHE */
-            if (_superEmail && email === _superEmail) {
-                console.log('%c  🛡️ Bảo vệ cache Super Admin: ' + email, 'color:#f59e0b');
-            } else {
-                localStorage.removeItem(u.cacheKey);
-            }
+            /* ⭐ GIỮ NGUYÊN CACHE — KHÔNG XÓA CỦA BẤT KỲ AI */
+            console.log('%c  🛡️ Giữ nguyên cache: ' + email, 'color:#16a34a');
 
         } catch(err) {
             console.error('%c  ❌ ' + email + ' — Lỗi: ' + err.message, 
@@ -7134,7 +7129,7 @@ window.tatKhanCap = async function() {
     console.log('%c═══════════════════════════════════════', 'color:#4f46e5');
 
     /* ═══════════════════════════════════════════════════════════
-       BƯỚC 6: KẾT THÚC (RTDB ĐÃ TẮT Ở BƯỚC 0)
+       BƯỚC 6: KẾT THÚC
        ═══════════════════════════════════════════════════════════ */
     if (failed === 0 && renewalsFailed === 0 && approvedFailed === 0) {
         console.log('%c✅ HOÀN TẤT TẮT KHẨN CẤP', 
@@ -7145,7 +7140,7 @@ window.tatKhanCap = async function() {
         console.error('%c⚠️ CÓ LỖI KHI SYNC FIRESTORE', 
                      'color:#dc2626;font-weight:bold;font-size:14px');
         console.error('→ RTDB đã tắt (toàn hệ thống OK).');
-        console.error('→ Nhưng Firestore sync có lỗi. Kiểm tra Console để xem chi tiết.');
+        console.error('→ Nhưng Firestore sync có lỗi.');
         
         var failedList = results.filter(function(r) { return r.status === 'failed'; });
         if (failedList.length > 0) {
