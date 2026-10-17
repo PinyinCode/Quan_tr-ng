@@ -30,7 +30,7 @@ OUTPUT_FILE = os.path.join(DATA_DIR, "ai_mnemonics.json")
 DELAY_BETWEEN = float(os.getenv("DELAY_BETWEEN", "1.2"))
 
 # ═══════════════════════════════════════════════════════════════════
-#  GIT AUTOMATION
+#  GIT AUTOMATION (Đã sửa lỗi exit code 128)
 # ═══════════════════════════════════════════════════════════════════
 def git_commit_and_push(count):
     try:
@@ -41,8 +41,12 @@ def git_commit_and_push(count):
         status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
         if status.stdout.strip():
             msg = f"🔄 Auto-commit: Đã cập nhật {count} từ vựng mới [skip ci]"
-            subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=True)
+            
+            # 1. Commit trước
             subprocess.run(["git", "commit", "-m", msg], check=True)
+            # 2. Pull rebase sau khi index đã sạch
+            subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=True)
+            # 3. Push
             subprocess.run(["git", "push"], check=True)
             print(f"   🚀 [GIT] Đã push tiến trình ({count} từ) lên GitHub!")
     except Exception as e:
@@ -52,15 +56,23 @@ def git_commit_and_push(count):
 #  PROMPT TINH CHỈNH: TẠO MẸO CỰC KỲ NGẮN GỌN & BẮT VẦN
 # ═══════════════════════════════════════════════════════════════════
 def build_story_prompt(zh, pinyin, vi):
-    vi_str = f" nghĩa là '{vi}'" if vi else ""
-    return f"""Từ cần nhớ: **{zh}** (pinyin: {pinyin}){vi_str}.
+    vi_str = vi if vi else "Không rõ"
+    return f"""Bạn là một chuyên gia giảng dạy tiếng Trung, chuyên tạo ra các mẹo nhớ (mnemonic) cực kỳ thông minh, ngắn gọn và hài hước cho người Việt.
 
-Hãy tạo mẹo nhớ bằng cách chơi chữ/bắt vần siêu ngắn gọn (tối đa 1 câu duy nhất, hài hước):
+Nhiệm vụ: Tạo mẹo nhớ cho từ **{zh}** (Pinyin: {pinyin} | Nghĩa: {vi_str}).
 
-📌 Âm thanh: [1 từ hoặc cụm từ tiếng Việt đồng âm/gần âm nhất với "{pinyin}"]
-🎬 Câu chuyện: [Đúng 1 câu ngắn gọn cực kỳ bắt vần để nhớ ngay nghĩa "{vi}"]
+Hãy tư duy theo 2 bước:
+- Bước 1: Tìm một từ/cụm từ tiếng Việt có âm thanh GẦN GIỐNG NHẤT với "{pinyin}" (Ví dụ: pinyin "bā" -> "ba", "bá", "bà").
+- Bước 2: Dệt từ vừa tìm được vào một câu chuyện ngắn (1 câu) có liên quan trực tiếp đến nghĩa "{vi_str}". Bắt buộc câu chuyện phải chứa từ mang âm thanh đó.
 
-Chỉ xuất ra đúng 2 dòng có emoji 📌 và 🎬:"""
+Yêu cầu định dạng đầu ra (BẮT BUỘC CHỈ XUẤT RA 2 DÒNG NÀY, KHÔNG GIẢI THÍCH THÊM):
+📌 Âm thanh: [Điền từ/cụm từ tiếng Việt đồng âm ở Bước 1]
+🎬 Câu chuyện: [Điền 1 câu chuyện ngắn gọn, vui vẻ, liên kết âm thanh và nghĩa]
+
+Ví dụ mẫu:
+📌 Âm thanh: ma
+🎬 Câu chuyện: Con ma nằm mơ (mā) thấy mẹ (mā).
+"""
 
 def generate_new_story(zh, pinyin, vi):
     if not API_KEY:
@@ -73,7 +85,7 @@ def generate_new_story(zh, pinyin, vi):
         response = client.chat.completions.create(
             model=MODEL_ID,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.6,
+            temperature=0.7, # Tăng nhẹ temperature để AI sáng tạo hơn
             max_tokens=150,
         )
         if response and response.choices:
@@ -112,11 +124,13 @@ def clean_and_update_content(old_text, new_story_text):
     lines = old_text.split("\n")
     cleaned_lines = []
     
+    # Xóa sạch các dòng chứa mẹo cũ (bao gồm cả icon và text)
     for line in lines:
         if not ("📌" in line or "🎬" in line or "Âm thanh:" in line or "Câu chuyện:" in line):
             cleaned_lines.append(line)
 
-    new_lines = [l.strip() for l in new_story_text.split("\n") if l.strip()]
+    # Lấy 2 dòng mới
+    new_lines = [l.strip() for l in new_story_text.split("\n") if l.strip() and ("📌" in l or "🎬" in l)]
     
     insert_idx = 0
     for idx, l in enumerate(cleaned_lines):
@@ -164,6 +178,7 @@ def main():
         else:
             print(f"   ❌ Thất bại, giữ nguyên {zh}", flush=True)
 
+        # Lưu file liên tục để tránh mất dữ liệu
         with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
@@ -172,6 +187,10 @@ def main():
             git_commit_and_push(updated_count)
 
         time.sleep(DELAY_BETWEEN)
+
+    # Push những từ lẻ còn sót lại cuối cùng (nếu chưa đủ 100)
+    if updated_count % 100 != 0 and updated_count > 0:
+        git_commit_and_push(updated_count)
 
     print(f"\n🎉 HOÀN TẤT! Đã làm mới câu chuyện cho {updated_count} từ.")
 
