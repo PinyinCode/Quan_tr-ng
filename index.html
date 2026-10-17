@@ -23316,11 +23316,11 @@ async function doUpdateExpiry() {
     var dateVal = $('editExpiryInput').value;
     var updateData = {};
     
-    /* ⭐ LẤY THÔNG TIN USER HIỆN TẠI ĐỂ CHECK TRIAL */
+    /* ⭐ LẤY THÔNG TIN USER HIỆN TẠI */
     var targetUser = usersCache.find(function(u) { return u.email === editingExpiryEmail; });
     var wasTrial = targetUser && (targetUser.tier === 'trial' || targetUser.isTrial === true);
     
-    /* ⭐ SET HẠN SỬ DỤNG */
+    /* ⭐ SET HẠN */
     if (dateVal) {
         var d = new Date(dateVal + 'T23:59:59');
         if (isNaN(d.getTime())) return alert('Ngày không hợp lệ!');
@@ -23331,7 +23331,7 @@ async function doUpdateExpiry() {
         updateData.isPermanent = true;
     }
     
-    /* ⭐ NÂNG CẤP: NẾU USER ĐANG TRIAL → CHUYỂN THÀNH ACTIVE */
+    /* ⭐ NÂNG CẤP NẾU ĐANG TRIAL */
     if (wasTrial) {
         updateData.isTrial = false;
         updateData.tier = 'active';
@@ -23339,39 +23339,93 @@ async function doUpdateExpiry() {
         updateData.upgradedBy = currentUser.email;
         updateData.upgradedFrom = 'trial';
         updateData.upgradedTo = 'active';
-        console.log('⭐ Nâng cấp user trial → active:', editingExpiryEmail);
     }
     
-    /* ⭐ HIỂN THỊ LOADING */
     var btn = $('editExpiryConfirm');
     btn.disabled = true;
     var originalHtml = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Đang lưu...';
     
+    /* ═══════════════════════════════════════════════════════════
+       🚨 NHÁNH EMERGENCY — GHI VÀO RTDB
+       ═══════════════════════════════════════════════════════════ */
+    if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
+        console.log('🚨 [Emergency] Admin duyệt qua RTDB');
+        
+        try {
+            // Chuẩn bị data để ghi RTDB
+            var rtdbData = {
+                email: editingExpiryEmail,
+                tier: updateData.tier || 'active',
+                isTrial: updateData.isTrial === undefined ? false : updateData.isTrial,
+                isPermanent: updateData.isPermanent || false,
+                expiresAtMs: updateData.expiresAt ? updateData.expiresAt.toDate().getTime() : null,
+                upgradedAt: Date.now(),
+                upgradedBy: currentUser.email,
+                upgradedFrom: wasTrial ? 'trial' : null,
+                action: wasTrial ? 'upgrade_trial_to_active' : 'update_expiry'
+            };
+            
+            // Ghi vào RTDB
+            await firebase.database()
+                .ref('config/emergency-user-updates/' + editingExpiryEmail.replace(/[.@#$\[\]]/g, '_'))
+                .set(rtdbData);
+            
+            console.log('✅ [Emergency] Đã ghi RTDB:', rtdbData);
+            
+            // Xóa cache admin để refresh
+            try { localStorage.removeItem('admin_users_cache'); } catch(e) {}
+            try { localStorage.removeItem('user_cache_' + editingExpiryEmail); } catch(e) {}
+            
+            // Đóng modal
+            $('editExpiryModal').classList.remove('show');
+            
+            // Thông báo
+            var msg = dateVal 
+                ? '✅ [Bảo trì] Đã cập nhật hạn đến ' + new Date(dateVal).toLocaleDateString('vi-VN')
+                : '💎 [Bảo trì] Đã đặt thành vĩnh viễn';
+            
+            if (wasTrial) {
+                msg += '\n\n⭐ ĐÃ NÂNG CẤP:\n   🎁 TRIAL → ✅ ACTIVE\n\n   User sẽ tự động cập nhật trong 1-2 giây.';
+            }
+            
+            alert(msg);
+            
+            // Reload danh sách
+            loadUsers(true);
+            
+        } catch(err) {
+            console.error('❌ [Emergency] Lỗi ghi RTDB:', err);
+            alert('❌ Lỗi ghi RTDB: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+        
+        return;   // ⛔ Dừng, không gọi Firestore
+    }
+    
+    /* ═══════════════════════════════════════════════════════════
+       🟢 NHÁNH BÌNH THƯỜNG — GHI FIRESTORE
+       ═══════════════════════════════════════════════════════════ */
     try {
-        /* ⭐ CẬP NHẬT FIRESTORE */
         await db.collection('allowed_users').doc(editingExpiryEmail).update(updateData);
         
-        /* ⭐ XÓA CACHE */
         try { localStorage.removeItem('user_cache_' + editingExpiryEmail); } catch(e) {}
         try { localStorage.removeItem('admin_users_cache'); } catch(e) {}
         try { localStorage.removeItem('synced_emergency_' + editingExpiryEmail); } catch(e) {}
         
-        /* ⭐ ĐÓNG MODAL */
         $('editExpiryModal').classList.remove('show');
         
-        /* ⭐ THÔNG BÁO KẾT QUẢ */
-        var msg = dateVal 
+        var msg2 = dateVal 
             ? '✅ Đã cập nhật hạn đến ' + new Date(dateVal).toLocaleDateString('vi-VN')
             : '💎 Đã đặt thành vĩnh viễn';
         
         if (wasTrial) {
-            msg += '\n\n⭐ ĐÃ NÂNG CẤP:\n   🎁 TRIAL → ✅ USER CHÍNH THỨC\n\n   User giờ có FULL QUYỀN!';
+            msg2 += '\n\n⭐ ĐÃ NÂNG CẤP:\n   🎁 TRIAL → ✅ ACTIVE';
         }
         
-        alert(msg);
-        
-        /* ⭐ RELOAD DANH SÁCH USER */
+        alert(msg2);
         loadUsers(true);
         
     } catch(err) {
