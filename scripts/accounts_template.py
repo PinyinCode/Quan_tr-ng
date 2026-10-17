@@ -5707,8 +5707,15 @@ window.setQuickExpiryPermanent = function() { $('editExpiryInput').value = ''; }
 
 async function doUpdateExpiry() {
     if (!editingExpiryEmail) return;
+    
     var dateVal = $('editExpiryInput').value;
     var updateData = {};
+    
+    /* ⭐ LẤY THÔNG TIN USER HIỆN TẠI ĐỂ CHECK TRIAL */
+    var targetUser = usersCache.find(function(u) { return u.email === editingExpiryEmail; });
+    var wasTrial = targetUser && (targetUser.tier === 'trial' || targetUser.isTrial === true);
+    
+    /* ⭐ SET HẠN SỬ DỤNG */
     if (dateVal) {
         var d = new Date(dateVal + 'T23:59:59');
         if (isNaN(d.getTime())) return alert('Ngày không hợp lệ!');
@@ -5718,21 +5725,58 @@ async function doUpdateExpiry() {
         updateData.expiresAt = null;
         updateData.isPermanent = true;
     }
+    
+    /* ⭐ NÂNG CẤP: NẾU USER ĐANG TRIAL → CHUYỂN THÀNH ACTIVE */
+    if (wasTrial) {
+        updateData.isTrial = false;
+        updateData.tier = 'active';
+        updateData.upgradedAt = firebase.firestore.FieldValue.serverTimestamp();
+        updateData.upgradedBy = currentUser.email;
+        updateData.upgradedFrom = 'trial';
+        updateData.upgradedTo = 'active';
+        console.log('⭐ Nâng cấp user trial → active:', editingExpiryEmail);
+    }
+    
+    /* ⭐ HIỂN THỊ LOADING */
     var btn = $('editExpiryConfirm');
     btn.disabled = true;
     var originalHtml = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Đang lưu...';
+    
     try {
+        /* ⭐ CẬP NHẬT FIRESTORE */
         await db.collection('allowed_users').doc(editingExpiryEmail).update(updateData);
+        
+        /* ⭐ XÓA CACHE */
         try { localStorage.removeItem('user_cache_' + editingExpiryEmail); } catch(e) {}
         try { localStorage.removeItem('admin_users_cache'); } catch(e) {}
+        try { localStorage.removeItem('synced_emergency_' + editingExpiryEmail); } catch(e) {}
+        
+        /* ⭐ ĐÓNG MODAL */
         $('editExpiryModal').classList.remove('show');
-        alert(dateVal ? '✅ Đã cập nhật hạn đến ' + new Date(dateVal).toLocaleDateString('vi-VN') : '💎 Đã đặt thành vĩnh viễn');
+        
+        /* ⭐ THÔNG BÁO KẾT QUẢ */
+        var msg = dateVal 
+            ? '✅ Đã cập nhật hạn đến ' + new Date(dateVal).toLocaleDateString('vi-VN')
+            : '💎 Đã đặt thành vĩnh viễn';
+        
+        if (wasTrial) {
+            msg += '\n\n⭐ ĐÃ NÂNG CẤP:\n   🎁 TRIAL → ✅ USER CHÍNH THỨC\n\n   User giờ có FULL QUYỀN!';
+        }
+        
+        alert(msg);
+        
+        /* ⭐ RELOAD DANH SÁCH USER */
         loadUsers(true);
-    } catch(err) { alert('❌ Lỗi: ' + err.message); }
-    finally { btn.disabled = false; btn.innerHTML = originalHtml; }
+        
+    } catch(err) {
+        console.error('Lỗi cập nhật hạn:', err);
+        alert('❌ Lỗi: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
 }
-
 async function doChangeName() {
     if (!editingEmail) return;
     var newName = $('changeNameInput').value.trim();
