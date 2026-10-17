@@ -41,6 +41,7 @@ def git_commit_and_push(count):
         status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
         if status.stdout.strip():
             msg = f"🔄 Auto-commit: Đã cập nhật {count} từ vựng mới [skip ci]"
+            subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=True)
             subprocess.run(["git", "commit", "-m", msg], check=True)
             subprocess.run(["git", "push"], check=True)
             print(f"   🚀 [GIT] Đã push tiến trình ({count} từ) lên GitHub!")
