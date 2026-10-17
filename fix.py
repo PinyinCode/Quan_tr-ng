@@ -208,26 +208,10 @@ def build_vocab_js_patch():
                      ' — nâng cấp Premium để mở toàn bộ.' };
     }
 
-    function applyVocabLimits(list, access) {
+    def applyVocabLimits(list, access):
         var result = list;
-        if (access.hskAllowed && access.hskAllowed.length &&
-            access.hskAllowed.length < 9) {
-            var allowSet = {};
-            access.hskAllowed.forEach(function(h) {
-                allowSet['HSK' + h] = true;
-                allowSet[String(h)] = true;
-            });
-            result = result.filter(function(r) {
-                var h = (r.hsk || '').toString().toUpperCase().trim();
-                if (!h) return true;
-                if (h === 'HSK7-9') {
-                    return allowSet['HSK7-9'] === true;
-                }
-                var num = h.replace(/[^0-9]/g, '');
-                if (!num) return true;
-                return allowSet['HSK' + num] === true || allowSet[num] === true;
-            });
-        }
+        // Tạm thời bỏ qua lọc HSK để giữ nguyên số câu
+        
         var maxQ = access.maxQuestions;
         if (typeof maxQ === 'number' && maxQ > 0 && result.length > maxQ) {
             result = result.slice(0, maxQ);
