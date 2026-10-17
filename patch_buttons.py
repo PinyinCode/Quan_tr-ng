@@ -105,7 +105,7 @@ BUTTONS_CSS = r"""
     pointer-events: none;
 }
 
-/* ── Khối text 2 hàng ── */
+/* ── Khối text 2 hàng co giãn tự động ── */
 .ds-btn .ds-btn-text {
     flex: 1;
     min-width: 0;
@@ -117,7 +117,7 @@ BUTTONS_CSS = r"""
     position: relative;
 }
 .ds-btn .ds-btn-title {
-    font-size: clamp(.85rem, 1.1vw, 1rem);
+    font-size: clamp(0.9rem, 1.2vw, 1.15rem);
     font-weight: 700;
     color: var(--text);
     line-height: 1.25;
@@ -132,10 +132,10 @@ BUTTONS_CSS = r"""
     margin-right: .15rem;
 }
 .ds-btn .ds-btn-sub {
-    font-size: clamp(.7rem, .85vw, .8rem);
+    font-size: clamp(0.75rem, 0.95vw, 0.9rem);
     font-weight: 600;
     color: var(--text-3);
-    line-height: 1.3;
+    line-height: 1.25;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -311,8 +311,8 @@ BUTTONS_CSS = r"""
         font-size: .92rem;
         border-radius: 9px;
     }
-    .ds-btn .ds-btn-title { font-size: .76rem; }
-    .ds-btn .ds-btn-sub   { font-size: .6rem; }
+    .ds-btn .ds-btn-title { font-size: clamp(0.78rem, 2.5vw, 0.9rem); }
+    .ds-btn .ds-btn-sub   { font-size: clamp(0.62rem, 2vw, 0.72rem); }
 }
 
 /* ═══════════════════════════════════════════════════════════ */
