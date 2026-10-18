@@ -266,6 +266,7 @@ jobs:
           if [ -f "data/dataset_registry.json" ]; then git add data/dataset_registry.json; fi
           if [ -f "data/fixpy_datasets.json" ]; then git add data/fixpy_datasets.json; fi
           if [ -f "data/similar_chars.json" ]; then git add data/similar_chars.json; fi
+          if [ -f "data/fixpy_preview.json" ]; then git add data/fixpy_preview.json; fi
 
           if git diff --quiet && git diff --staged --quiet; then
             echo "no changes"
