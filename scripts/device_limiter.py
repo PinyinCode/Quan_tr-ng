@@ -286,7 +286,7 @@ def build_device_js():
     function warmupServer() {
         if (_warmupStarted || _serverAwake) return;
         _warmupStarted = true;
-        fetchSafe(SERVER_URL + '/api/ping', { method: 'GET' }, FETCH_TIMEOUT_FIRST)
+        fetchSafe(SERVER_URL + '/health', { method: 'GET' }, FETCH_TIMEOUT_FIRST) // <-- Sửa /api/ping thành /health
             .then(function() { _serverAwake = true; })
             .catch(function() { _warmupStarted = false; });
     }
@@ -316,11 +316,13 @@ def build_device_js():
     async function sendOtpToServer(email) {
         if (!email) return { ok: false, reason: 'no_email' };
         try {
-            var res = await fetchWithRetry(SERVER_URL + '/api/device/send-otp', {
+            // Tăng timeout lên 45 giây
+            var res = await fetchSafe(SERVER_URL + '/api/device/send-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: email, deviceId: getDeviceId(), deviceName: getDeviceName() })
-            });
+            }, 45000); // <-- THÊM 45000 VÀO ĐÂY
+            
             var data = await res.json();
             if (data.ok) return { ok: true };
             return { ok: false, reason: data.error || 'server_error' };
