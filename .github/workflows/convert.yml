@@ -305,6 +305,9 @@ jobs:
           if [ -f "data/similar_chars.json" ]; then
             cp data/similar_chars.json _site/data/
           fi
+          if [ -f "data/fixpy_preview.json" ]; then
+            cp data/fixpy_preview.json _site/data/
+          fi
           echo "=== _site contents ==="
           find _site -type f | head -30
 
