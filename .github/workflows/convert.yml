@@ -286,6 +286,23 @@ jobs:
         run: |
           rm -rf _site
           mkdir -p _site
+                    # Tao robots.txt
+          cat > _site/robots.txt <<'EOF'
+          User-agent: *
+          Allow: /
+
+          Sitemap: https://tuhoctiengtrung.org/sitemap.xml
+          EOF
+
+          # Tao sitemap.xml
+          cat > _site/sitemap.xml <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            <url>
+              <loc>https://tuhoctiengtrung.org/</loc>
+            </url>
+          </urlset>
+          EOF
           cp index.html _site/
           if [ -d "assets" ]; then cp -r assets _site/; fi
           if [ -d "static" ]; then cp -r static _site/; fi
