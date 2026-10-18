@@ -6,19 +6,19 @@
     "servers": [
         {
             "name": "OTP Server",
-            "url": "https://gmail-otp-gdsr.onrender.com/"
+            "url": "https://server-vopb.onrender.com/api/device/send-otp"
         },
         {
             "name": "Grading Server",
-            "url": "https://chinese-grading.onrender.com/"
+            "url": "https://server-vopb.onrender.com/check"
         },
         {
             "name": "Vocab API",
-            "url": "https://chinese-vocab-api.onrender.com/"
+            "url": "https://server-vopb.onrender.com/generate-vocab"
         },
         {
             "name": "Delete API",
-            "url": "https://deleteaccount-np60.onrender.com/"
+            "url": "https://server-vopb.onrender.com/api/delete-user"
         }
     ],
     
