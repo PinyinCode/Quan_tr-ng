@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module SERVER STATUS — Hiển thị trạng thái 3 server từ self_wake_config.json.
+Module SERVER STATUS — Hiển thị trạng thái 1 server chính (đã gộp 5-in-1).
 Đọc URL từ self_wake_config.json — không hardcode.
-
-Cách dùng trong convert.py:
-    from server_status import build_server_status_html, build_server_status_css
-    # Chèn vào HTML
 """
 
 import json
@@ -173,7 +169,7 @@ def build_server_status_css():
 
 
 def build_server_status_html():
-    """HTML cho section trạng thái server."""
+    """HTML cho section trạng thái server — CHỈ 1 SERVER CHÍNH."""
     servers, config = load_servers()
     
     if not servers:
@@ -182,27 +178,24 @@ def build_server_status_html():
     if not config.get("enabled", True):
         return ""
     
-    badges = ""
-    for s in servers:
-        name = s["name"]
-        url = s["url"]
-        badges += (
-            '<span class="server-badge status-unknown" '
-            'data-url="' + url + '" '
-            'data-name="' + name + '" '
-            'title="' + name + ': ' + url + '">'
-            '<span class="dot"></span>'
-            '<span class="name">' + name + '</span>'
-            '<span class="ms"></span>'
-            '</span>'
-        )
+    # ⭐ Chỉ lấy server đầu tiên (server chính)
+    main = servers[0]
+    name = main["name"]
+    url = main["url"]
     
     return (
         '<div class="server-status-list" id="serverStatusList">'
         '<span class="server-status-label">'
         '<i class="fas fa-server"></i> Server:'
         '</span>'
-        + badges +
+        '<span class="server-badge status-unknown" '
+        'data-url="' + url + '" '
+        'data-name="' + name + '" '
+        'title="' + name + ': ' + url + '">'
+        '<span class="dot"></span>'
+        '<span class="name">' + name + '</span>'
+        '<span class="ms"></span>'
+        '</span>'
         '<button class="server-status-refresh" id="serverStatusRefresh" '
         'title="Kiểm tra lại" type="button">'
         '<i class="fas fa-sync-alt"></i>'
@@ -212,54 +205,45 @@ def build_server_status_html():
 
 
 def build_server_status_js():
-    """JS kiểm tra trạng thái server."""
+    """JS kiểm tra trạng thái — CHỈ 1 SERVER CHÍNH."""
     servers, config = load_servers()
     
-    if not servers:
+    if not servers or not config.get("enabled", True):
         return ""
     
-    if not config.get("enabled", True):
-        return ""
-    
-    servers_json = json.dumps(
-        [{"name": s["name"], "url": s["url"]} for s in servers],
+    # ⭐ Chỉ lấy server đầu tiên
+    main = servers[0]
+    server_json = json.dumps(
+        {"name": main["name"], "url": main["url"]},
         ensure_ascii=False
     )
-    
     timeout = config.get("ping_timeout_ms", 15000)
     
     return r"""
 /* ═══════════════════════════════════════════════════════════════
-   ⚡ SERVER STATUS CHECKER
-   Đọc URL từ self_wake_config.json — không hardcode
+   ⚡ SERVER STATUS CHECKER — Chỉ ping 1 server
    ═══════════════════════════════════════════════════════════════ */
 (function() {
     'use strict';
     
-    var SERVERS = __SERVERS_JSON__;
+    var SERVER = __SERVER_JSON__;
     var TIMEOUT = __TIMEOUT__;
     
-    if (!SERVERS || !SERVERS.length) return;
+    if (!SERVER) return;
     
-    var STATUS = {};
-    SERVERS.forEach(function(s) {
-        STATUS[s.name] = { ok: false, ms: 0, state: 'unknown' };
-    });
+    var STATUS = { ok: false, ms: 0, state: 'unknown' };
     
     function log() {
         // Bật nếu cần debug
-        // var a = Array.prototype.slice.call(arguments);
-        // a.unshift('[server-status]');
-        // console.log.apply(console, a);
     }
     
-    async function checkOne(server) {
+    async function checkOne() {
         var t0 = Date.now();
         try {
             var controller = new AbortController();
             var timer = setTimeout(function() { controller.abort(); }, TIMEOUT);
             
-            await fetch(server.url, {
+            await fetch(SERVER.url, {
                 method: 'GET',
                 mode: 'no-cors',
                 cache: 'no-store',
@@ -274,45 +258,34 @@ def build_server_status_js():
             else if (ms < 5000) state = 'waking';
             else state = 'slow';
             
-            STATUS[server.name] = { ok: true, ms: ms, state: state };
-            log('OK', server.name, ms + 'ms', state);
-            return STATUS[server.name];
+            STATUS = { ok: true, ms: ms, state: state };
+            log('OK', SERVER.name, ms + 'ms', state);
+            return STATUS;
         } catch(e) {
             var ms2 = Date.now() - t0;
-            STATUS[server.name] = { 
+            STATUS = { 
                 ok: false, 
                 ms: ms2, 
                 state: (e.name === 'AbortError') ? 'slow' : 'error' 
             };
-            log('FAIL', server.name, e.name, ms2 + 'ms');
-            return STATUS[server.name];
+            log('FAIL', SERVER.name, e.name, ms2 + 'ms');
+            return STATUS;
         }
     }
     
-    function renderBadge(server) {
-        var badge = document.querySelector('.server-badge[data-name="' + server.name + '"]');
+    function renderBadge() {
+        var badge = document.querySelector('.server-badge[data-name="' + SERVER.name + '"]');
         if (!badge) return;
         
-        var st = STATUS[server.name];
+        var st = STATUS;
         badge.className = 'server-badge';
         
         var stateClass, stateText;
-        if (st.state === 'active') {
-            stateClass = 'status-active';
-            stateText = st.ms + 'ms';
-        } else if (st.state === 'waking') {
-            stateClass = 'status-waking';
-            stateText = Math.round(st.ms / 1000) + 's';
-        } else if (st.state === 'slow') {
-            stateClass = 'status-slow';
-            stateText = Math.round(st.ms / 1000) + 's';
-        } else if (st.state === 'error') {
-            stateClass = 'status-error';
-            stateText = 'lỗi';
-        } else {
-            stateClass = 'status-unknown';
-            stateText = '...';
-        }
+        if (st.state === 'active') { stateClass = 'status-active'; stateText = st.ms + 'ms'; }
+        else if (st.state === 'waking') { stateClass = 'status-waking'; stateText = Math.round(st.ms / 1000) + 's'; }
+        else if (st.state === 'slow') { stateClass = 'status-slow'; stateText = Math.round(st.ms / 1000) + 's'; }
+        else if (st.state === 'error') { stateClass = 'status-error'; stateText = 'lỗi'; }
+        else { stateClass = 'status-unknown'; stateText = '...'; }
         
         badge.classList.add(stateClass);
         var msEl = badge.querySelector('.ms');
@@ -323,27 +296,20 @@ def build_server_status_js():
         var refreshBtn = document.getElementById('serverStatusRefresh');
         if (refreshBtn) refreshBtn.classList.add('spinning');
         
-        // Set tất cả về unknown
-        SERVERS.forEach(function(s) {
-            STATUS[s.name] = { ok: false, ms: 0, state: 'unknown' };
-            var badge = document.querySelector('.server-badge[data-name="' + s.name + '"]');
-            if (badge) {
-                badge.className = 'server-badge status-unknown';
-                var msEl = badge.querySelector('.ms');
-                if (msEl) msEl.textContent = '...';
-            }
-        });
+        STATUS = { ok: false, ms: 0, state: 'unknown' };
+        var badge = document.querySelector('.server-badge[data-name="' + SERVER.name + '"]');
+        if (badge) {
+            badge.className = 'server-badge status-unknown';
+            var msEl = badge.querySelector('.ms');
+            if (msEl) msEl.textContent = '...';
+        }
         
-        // Ping song song
-        await Promise.all(SERVERS.map(checkOne));
-        
-        // Render từng badge
-        SERVERS.forEach(renderBadge);
+        await checkOne();
+        renderBadge();
         
         if (refreshBtn) refreshBtn.classList.remove('spinning');
     }
     
-    // Bind nút refresh
     function bindRefresh() {
         var btn = document.getElementById('serverStatusRefresh');
         if (btn && !btn._bound) {
@@ -352,7 +318,6 @@ def build_server_status_js():
         }
     }
     
-    // Chạy lần đầu sau 2s
     function init() {
         bindRefresh();
         setTimeout(checkAll, 2000);
@@ -364,15 +329,11 @@ def build_server_status_js():
         init();
     }
     
-    // Auto re-check mỗi 5 phút
     setInterval(checkAll, 5 * 60 * 1000);
     
-    // Expose ra global
     window.__serverStatus = { checkAll: checkAll, STATUS: STATUS };
-    
-    log('Module loaded — ' + SERVERS.length + ' servers');
 })();
-""".replace("__SERVERS_JSON__", servers_json).replace("__TIMEOUT__", str(timeout))
+""".replace("__SERVER_JSON__", server_json).replace("__TIMEOUT__", str(timeout))
 
 
 def build_server_status_bundle():
@@ -394,14 +355,14 @@ def build_server_status_bundle():
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("SERVER STATUS MODULE — DEMO")
+    print("SERVER STATUS MODULE — DEMO (1 server)")
     print("=" * 60)
     print("\nConfig path:", CONFIG_PATH)
     
     servers, config = load_servers()
     print("\nServers loaded:", len(servers))
-    for s in servers:
-        print("  •", s["name"], "=>", s["url"])
+    if servers:
+        print("  • Main Server:", servers[0]["name"], "=>", servers[0]["url"])
     
     css = build_server_status_css()
     html = build_server_status_html()
@@ -410,5 +371,5 @@ if __name__ == "__main__":
     print("\nCSS length:", len(css), "chars")
     print("HTML length:", len(html), "chars")
     print("JS length:", len(js), "chars")
-    print("Bundle length:", len(b `uild_server_status_bundle()), "chars")
-convert    print("\n✅ Module sẵn sàng")
+    print("Bundle length:", len(build_server_status_bundle()), "chars")
+    print("\n✅ Module sẵn sàng")
