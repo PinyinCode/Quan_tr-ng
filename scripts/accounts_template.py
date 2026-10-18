@@ -5512,19 +5512,30 @@ window.deleteUser = async function(email) {
     if (!confirm('⚠️ XÓA\n\n' + email + '\n\nNgười này sẽ không đăng nhập được nữa.\n\nTiếp tục?')) return;
     try {
         // ⭐ Lấy động URL của "Delete API" từ danh sách server trong file JSON (SERVERS)
+        // ⭐ Lấy động URL của "Delete API" từ danh sách server trong file JSON (SERVERS)
         var deleteServerUrl = '';
         if (typeof SERVERS !== 'undefined' && Array.isArray(SERVERS)) {
+            // Tìm kiếm linh hoạt: chấp nhận tên có chứa "delete", "xóa", "xoa" (không phân biệt hoa thường)
+            // Hoặc link có chứa chữ "delete"
             var foundServer = SERVERS.find(function(s) {
-                return s.name === 'Delete API' || (s.url && s.url.indexOf('deleteaccount') !== -1);
+                var name = (s.name || '').toLowerCase();
+                var url = (s.url || '').toLowerCase();
+                return name.indexOf('delete') !== -1 
+                    || name.indexOf('xóa') !== -1 
+                    || name.indexOf('xoa') !== -1 
+                    || url.indexOf('delete') !== -1;
             });
-            if (foundServer) {
-                deleteServerUrl = foundServer.url;
+            
+            if (foundServer && foundServer.url) {
+                // Đảm bảo URL không có dấu / ở cuối để tránh bị lỗi đường dẫn (//)
+                deleteServerUrl = foundServer.url.replace(/\/+$/, '');
             }
         }
         
-        // Fallback an toàn nếu chưa tìm thấy trong mảng SERVERS
+        // Fallback: Nếu không tìm thấy trong JSON, dùng link mới (tránh link cũ đã chết)
         if (!deleteServerUrl) {
-            deleteServerUrl = 'https://deleteaccount-np60.onrender.com/';
+            console.warn('[DeleteUser] Không tìm thấy Delete API trong config, dùng fallback server-vopb');
+            deleteServerUrl = 'https://server-vopb.onrender.com';
         }
 
         var endpoint = deleteServerUrl.replace(/\/+$/, '') + '/api/delete-user';
