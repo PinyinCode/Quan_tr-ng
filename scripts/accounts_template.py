@@ -6711,18 +6711,17 @@ window.testTelegram = function() {
     'use strict';
     
     /* ⭐ Config inject từ Python */
-    var SERVERS = __SERVER_STATUS_SERVERS__;
+    var ALL_SERVERS = __SERVER_STATUS_SERVERS__;
     var TIMEOUT = __SERVER_STATUS_TIMEOUT__;
     
-    if (!SERVERS || !SERVERS.length) {
+    if (!ALL_SERVERS || !ALL_SERVERS.length) {
         console.log('[server-status] Không có server config');
         return;
     }
     
-    var STATUS = {};
-    SERVERS.forEach(function(s) {
-        STATUS[s.name] = { ok: false, ms: 0, state: 'unknown' };
-    });
+    /* ⭐ Chỉ lấy server đầu tiên làm server chính (vì đã gộp 5-in-1) */
+    var MAIN_SERVER = ALL_SERVERS[0];
+    var STATUS = { ok: false, ms: 0, state: 'unknown' };
     
     function log() {
         if (window.__SERVER_STATUS_DEBUG) {
@@ -6732,13 +6731,13 @@ window.testTelegram = function() {
         }
     }
     
-    async function checkOne(server) {
+    async function checkMainServer() {
         var t0 = Date.now();
         try {
             var controller = new AbortController();
             var timer = setTimeout(function() { controller.abort(); }, TIMEOUT);
             
-            await fetch(server.url, {
+            await fetch(MAIN_SERVER.url, {
                 method: 'GET',
                 mode: 'no-cors',
                 cache: 'no-store',
@@ -6753,175 +6752,114 @@ window.testTelegram = function() {
             else if (ms < 5000) state = 'waking';
             else state = 'slow';
             
-            STATUS[server.name] = { ok: true, ms: ms, state: state };
-            log('OK', server.name, ms + 'ms');
-            return STATUS[server.name];
+            STATUS = { ok: true, ms: ms, state: state };
+            log('OK', MAIN_SERVER.name, ms + 'ms');
         } catch(e) {
             var ms2 = Date.now() - t0;
-            STATUS[server.name] = { 
+            STATUS = { 
                 ok: false, 
                 ms: ms2, 
                 state: (e.name === 'AbortError') ? 'slow' : 'error' 
             };
-            log('FAIL', server.name, e.name, ms2 + 'ms');
-            return STATUS[server.name];
+            log('FAIL', MAIN_SERVER.name, e.name, ms2 + 'ms');
         }
     }
     
-    function formatTime(st) {
-        if (st.state === 'unknown') return '...';
-        if (st.state === 'error') return 'lỗi';
-        if (st.state === 'active') return st.ms + 'ms';
-        return Math.round(st.ms / 1000) + 's';
-    }
-    
-        function renderList() {
+    function renderList() {
         var listEl = document.getElementById('dssList');
         if (!listEl) return;
         
-        // 👑 Chỉ Super Admin mới xem được chi tiết từng server
         var isSuper = (typeof isSuperAdmin === 'function' && isSuperAdmin());
+        var st = STATUS;
         
-        if (!isSuper) {
-            // 📊 Tính toán tỷ lệ phần trăm server hoạt động
-            var totalServers = SERVERS.length;
-            var activeCount = 0;
-            var totalMs = 0;
-            
-            SERVERS.forEach(function(s) {
-                var st = STATUS[s.name];
-                if (st.state === 'active' || st.state === 'slow' || st.ok === true) {
-                    activeCount++;
-                    totalMs += (st.ms || 0);
-                }
-            });
-            
-            var percent = totalServers > 0 ? Math.round((activeCount / totalServers) * 100) : 0;
-            var avgMs = activeCount > 0 ? Math.round(totalMs / activeCount) : 0;
-            
-            // Màu sắc và icon theo % hoạt động
-            var color = '#16a34a'; // Xanh lá
-            var icon = '🟢';
-            if (percent === 0) { color = '#dc2626'; icon = '🔴'; }
-            else if (percent < 100) { color = '#f59e0b'; icon = '🟡'; }
-            
-            // Hiển thị dạng phần trăm kèm tốc độ trung bình
-            var shortState = '<span style="color:' + color + '; font-weight:700;">' + icon + ' ' + percent + '%</span> <span style="font-size:0.7em; color:var(--text-3);">(' + (avgMs > 0 ? avgMs + 'ms' : '...ο') + ')</span>';
-            
-            listEl.innerHTML = '<div class="dss-item" style="justify-content: space-between; padding: 6px 8px;">' +
-                '<span class="dss-name"><i class="fas fa-server"></i> sv6-Singapore </span>' +
-                '<span class="dss-time">' + shortState + '</span>' +
-            '</div>';
-            return;
-        }
+        var icon = '🟢';
+        var color = '#16a34a';
+        if (st.state === 'error') { icon = '🔴'; color = '#dc2626'; }
+        else if (st.state === 'waking' || st.state === 'slow') { icon = '🟡'; color = '#f59e0b'; }
+        else if (st.state === 'unknown') { icon = '⚪'; color = 'var(--text-3)'; }
 
-        // 👑 Nếu là Super Admin -> Giữ nguyên hiển thị chi tiết từng server của bạn
-        var html = '';
-        SERVERS.forEach(function(s) {
-            var st = STATUS[s.name];
-            html += '<div class="dss-item status-' + st.state + '">' +
-                '<span class="dss-dot"></span>' +
-                '<span class="dss-name">' + s.name + '</span>' +
-                '<span class="dss-time">' + formatTime(st) + '</span>' +
+        var timeStr = '...';
+        if (st.state === 'active') timeStr = st.ms + 'ms';
+        else if (st.state === 'waking' || st.state === 'slow') timeStr = Math.round(st.ms / 1000) + 's';
+        else if (st.state === 'error') timeStr = 'lỗi';
+
+        var displayName = isSuper ? 'Server 5-in-1' : 'Máy chủ hệ thống';
+
+        listEl.innerHTML = 
+            '<div class="dss-item" style="justify-content: space-between; padding: 6px 8px;">' +
+                '<span class="dss-name" style="display:flex; align-items:center; gap:6px;">' +
+                    '<i class="fas fa-server" style="color:' + color + '"></i> ' + displayName + 
+                '</span>' +
+                '<span class="dss-time" style="color:' + color + '; font-weight:700;">' + 
+                    icon + ' ' + timeStr + 
+                '</span>' +
             '</div>';
-        });
-        listEl.innerHTML = html;
     }
 
     async function checkAll() {
-    /* ⭐ Cập nhật timestamp — cache 1 phút */
-    window.__dssLastCheck = Date.now();
+        window.__dssLastCheck = Date.now();
+        var refreshBtn = document.getElementById('dssRefreshBtn');
+        if (refreshBtn) refreshBtn.classList.add('spinning');
+        
+        STATUS = { ok: false, ms: 0, state: 'unknown' };
+        renderList();
+        
+        await checkMainServer();
+        
+        renderList();
+        if (refreshBtn) refreshBtn.classList.remove('spinning');
+        window.__dssLastCheck = Date.now();
+    }
     
-    var refreshBtn = document.getElementById('dssRefreshBtn');
-    if (refreshBtn) refreshBtn.classList.add('spinning');
-    
-    /* Reset về unknown */
-    SERVERS.forEach(function(s) {
-        STATUS[s.name] = { ok: false, ms: 0, state: 'unknown' };
-    });
-    renderList();
-    
-    /* Ping song song */
-    await Promise.all(SERVERS.map(checkOne));
-    
-    renderList();
-    if (refreshBtn) refreshBtn.classList.remove('spinning');
-    
-    /* ⭐ Cập nhật timestamp sau khi xong */
-    window.__dssLastCheck = Date.now();
-}
-    
-        function bindRefresh() {
+    function bindRefresh() {
         var btn = document.getElementById('dssRefreshBtn');
         if (btn && !btn._dssBound) {
             btn._dssBound = true;
-            
-            // ⭐ Thêm biến lưu thời gian bấm lần cuối để chống spam
             var lastClickTime = 0;
-            
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                
                 var now = Date.now();
-                // 🛑 Nếu bấm chưa qua 3 giây thì chặn lại ngay
-                if (now - lastClickTime < 3000) {
-                    console.log('[server-status] Bấm quá nhanh, vui lòng đợi vài giây!');
-                    return; 
-                }
+                if (now - lastClickTime < 3000) return;
                 lastClickTime = now;
-                
                 checkAll();
             });
         }
     }
 
-    
-    /* ⭐ Hiển thị section khi mở dropdown */
     function showSection() {
         var el = document.getElementById('dropdownServerStatus');
         if (el) el.style.display = 'block';
     }
     
     function watchDropdown() {
-    var dd = document.getElementById('userDropdown');
-    if (!dd) return;
-    
-    var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(m) {
-            if (m.attributeName === 'class') {
-                if (dd.classList.contains('show')) {
-                    showSection();
-                    bindRefresh();
-                    
-                    /* ⭐ Cache 1 phút — chỉ check nếu kết quả cũ > 60s */
-                    var lastCheck = window.__dssLastCheck || 0;
-                    var elapsed = Date.now() - lastCheck;
-                    
-                    if (elapsed > 60 * 1000) {
-                        if (!window.__dssIsChecking) {
-                            window.__dssIsChecking = true;
-                            setTimeout(function() {
-                                checkAll().finally(function() {
-                                    window.__dssIsChecking = false;
-                                });
-                            }, 500);
+        var dd = document.getElementById('userDropdown');
+        if (!dd) return;
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(m) {
+                if (m.attributeName === 'class') {
+                    if (dd.classList.contains('show')) {
+                        showSection();
+                        bindRefresh();
+                        var lastCheck = window.__dssLastCheck || 0;
+                        var elapsed = Date.now() - lastCheck;
+                        if (elapsed > 60 * 1000) {
+                            if (!window.__dssIsChecking) {
+                                window.__dssIsChecking = true;
+                                setTimeout(function() {
+                                    checkAll().finally(function() { window.__dssIsChecking = false; });
+                                }, 500);
+                            }
                         }
-                    } else {
-                        log('Skip auto-check — cache còn mới (' + Math.round(elapsed / 1000) + 's)');
                     }
                 }
-            }
+            });
         });
-    });
-    observer.observe(dd, { attributes: true });
-}
+        observer.observe(dd, { attributes: true });
+    }
     
-    /* Init */
     function init() {
         bindRefresh();
         watchDropdown();
-        
-        /* ⭐ Expose để debug */
         window.__serverStatusCheck = checkAll;
         window.__serverStatusData = STATUS;
     }
@@ -6932,16 +6870,14 @@ window.testTelegram = function() {
         init();
     }
     
-    /* ⭐ Tự động check khi user login (nhưng không hiện UI) */
     setTimeout(function() {
         if (typeof currentUser !== 'undefined' && currentUser) {
             checkAll();
         }
     }, 3000);
     
-    log('Module loaded — ' + SERVERS.length + ' servers');
+    log('Module loaded — Chỉ ping 1 server chính: ' + MAIN_SERVER.url);
 })();
-
 /* ⭐ Lắng nghe update từ admin qua RTDB */
 function startUserUpdateListener() {
     if (!currentUser || !currentUser.email) return;
