@@ -5,6 +5,10 @@
     
     "servers": [
         {
+            "name": "Health Check / Wake Server",
+            "url": "https://server-vopb.onrender.com/health"
+        },
+        {
             "name": "OTP Server",
             "url": "https://server-vopb.onrender.com/api/device/send-otp"
         },
@@ -14,7 +18,7 @@
         },
         {
             "name": "Vocab API",
-            "url": "https://server-vopb.onrender.com/generate-vocab"
+            "url": "https://server-vopb.onrender.com/analyze"
         },
         {
             "name": "Delete API",
