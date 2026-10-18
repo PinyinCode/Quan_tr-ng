@@ -73,7 +73,7 @@ def _get_api_urls_from_self_wake():
         "grading_api": "https://server-vopb.onrender.com/check",
         "vocab_api": "https://server-vopb.onrender.com",
     }
-    cfg_path = "self_wake_config.json"
+    cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "self_wake_config.json")
     if not os.path.isfile(cfg_path):
         print(f"⚠️  Không có {cfg_path} — dùng URL mặc định")
         return defaults
