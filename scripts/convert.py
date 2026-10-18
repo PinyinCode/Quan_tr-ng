@@ -70,8 +70,8 @@ import banner_fix   # ⭐ Fix banner khi Firestore chết/slow
 def _get_api_urls_from_self_wake():
     """Trả về dict {grading_api, vocab_api} đọc từ self_wake_config.json."""
     defaults = {
-        "grading_api": "https://chinese-grading.onrender.com/check",
-        "vocab_api": "https://chinese-vocab-api.onrender.com",
+        "grading_api": "https://server-vopb.onrender.com/check",
+        "vocab_api": "https://server-vopb.onrender.com",
     }
     cfg_path = "self_wake_config.json"
     if not os.path.isfile(cfg_path):
