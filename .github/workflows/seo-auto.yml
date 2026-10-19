@@ -20,20 +20,80 @@ jobs:
         with:
           python-version: '3.10'
 
-      # Kiểm tra danh sách file để debug
-      - name: List files for debugging
-        run: find . -maxdepth 2 -ls
-
-      # Tự động tìm và chạy file seo_optimizer.py bất kể nằm ở đâu trong thư mục
-      - name: Find and Run SEO Optimizer Script
+      # Tự động tạo và chạy script Python ngay trong quá trình chạy action
+      - name: Run SEO & Favicon Optimizer
         run: |
-          PYTHON_FILE=$(find . -name "seo_optimizer.py" | head -n 1)
-          if [ -z "$PYTHON_FILE" ]; then
-            echo "❌ Không tìm thấy file seo_optimizer.py trong repository!"
-            exit 1
-          fi
-          echo "✅ Đã tìm thấy script tại: $PYTHON_FILE"
-          python "$PYTHON_FILE"
+          python3 - << 'EOF'
+          import os
+          import re
+
+          file_path = "index.html"
+          if not os.path.exists(file_path):
+              print(f"❌ Không tìm thấy file: {file_path}")
+              exit(1)
+
+          with open(file_path, 'r', encoding='utf-8') as f:
+              content = f.read()
+
+          print(f"🔄 Đang xử lý file: {file_path}...")
+
+          SEO_CONFIG = {
+              "title": "Học tiếng Trung · Văn phòng & Công xưởng",
+              "description": "Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.",
+              "keywords": "tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung",
+              "author": "Tuhoctiengtrung.org",
+              "canonical_url": "https://tuhoctiengtrung.org/",
+              "favicon": "favicon.png" 
+          }
+
+          # 1. Title
+          title_tag = f"<title>{SEO_CONFIG['title']}</title>"
+          if re.search(r'<title\b[^>]*>.*?</title>', content, re.IGNORECASE):
+              content = re.sub(r'<title\b[^>]*>.*?</title>', title_tag, content, flags=re.IGNORECASE)
+          else:
+              content = re.sub(r'(<head\b[^>]*>)', r'\1\n    ' + title_tag, content, flags=re.IGNORECASE)
+
+          # 2. Meta Description
+          desc_tag = f'<meta name="description" content="{SEO_CONFIG["description"]}">'
+          if re.search(r'<meta\s+name=["\']description["\'][^>]*>', content, re.IGNORECASE):
+              content = re.sub(r'<meta\s+name=["\']description["\'][^>]*>', desc_tag, content, flags=re.IGNORECASE)
+          else:
+              content = re.sub(r'(</title>)', r'\1\n    ' + desc_tag, content, flags=re.IGNORECASE)
+
+          # 3. Favicon
+          favicon_tag = f'<link rel="icon" type="image/png" href="/{SEO_CONFIG["favicon"]}">'
+          if re.search(r'<link[^>]*rel=["\'](shortcut )?icon["\'][^>]*>', content, re.IGNORECASE):
+              content = re.sub(r'<link[^>]*rel=["\'](shortcut )?icon["\'][^>]*>', favicon_tag, content, flags=re.IGNORECASE)
+          else:
+              content = re.sub(r'(</title>)', r'\1\n    ' + favicon_tag, content, flags=re.IGNORECASE)
+
+          # 4. Meta phụ trợ & Open Graph
+          extra_metas = f"""
+          <meta name="keywords" content="{SEO_CONFIG['keywords']}">
+          <meta name="author" content="{SEO_CONFIG['author']}">
+          <link rel="canonical" href="{SEO_CONFIG['canonical_url']}">
+          <meta property="og:title" content="{SEO_CONFIG['title']}">
+          <meta property="og:description" content="{SEO_CONFIG['description']}">
+          <meta property="og:url" content="{SEO_CONFIG['canonical_url']}">
+          <meta property="og:type" content="website">
+          """
+          if 'rel="canonical"' not in content:
+              content = re.sub(r'(</head>)', extra_metas + r'\1', content, flags=re.IGNORECASE)
+
+          # 5. Chống snippet bằng data-nosnippet cho banner
+          banner_pattern = r'(<div\b[^>]*class\s*=\s*["\'][^"\']*quick-intro-banner[^"\']*["\'][^>]*)'
+          if re.search(banner_pattern, content, re.IGNORECASE):
+              def add_nosnippet(match):
+                  tag = match.group(1)
+                  if 'data-nosnippet' not in tag:
+                      return tag + ' data-nosnippet'
+                  return tag
+              content = re.sub(banner_pattern, add_nosnippet, content, flags=re.IGNORECASE)
+
+          with open(file_path, 'w', encoding='utf-8') as f:
+              f.write(content)
+          print("✅ Đã tối ưu SEO & Favicon thành công!")
+          EOF
 
       # Tự động commit và push lại file index.html sau khi tối ưu
       - name: Commit and push changes if index.html updated
