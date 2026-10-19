@@ -20,14 +20,22 @@ jobs:
         with:
           python-version: '3.10'
 
-      # Kiểm tra và liệt kê các file để xác định đúng vị trí chạy
+      # Kiểm tra danh sách file để debug
       - name: List files for debugging
-        run: ls -la
+        run: find . -maxdepth 2 -ls
 
-      # Chạy script Python đúng cách
-      - name: Run SEO Optimizer Script
-        run: python seo_optimizer.py
+      # Tự động tìm và chạy file seo_optimizer.py bất kể nằm ở đâu trong thư mục
+      - name: Find and Run SEO Optimizer Script
+        run: |
+          PYTHON_FILE=$(find . -name "seo_optimizer.py" | head -n 1)
+          if [ -z "$PYTHON_FILE" ]; then
+            echo "❌ Không tìm thấy file seo_optimizer.py trong repository!"
+            exit 1
+          fi
+          echo "✅ Đã tìm thấy script tại: $PYTHON_FILE"
+          python "$PYTHON_FILE"
 
+      # Tự động commit và push lại file index.html sau khi tối ưu
       - name: Commit and push changes if index.html updated
         run: |
           git config --global user.name "GitHub Actions Bot"
@@ -35,7 +43,7 @@ jobs:
           git add index.html
           git status
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "Không có thay đổi nào cần commit."
           else
             git commit -m "🤖 Auto-optimized SEO and Favicon via GitHub Actions"
             git push
