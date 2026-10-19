@@ -1,0 +1,76 @@
+# -*- coding: utf-8 -*-
+"""
+Script Python tự động tối ưu SEO, Thẻ mô tả, Favicon và chống lỗi snippet Google.
+"""
+
+import os
+import re
+
+# Cấu hình thông tin SEO và Icon
+SEO_CONFIG = {
+    "title": "Học tiếng Trung · Văn phòng & Công xưởng",
+    "description": "Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.",
+    "keywords": "tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung",
+    "author": "Tuhoctiengtrung.org",
+    "canonical_url": "https://tuhoctiengtrung.org/",
+    # Đường dẫn icon của bạn (có thể dùng favicon.ico hoặc favicon.png nằm ở thư mục gốc)
+    "favicon": "favicon.png" 
+}
+
+def optimize_html_file(file_path):
+    if not os.path.exists(file_path):
+        print(f"❌ Không tìm thấy file: {file_path}")
+        return
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    print(f"🔄 Đang xử lý file: {file_path}...")
+
+    # 1. Tối ưu hoặc thêm thẻ Title
+    title_tag = f"<title>{SEO_CONFIG['title']}</title>"
+    if re.search(r'<title>.*?</title>', content, re.IGNORECASE):
+        content = re.sub(r'<title>.*?</title>', title_tag, content, flags=re.IGNORECASE)
+    else:
+        content = content.replace('<head>', f'<head>\n    {title_tag}')
+
+    # 2. Tối ưu hoặc thêm thẻ Meta Description chuẩn SEO
+    desc_tag = f'<meta name="description" content="{SEO_CONFIG["description"]}">'
+    if re.search(r'<meta\s+name=["\']description["\'][^>]*>', content, re.IGNORECASE):
+        content = re.sub(r'<meta\s+name=["\']description["\'][^>]*>', desc_tag, content, flags=re.IGNORECASE)
+    else:
+        content = content.replace('</title>', f'</title>\n    {desc_tag}')
+
+    # 3. Thêm Favicon nếu chưa có trong file HTML
+    favicon_tag = f'<link rel="icon" type="image/png" href="/{SEO_CONFIG["favicon"]}">'
+    if 'rel="icon"' not in content and 'rel="shortcut icon"' not in content:
+        content = content.replace('</title>', f'</title>\n    {favicon_tag}')
+    else:
+        # Nếu đã có thì cập nhật lại đường dẫn cho đúng
+        content = re.sub(r'<link[^>]*rel=["\'](shortcut )?icon["\'][^>]*>', favicon_tag, content, flags=re.IGNORECASE)
+
+    # 4. Thêm các thẻ Meta phụ trợ và Open Graph (SEO + Mạng xã hội)
+    extra_metas = f"""
+    <meta name="keywords" content="{SEO_CONFIG['keywords']}">
+    <meta name="author" content="{SEO_CONFIG['author']}">
+    <link rel="canonical" href="{SEO_CONFIG['canonical_url']}">
+    <meta property="og:title" content="{SEO_CONFIG['title']}">
+    <meta property="og:description" content="{SEO_CONFIG['description']}">
+    <meta property="og:url" content="{SEO_CONFIG['canonical_url']}">
+    <meta property="og:type" content="website">
+    """
+    
+    if 'rel="canonical"' not in content:
+        content = content.replace('</head>', f'{extra_metas}\n</head>')
+
+    # 5. Tự động thêm `data-nosnippet` vào banner marquee để Google không lấy nhầm chữ chạy
+    content = re.sub(r'<div([^>]*class=["\'][^"\']*quick-intro-banner[^"\']*["\'][^>]*)>', r'<div\1 data-nosnippet>', content)
+
+    # Ghi lại file index.html
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(content)
+
+    print(f"✅ Đã cấu hình xong SEO & Favicon cho {file_path} thành công!")
+
+if __name__ == "__main__":
+    optimize_html_file("index.html")
