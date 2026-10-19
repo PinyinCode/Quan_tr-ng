@@ -3,30 +3,37 @@ name: Auto Optimize SEO & Favicon
 on:
   push:
     branches:
-      - main  # Hoặc tên nhánh chính của anh (ví dụ: master)
+      - main  # Hoặc master tùy theo nhánh của anh
+
+# 1. Cấp quyền đọc và ghi (Read/Write) rõ ràng cho Workflow
+permissions:
+  contents: write
 
 jobs:
   seo-optimization:
     runs-on: ubuntu-latest
     steps:
-      # 1. Kéo code mới nhất từ kho lưu trữ về
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Cài đặt môi trường Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      # 3. Chạy script Python tối ưu SEO và Icon
       - name: Run SEO Optimizer Script
         run: python seo_optimizer.py
 
-      # 4. Tự động commit và push ngược lại kho lưu trữ GitHub
+      # 2. Tự động commit và push an toàn, tránh lỗi khi không có thay đổi
       - name: Commit and push changes if index.html updated
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Auto-optimized SEO and Favicon via GitHub Actions" && git push)
+          git status
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "🤖 Auto-optimized SEO and Favicon via GitHub Actions"
+            git push
+          fi
