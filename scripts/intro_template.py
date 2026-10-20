@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Intro Template — Banner marquee chạy chữ thông báo đổi tên miền.
+Intro Template — Banner marquee chạy chữ thông báo tính năng luyện tập.
+Màu sắc nổi bật, tương phản cao, dễ nhận diện.
 
 Cung cấp 3 hàm:
   - build_intro_css()   → CSS cho banner marquee + 2 nút mock
-  - build_intro_html()  → HTML cho banner marquee + 2 nút mock (Đã rút gọn nội dung tên miền)
+  - build_intro_html()  → HTML cho banner marquee + 2 nút mock
   - build_intro_js()    → JS điều khiển banner + highlight nút thật
 """
-
 
 # ═══════════════════════════════════════════════════════════════════
 #  CSS
@@ -15,24 +15,23 @@ Cung cấp 3 hàm:
 def build_intro_css():
     return r"""
 /* ═══════════════════════════════════════════════════════════════ */
-/* QUICK INTRO BANNER — Marquee chạy chữ thông báo đổi tên miền  */
+/* QUICK INTRO BANNER — Marquee nổi bật, dễ nhận diện            */
 /* ═══════════════════════════════════════════════════════════════ */
 .quick-intro-banner {
     display: flex;
     align-items: center;
     gap: .65rem;
-    padding: .6rem .85rem;
+    padding: .65rem .9rem;
     margin-bottom: 1rem;
-    background: linear-gradient(135deg,
-        rgba(99, 102, 241, .08) 0%,
-        rgba(139, 92, 246, .08) 50%,
-        rgba(217, 70, 239, .06) 100%);
-    border: 1.5px solid rgba(139, 92, 246, .3);
-    border-radius: 12px;
+    /* Nền Gradient rực rỡ: Xanh lá -> Xanh dương */
+    background: linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #6366f1 100%);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
     overflow: hidden;
     position: relative;
     animation: qibSlideDown .5s cubic-bezier(.34, 1.56, .64, 1);
-    box-shadow: 0 2px 10px rgba(139, 92, 246, .08);
+    /* Hiệu ứng phát sáng (Glow) xung quanh banner */
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
     transition: box-shadow .3s ease, transform .3s ease;
 }
 @keyframes qibSlideDown {
@@ -46,18 +45,19 @@ body[data-vocab-mode="1"] .quick-intro-banner {
     display: none !important;
 }
 
+/* Icon loa: Nền đỏ/hồng rực, phát sáng */
 .qib-icon {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 10px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6 40%, #d946ef);
+    background: linear-gradient(135deg, #ef4444, #ec4899);
     color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 1.1rem;
     flex-shrink: 0;
-    box-shadow: 0 3px 10px rgba(139, 92, 246, .35);
+    box-shadow: 0 3px 12px rgba(236, 72, 153, 0.5);
     position: relative;
     z-index: 2;
 }
@@ -65,18 +65,18 @@ body[data-vocab-mode="1"] .quick-intro-banner {
 .qib-marquee {
     flex: 1 1 auto;
     min-width: 0;
-    height: 30px;
+    height: 32px;
     overflow: hidden;
     position: relative;
     mask-image: linear-gradient(90deg,
         transparent 0%,
-        #000 6%,
-        #000 94%,
+        #000 5%,
+        #000 95%,
         transparent 100%);
     -webkit-mask-image: linear-gradient(90deg,
         transparent 0%,
-        #000 6%,
-        #000 94%,
+        #000 5%,
+        #000 95%,
         transparent 100%);
 }
 
@@ -85,7 +85,7 @@ body[data-vocab-mode="1"] .quick-intro-banner {
     align-items: center;
     height: 100%;
     white-space: nowrap;
-    animation: qibScroll 30s linear infinite;
+    animation: qibScroll 25s linear infinite;
     will-change: transform;
 }
 @keyframes qibScroll {
@@ -93,62 +93,31 @@ body[data-vocab-mode="1"] .quick-intro-banner {
     to   { transform: translateX(-50%); }
 }
 
+/* Chữ chạy: Trắng đậm, có viền đổ bóng để nổi bật */
 .qib-item {
     display: inline-flex;
     align-items: center;
     gap: .45rem;
     padding: 0 1.5rem;
-    font-size: 1rem;
-    font-weight: 800;
-    color: var(--text);
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: #ffffff;
     line-height: 1;
     flex-shrink: 0;
-    letter-spacing: .01em;
+    letter-spacing: .03em;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
-.qib-item i {
-    color: #d946ef;
-    font-size: 1.05rem;
-    filter: drop-shadow(0 1px 2px rgba(217, 70, 239, .3));
-}
-.qib-item b {
-    font-weight: 900;
-    margin: 0 .15em;
-    letter-spacing: .02em;
-    background: linear-gradient(135deg, #dc2626, #ef4444 50%, #dc2626);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-    filter: drop-shadow(0 1px 1px rgba(220, 38, 38, .2));
-}
+
+/* Dấu chấm ngăn cách (·) màu vàng tươi */
 .qib-item.sep::after {
     content: '·';
     margin-left: 1.5rem;
-    color: #d946ef;
-    opacity: .7;
-    font-size: 1.6em;
+    color: #fde047;
+    opacity: 1;
+    font-size: 1.8em;
     font-weight: 900;
     line-height: 1;
-    text-shadow: 0 0 6px rgba(217, 70, 239, .4);
-}
-
-[data-theme="dark"] .qib-item {
-    color: #e2e8f0;
-}
-[data-theme="dark"] .qib-item b {
-    background: linear-gradient(135deg, #fca5a5, #f87171 50%, #fca5a5);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-}
-[data-theme="dark"] .qib-item i {
-    color: #f0abfc;
-    filter: drop-shadow(0 1px 2px rgba(240, 171, 252, .4));
-}
-[data-theme="dark"] .qib-item.sep::after {
-    color: #f0abfc;
-    text-shadow: 0 0 8px rgba(240, 171, 252, .5);
+    text-shadow: 0 0 8px rgba(253, 224, 71, 0.8);
 }
 
 /* ═══════════════════════════════════════════════════════════ */
@@ -156,19 +125,19 @@ body[data-vocab-mode="1"] .quick-intro-banner {
 /* ═══════════════════════════════════════════════════════════ */
 .qib-mock-actions {
     display: flex;
-    gap: .35rem;
+    gap: .4rem;
     align-items: center;
     flex-shrink: 0;
     position: relative;
     z-index: 2;
-    padding-left: .5rem;
-    border-left: 1.5px dashed rgba(139, 92, 246, .3);
+    padding-left: .6rem;
+    border-left: 2px dashed rgba(255, 255, 255, 0.4);
 }
 .qib-mock-btn {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    border: none;
+    border: 2px solid rgba(255, 255, 255, 0.4);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -176,54 +145,36 @@ body[data-vocab-mode="1"] .quick-intro-banner {
     cursor: pointer;
     flex-shrink: 0;
     transition: transform .2s cubic-bezier(.34,1.56,.64,1),
-                box-shadow .2s, background .2s, color .2s;
+                box-shadow .2s, background .2s, border-color .2s;
     position: relative;
     font-family: inherit;
     padding: 0;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    backdrop-filter: blur(4px);
 }
 .qib-mock-btn:hover {
-    transform: scale(1.15);
-}
-.qib-mock-btn.write {
-    background: var(--amber-light, #fef3c7);
-    color: #92400e;
-}
-.qib-mock-btn.write:hover {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(245, 158, 11, .45);
-}
-.qib-mock-btn.full {
-    background: var(--primary-light, #dbeafe);
-    color: var(--primary-dark, #1e40af);
+    transform: scale(1.15) translateY(-2px);
+    background: #fff;
+    color: #1e40af;
+    border-color: #fff;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 .qib-mock-btn.full::after {
     content: '';
     position: absolute;
-    inset: -3px;
+    inset: -4px;
     border-radius: 50%;
-    border: 2px solid var(--primary, #2563eb);
+    border: 2px solid #fde047;
     animation: qibMockPulse 1.8s ease-in-out infinite;
     pointer-events: none;
 }
 @keyframes qibMockPulse {
-    0%, 100% { opacity: .5; transform: scale(1); }
+    0%, 100% { opacity: .7; transform: scale(1); }
     50%      { opacity: .1; transform: scale(1.3); }
 }
-.qib-mock-btn.full:hover {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, .45);
-}
-[data-theme="dark"] .qib-mock-btn.write {
-    background: rgba(245,158,11,.22);
-    color: #fcd34d;
-}
-[data-theme="dark"] .qib-mock-btn.full {
-    background: rgba(59,130,246,.22);
-    color: #93c5fd;
-}
 
+/* Nút đóng (X) */
 .qib-actions {
     display: flex;
     align-items: center;
@@ -234,32 +185,34 @@ body[data-vocab-mode="1"] .quick-intro-banner {
 }
 
 .qib-btn-ghost {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     padding: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--surface);
-    color: var(--text-3);
-    border: 1px solid var(--border);
-    border-radius: 50px;
+    background: rgba(0, 0, 0, 0.2);
+    color: #fff;
+    border: 2px solid transparent;
+    border-radius: 50%;
     cursor: pointer;
     font-family: inherit;
-    font-size: .82rem;
-    transition: all .2s ease;
+    font-size: .85rem;
+    transition: all .25s ease;
 }
 .qib-btn-ghost:hover {
-    background: var(--danger-light);
-    color: var(--danger);
-    border-color: var(--danger);
-    transform: rotate(90deg);
+    background: #ef4444;
+    color: #fff;
+    border-color: #fff;
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
 }
 
 .qib-marquee:hover .qib-track {
     animation-play-state: paused;
 }
 
+/* Responsive cho Mobile */
 @media (max-width: 500px) {
     .quick-intro-banner {
         padding: .55rem .65rem;
@@ -271,22 +224,19 @@ body[data-vocab-mode="1"] .quick-intro-banner {
         font-size: .9rem;
         border-radius: 9px;
     }
-    .qib-marquee { height: 26px; }
+    .qib-marquee { height: 28px; }
     .qib-item {
-        font-size: .85rem;
+        font-size: .9rem;
         padding: 0 1.15rem;
         gap: .35rem;
     }
-    .qib-item i {
-        font-size: .9rem;
-    }
     .qib-item.sep::after {
         margin-left: 1.15rem;
-        font-size: 1.4em;
+        font-size: 1.5em;
     }
     .qib-mock-actions {
-        gap: .25rem;
-        padding-left: .35rem;
+        gap: .3rem;
+        padding-left: .4rem;
     }
     .qib-mock-btn {
         width: 32px;
@@ -294,8 +244,8 @@ body[data-vocab-mode="1"] .quick-intro-banner {
         font-size: .85rem;
     }
     .qib-btn-ghost {
-        width: 30px;
-        height: 30px;
+        width: 28px;
+        height: 28px;
     }
 }
 @media (max-width: 380px) {
@@ -305,13 +255,12 @@ body[data-vocab-mode="1"] .quick-intro-banner {
 }
 """
 
-
 # ═══════════════════════════════════════════════════════════════════
 #  HTML
 # ═══════════════════════════════════════════════════════════════════
 def build_intro_html():
     return r"""
-<!-- QUICK INTRO BANNER — Marquee thông báo đổi tên miền + 2 nút mock -->
+<!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
 <div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
@@ -320,12 +269,10 @@ def build_intro_html():
     <div class="qib-marquee">
         <div class="qib-track">
             <span class="qib-item sep">
-                <i class="fas fa-globe"></i>
-                <b>Tuhoctiengtrung.org:</b> Thông báo: Website chính thức đổi sang tên miền quốc tế [Https://tuhoctiengtrung.org] từ 15/10/2026!
+                Luyện đánh máy, ghép câu, viết HSK 1-9
             </span>
             <span class="qib-item sep">
-                <i class="fas fa-globe"></i>
-                <b>Tuhoctiengtrung.org:</b> Thông báo: Website chính thức đổi sang tên miền quốc tế [Https://tuhoctiengtrung.org] từ 15/10/2026!
+                Luyện đánh máy, ghép câu, viết HSK 1-9
             </span>
         </div>
     </div>
@@ -350,7 +297,6 @@ def build_intro_html():
     </div>
 </div>
 """
-
 
 # ═══════════════════════════════════════════════════════════════════
 #  JS
