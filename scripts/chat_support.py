@@ -229,6 +229,35 @@ body.has-floating-group #chatFloatWrap{bottom:calc(16px + env(safe-area-inset-bo
 @media (max-width:768px){
     .chat-toast{bottom:100px;font-size:.8rem;padding:.75rem 1.1rem;max-width:90vw;}
 }
+/* VÔ HIỆU HÓA SCALE CHO CÁC NÚT CHAT NỔI & MODAL CHAT */
+#chatFloatWrap,
+#chatFloatBtn,
+.chat-float-sub,
+.chat-modal,
+.chat-box,
+.chat-toast,
+.admin-chat-thread,
+.chat-limit-banner {
+    --ui-scale: 1 !important;
+    --pf-scale: 1 !important;
+}
+#chatFloatBtn {
+    width: 56px !important;
+    height: 56px !important;
+}
+#chatFloatBtn i.fa-comments {
+    font-size: 1.35rem !important;
+}
+.chat-float-sub {
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 1.15rem !important;
+}
+@media (max-width: 768px) {
+    #chatFloatBtn { width: 50px !important; height: 50px !important; }
+    #chatFloatBtn i.fa-comments { font-size: 1.2rem !important; }
+    .chat-float-sub { width: 44px !important; height: 44px !important; font-size: 1rem !important; }
+}
 """
 
 
