@@ -3715,38 +3715,44 @@ html body .practice-full-header .card-tag {
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* 2. THU NHỎ KÍCH THƯỚC MẶC ĐỊNH CỦA CÁC TAG (HSK, CHỦ ĐỀ, CÂU) */
-/* Áp dụng cho CẢ Flashcard ngoài màn hình chính VÀ Full Mode      */
+/* 2. THU NHỎ KÍCH THƯỚC MẶC ĐỊNH CỦA CÁC TAG                    */
 /* ═══════════════════════════════════════════════════════════════ */
 
 /* --- A. DÀNH CHO FLASHCARD NGOÀI MÀN HÌNH CHÍNH --- */
-html body .card-stt {
-    font-size: 0.68rem !important; /* Số thứ tự (VD: 1301) */
-    height: 24px !important;
-    min-width: 24px !important;
-    padding: 0 6px !important;
+html body .card .card-stt {
+    font-size: 0.68rem !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    padding: 0 5px !important;
 }
 
-html body .card-tag {
-    font-size: 0.65rem !important; /* Chữ trong tag (HSK, Tiến độ...) */
+/* Đánh trực tiếp vào từng loại tag để không bị ghi đè */
+html body .card .card-meta .card-tag,
+html body .card .card-meta .card-tag.hsk,
+html body .card .card-meta .card-tag.topic,
+html body .card .card-meta .card-tag.subject {
+    font-size: 0.65rem !important;
     padding: 0.15rem 0.45rem !important;
     height: auto !important;
     line-height: 1.2 !important;
 }
 
-html body .card-meta {
-    gap: 0.25rem !important; /* Khoảng cách giữa các tag */
+/* Khoảng cách giữa các tag */
+html body .card .card-meta {
+    gap: 0.25rem !important;
 }
 
 /* --- B. DÀNH CHO HEADER TRONG FULL MODE --- */
-html body .practice-full-header .card-tag {
-    font-size: 0.65rem !important; /* Giảm size chữ */
-    padding: 0.15rem 0.45rem !important; /* Giảm padding */
+html body .practice-full-header .pf-tags .card-tag,
+html body .practice-full-header .pf-tags .card-tag.hsk,
+html body .practice-full-header .pf-tags .card-tag.topic {
+    font-size: 0.65rem !important;
+    padding: 0.15rem 0.45rem !important;
     height: auto !important;
 }
 
 html body .practice-full-header .pf-counter {
-    font-size: 0.65rem !important; /* Bộ đếm câu (VD: #1 · Câu 1) */
+    font-size: 0.65rem !important;
     padding: 0.25rem 0.6rem !important;
 }
 
