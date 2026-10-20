@@ -3381,11 +3381,14 @@ body.practice-full-open .pf-tiktok-float {
 
 }
 /* Mặc định: Neo ở góc phải, căn giữa dọc */
+/* ═══════════════════════════════════════════════════════════ */
+/* CỤM NÚT +/- ĐIỀU KHIỂN SCALE (PRACTICE FULL MODE)          */
+/* ═══════════════════════════════════════════════════════════ */
 .pf-width-ctrl {
     position: fixed;
     top: 50%;
     right: clamp(8px, 1.5vw, 16px);
-    left: auto; /* Đảm bảo không bị dính left mặc định */
+    left: auto;
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
@@ -3393,15 +3396,15 @@ body.practice-full-open .pf-tiktok-float {
     z-index: 2600;
     pointer-events: none;
     opacity: 0;
-    transition: opacity .25s ease;
+    transition: opacity .3s ease;
     
-    /* Thêm các thuộc tính hỗ trợ kéo thả */
+    /* Hỗ trợ kéo thả */
     cursor: grab;
-    touch-action: none; /* Chặn trình duyệt tự cuộn trang khi đang kéo nút trên mobile */
-    user-select: none; /* Không bôi đen text khi kéo */
+    touch-action: none;
+    user-select: none;
 }
 
-/* Hiệu ứng khi đang giữ chuột/ngón tay để kéo */
+/* Hiệu ứng khi đang kéo */
 .pf-width-ctrl:active {
     cursor: grabbing;
 }
@@ -3412,6 +3415,20 @@ body.practice-full-open .pf-tiktok-float {
     pointer-events: auto;
 }
 
+/* ⭐ Tự mờ đi sau 5s không tương tác */
+.pf-width-ctrl.auto-faded {
+    opacity: 0.25;
+}
+
+/* Sáng lại khi chạm vào / hover */
+.pf-width-ctrl.auto-faded:hover,
+.pf-width-ctrl.auto-faded:active {
+    opacity: 1;
+}
+
+/* ─────────────────────────────────────────────────────────── */
+/* NÚT + VÀ -                                                 */
+/* ─────────────────────────────────────────────────────────── */
 .pf-width-btn {
     width: clamp(36px, 3.5vw, 42px);
     height: clamp(36px, 3.5vw, 42px);
@@ -3449,6 +3466,9 @@ body.practice-full-open .pf-tiktok-float {
     transform: none;
 }
 
+/* ─────────────────────────────────────────────────────────── */
+/* CHỈ SỐ % Ở GIỮA                                           */
+/* ─────────────────────────────────────────────────────────── */
 .pf-width-indicator {
     font-size: .62rem;
     font-weight: 800;
@@ -3463,11 +3483,13 @@ body.practice-full-open .pf-tiktok-float {
     letter-spacing: .02em;
 }
 
-/* Trên mobile: Hiển thị và có thể thu nhỏ lại một chút cho vừa màn hình */
+/* ─────────────────────────────────────────────────────────── */
+/* MOBILE: Thu nhỏ nút cho vừa màn hình                        */
+/* ─────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .pf-width-ctrl {
         display: flex !important;
-        right: 8px; /* Sát mép hơn trên mobile */
+        right: 8px;
     }
     .pf-width-btn {
         width: 34px;
@@ -3479,7 +3501,6 @@ body.practice-full-open .pf-tiktok-float {
         min-width: 30px;
     }
 }
-
 /* ═══════════════════════════════════════════════════════════ */
 /* PRACTICE FULL — GỘP TẤT CẢ 1 HÀNG KHI LANDSCAPE            */
 /* [HSK] [Chủ đề] [Bộ dữ liệu] [Tìm kiếm] [Câu — rộng nhất]   */
@@ -8221,23 +8242,24 @@ function initPracticeFull() {
     }
     (function setupWidthControl() {
     /* ═══════════════════════════════════════════════════════════
-       ⭐ NÚT +/- ĐIỀU KHIỂN TẤT CẢ THÔNG SỐ (ZOOM TỔNG THỂ)
-       - Chỉnh --pf-scale → áp dụng cho: font, padding, ô, gap, nav
-       - Chỉnh --ui-scale → áp dụng cho: header, filters, dataset
-       - Lưu vào localStorage, load lại khi mở app
-       - Có thể kéo thả (drag & drop) và tự lưu vị trí
+       ⭐ NÚT +/- ĐIỀU KHIỂN SCALE (PRACTICE FULL MODE)
+       - Chỉnh --pf-scale → chỉ ảnh hưởng Practice Full
+       - Lưu scale + vị trí vào localStorage
+       - Kéo thả được, tự reset vị trí khi xoay màn hình
+       - Tự mờ sau 5s không tương tác
        ═══════════════════════════════════════════════════════════ */
     var MIN_SCALE = 0.7;
     var MAX_SCALE = 1.6;
-    var STEP = 0.05;       /* Mỗi lần bấm +/- : 5% */
+    var STEP = 0.05;
     var STORAGE_KEY = 'pfUserScale_v1';
     var POS_STORAGE_KEY = 'pfWidthCtrlPos_v1';
+    var FADE_TIMEOUT = 5000;
 
     var btnPlus = document.getElementById('pfWidthPlus');
     var btnMinus = document.getElementById('pfWidthMinus');
     var indicator = document.getElementById('pfWidthIndicator');
     var ctrlWrap = document.getElementById('pfWidthCtrl');
-    
+
     if (!btnPlus || !btnMinus || !indicator || !ctrlWrap) return;
 
     /* ═══════════════════════════════════════════════════════════
@@ -8276,7 +8298,6 @@ function initPracticeFull() {
 
     function dragStart(e) {
         if (e.target.closest('.pf-width-btn')) return;
-
         isDragging = true;
         var clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
         var clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
@@ -8305,7 +8326,7 @@ function initPracticeFull() {
 
         var maxLeft = window.innerWidth - ctrlWrap.offsetWidth;
         var maxTop = window.innerHeight - ctrlWrap.offsetHeight;
-        
+
         newLeft = Math.max(0, Math.min(newLeft, maxLeft));
         newTop = Math.max(0, Math.min(newTop, maxTop));
 
@@ -8332,22 +8353,41 @@ function initPracticeFull() {
 
     loadPosition();
 
-    window.addEventListener('resize', function() {
-        var rect = ctrlWrap.getBoundingClientRect();
-        var maxLeft = window.innerWidth - ctrlWrap.offsetWidth;
-        var maxTop = window.innerHeight - ctrlWrap.offsetHeight;
-        
-        var newLeft = Math.max(0, Math.min(rect.left, maxLeft));
-        var newTop = Math.max(0, Math.min(rect.top, maxTop));
+    /* ═══════════════════════════════════════════════════════════
+       ⭐ XỬ LÝ RESIZE / XOAY MÀN HÌNH
+       ═══════════════════════════════════════════════════════════ */
+    var lastOrientation = (window.innerWidth > window.innerHeight) ? 'landscape' : 'portrait';
 
-        ctrlWrap.style.left = newLeft + 'px';
-        ctrlWrap.style.top = newTop + 'px';
-        savePosition();
+    window.addEventListener('resize', function() {
+        var currentOrientation = (window.innerWidth > window.innerHeight) ? 'landscape' : 'portrait';
+
+        if (currentOrientation !== lastOrientation) {
+            lastOrientation = currentOrientation;
+
+            // Đổi hướng → reset về vị trí mặc định (góc phải giữa)
+            try { localStorage.removeItem(POS_STORAGE_KEY); } catch(e) {}
+
+            ctrlWrap.style.left = 'auto';
+            ctrlWrap.style.top = '50%';
+            ctrlWrap.style.right = 'clamp(8px, 1.5vw, 16px)';
+            ctrlWrap.style.transform = 'translateY(-50%)';
+        } else {
+            // Resize nhẹ → giữ nguyên vị trí, chỉ đẩy vào trong nếu tràn
+            var rect = ctrlWrap.getBoundingClientRect();
+            var maxLeft = window.innerWidth - ctrlWrap.offsetWidth;
+            var maxTop = window.innerHeight - ctrlWrap.offsetHeight;
+
+            var newLeft = Math.max(0, Math.min(rect.left, maxLeft));
+            var newTop = Math.max(0, Math.min(rect.top, maxTop));
+
+            ctrlWrap.style.left = newLeft + 'px';
+            ctrlWrap.style.top = newTop + 'px';
+            savePosition();
+        }
     });
 
-
     /* ═══════════════════════════════════════════════════════════
-       ⭐ LOGIC TĂNG GIẢM SCALE
+       ⭐ LOGIC TĂNG GIẢM SCALE (CHỈ ẢNH HƯỞNG --pf-scale)
        ═══════════════════════════════════════════════════════════ */
     function getSavedUserScale() {
         try {
@@ -8368,23 +8408,15 @@ function initPracticeFull() {
             getComputedStyle(document.documentElement)
                 .getPropertyValue('--pf-scale-base')
         ) || 1;
-        var baseUi = parseFloat(
-            getComputedStyle(document.documentElement)
-                .getPropertyValue('--ui-scale-base')
-        ) || 1;
 
         if (!basePf || isNaN(basePf)) {
             basePf = parseFloat(rootStyle.getPropertyValue('--pf-scale')) || 1;
         }
-        if (!baseUi || isNaN(baseUi)) {
-            baseUi = parseFloat(rootStyle.getPropertyValue('--ui-scale')) || 1;
-        }
 
+        // CHỈ set --pf-scale (không đụng --ui-scale)
         rootStyle.setProperty('--pf-scale', (basePf * userScale).toFixed(3));
-        rootStyle.setProperty('--ui-scale', (baseUi * userScale).toFixed(3));
 
         indicator.textContent = Math.round(userScale * 100) + '%';
-
         btnPlus.disabled = (userScale >= MAX_SCALE - 0.001);
         btnMinus.disabled = (userScale <= MIN_SCALE + 0.001);
     }
@@ -8419,6 +8451,31 @@ function initPracticeFull() {
     });
     indicator.title = 'Double-click để reset 100%';
     indicator.style.cursor = 'pointer';
+
+    /* ═══════════════════════════════════════════════════════════
+       ⭐ TỰ ĐỘNG MỜ SAU 5 GIÂY KHÔNG TƯƠNG TÁC
+       ═══════════════════════════════════════════════════════════ */
+    var fadeTimer = null;
+
+    function resetFadeTimer() {
+        ctrlWrap.classList.remove('auto-faded');
+
+        if (fadeTimer) clearTimeout(fadeTimer);
+
+        fadeTimer = setTimeout(function() {
+            ctrlWrap.classList.add('auto-faded');
+        }, FADE_TIMEOUT);
+    }
+
+    // Reset timer khi có tương tác
+    ctrlWrap.addEventListener('mousedown', resetFadeTimer);
+    ctrlWrap.addEventListener('touchstart', resetFadeTimer, { passive: true });
+    ctrlWrap.addEventListener('mouseenter', resetFadeTimer);
+    btnPlus.addEventListener('click', resetFadeTimer);
+    btnMinus.addEventListener('click', resetFadeTimer);
+
+    // Khởi động timer lần đầu
+    resetFadeTimer();
 
     console.log('[PF Scale] Control setup OK — current userScale: ' + currentScale);
 })();
