@@ -3659,7 +3659,44 @@ body.practice-full-open .pf-tiktok-float {
     }
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* ĐÓNG BĂNG KÍCH THƯỚC: HEADER, FLASHCARD & HEADER FULL MODE     */
+/* (Vô hiệu hóa hoàn toàn tác dụng của nút +/-)                   */
+/* ═══════════════════════════════════════════════════════════════ */
 
+/* 1. Toàn bộ Header trang chính */
+html body .sticky-top,
+html body .header,
+html body .header-inner,
+html body .logo,
+html body .logo-text,
+html body .logo-icon,
+html body .header-actions,
+html body .icon-btn,
+
+/* 2. Toàn bộ Flashcard */
+html body .card,
+html body .card-header,
+html body .card-body,
+html body .card-vi,
+html body .card-zh,
+html body .card-pinyin,
+html body .card-practice,
+html body .card-tag,
+html body .card-stt,
+
+/* 3. Header của màn hình Full Mode (Thanh chứa nút X, HSK, Công ty) */
+html body .practice-full-header,
+html body .pf-brand,
+html body .pf-brand-text,
+html body .pf-counter,
+html body .pf-tags,
+html body .practice-full-header .card-tag {
+    
+    /* Ép buộc scale luôn bằng 1, bất kể user bấm +/- thế nào */
+    --pf-scale: 1 !important;
+    --ui-scale: 1 !important;
+}
 """
 def build_ui_html():
     return r"""
