@@ -8225,18 +8225,130 @@ function initPracticeFull() {
        - Chỉnh --pf-scale → áp dụng cho: font, padding, ô, gap, nav
        - Chỉnh --ui-scale → áp dụng cho: header, filters, dataset
        - Lưu vào localStorage, load lại khi mở app
+       - Có thể kéo thả (drag & drop) và tự lưu vị trí
        ═══════════════════════════════════════════════════════════ */
     var MIN_SCALE = 0.7;
     var MAX_SCALE = 1.6;
     var STEP = 0.05;       /* Mỗi lần bấm +/- : 5% */
     var STORAGE_KEY = 'pfUserScale_v1';
+    var POS_STORAGE_KEY = 'pfWidthCtrlPos_v1';
 
     var btnPlus = document.getElementById('pfWidthPlus');
     var btnMinus = document.getElementById('pfWidthMinus');
     var indicator = document.getElementById('pfWidthIndicator');
-    if (!btnPlus || !btnMinus || !indicator) return;
+    var ctrlWrap = document.getElementById('pfWidthCtrl');
+    
+    if (!btnPlus || !btnMinus || !indicator || !ctrlWrap) return;
 
-    /* Lấy user scale đã lưu, hoặc 1.0 mặc định */
+    /* ═══════════════════════════════════════════════════════════
+       ⭐ KÉO THẢ CỤM NÚT (DRAG & DROP)
+       ═══════════════════════════════════════════════════════════ */
+    var isDragging = false;
+    var startX, startY;
+    var initialX, initialY;
+
+    function loadPosition() {
+        try {
+            var saved = JSON.parse(localStorage.getItem(POS_STORAGE_KEY));
+            if (saved && typeof saved.left === 'number') {
+                var maxLeft = window.innerWidth - ctrlWrap.offsetWidth - 5;
+                var maxTop = window.innerHeight - ctrlWrap.offsetHeight - 5;
+                saved.left = Math.max(5, Math.min(saved.left, maxLeft));
+                saved.top = Math.max(5, Math.min(saved.top, maxTop));
+
+                ctrlWrap.style.left = saved.left + 'px';
+                ctrlWrap.style.top = saved.top + 'px';
+                ctrlWrap.style.right = 'auto';
+                ctrlWrap.style.transform = 'none';
+            }
+        } catch(e) {}
+    }
+
+    function savePosition() {
+        var rect = ctrlWrap.getBoundingClientRect();
+        try {
+            localStorage.setItem(POS_STORAGE_KEY, JSON.stringify({
+                left: rect.left,
+                top: rect.top
+            }));
+        } catch(e) {}
+    }
+
+    function dragStart(e) {
+        if (e.target.closest('.pf-width-btn')) return;
+
+        isDragging = true;
+        var clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        var clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+        var rect = ctrlWrap.getBoundingClientRect();
+        startX = clientX;
+        startY = clientY;
+        initialX = rect.left;
+        initialY = rect.top;
+
+        ctrlWrap.style.transition = 'none';
+    }
+
+    function dragMove(e) {
+        if (!isDragging) return;
+        if (e.cancelable) e.preventDefault();
+
+        var clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        var clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+        var dx = clientX - startX;
+        var dy = clientY - startY;
+
+        var newLeft = initialX + dx;
+        var newTop = initialY + dy;
+
+        var maxLeft = window.innerWidth - ctrlWrap.offsetWidth;
+        var maxTop = window.innerHeight - ctrlWrap.offsetHeight;
+        
+        newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+        newTop = Math.max(0, Math.min(newTop, maxTop));
+
+        ctrlWrap.style.left = newLeft + 'px';
+        ctrlWrap.style.top = newTop + 'px';
+        ctrlWrap.style.right = 'auto';
+        ctrlWrap.style.transform = 'none';
+    }
+
+    function dragEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        ctrlWrap.style.transition = 'opacity .25s ease';
+        savePosition();
+    }
+
+    ctrlWrap.addEventListener('mousedown', dragStart);
+    window.addEventListener('mousemove', dragMove);
+    window.addEventListener('mouseup', dragEnd);
+
+    ctrlWrap.addEventListener('touchstart', dragStart, { passive: true });
+    window.addEventListener('touchmove', dragMove, { passive: false });
+    window.addEventListener('touchend', dragEnd);
+
+    loadPosition();
+
+    window.addEventListener('resize', function() {
+        var rect = ctrlWrap.getBoundingClientRect();
+        var maxLeft = window.innerWidth - ctrlWrap.offsetWidth;
+        var maxTop = window.innerHeight - ctrlWrap.offsetHeight;
+        
+        var newLeft = Math.max(0, Math.min(rect.left, maxLeft));
+        var newTop = Math.max(0, Math.min(rect.top, maxTop));
+
+        ctrlWrap.style.left = newLeft + 'px';
+        ctrlWrap.style.top = newTop + 'px';
+        savePosition();
+    });
+
+
+    /* ═══════════════════════════════════════════════════════════
+       ⭐ LOGIC TĂNG GIẢM SCALE
+       ═══════════════════════════════════════════════════════════ */
     function getSavedUserScale() {
         try {
             var v = parseFloat(localStorage.getItem(STORAGE_KEY));
@@ -8249,11 +8361,9 @@ function initPracticeFull() {
         try { localStorage.setItem(STORAGE_KEY, String(v)); } catch(e) {}
     }
 
-    /* ⭐ ÁP DỤNG: nhân userScale với base scale (auto tính) */
     function applyUserScale(userScale) {
         var rootStyle = document.documentElement.style;
 
-        /* Đọc base scale đã được auto_scale.js set */
         var basePf = parseFloat(
             getComputedStyle(document.documentElement)
                 .getPropertyValue('--pf-scale-base')
@@ -8263,26 +8373,18 @@ function initPracticeFull() {
                 .getPropertyValue('--ui-scale-base')
         ) || 1;
 
-        /* Nếu chưa có base (fallback) → dùng giá trị hiện tại */
         if (!basePf || isNaN(basePf)) {
-            basePf = parseFloat(
-                rootStyle.getPropertyValue('--pf-scale')
-            ) || 1;
+            basePf = parseFloat(rootStyle.getPropertyValue('--pf-scale')) || 1;
         }
         if (!baseUi || isNaN(baseUi)) {
-            baseUi = parseFloat(
-                rootStyle.getPropertyValue('--ui-scale')
-            ) || 1;
+            baseUi = parseFloat(rootStyle.getPropertyValue('--ui-scale')) || 1;
         }
 
-        /* ⭐ Set final = base × user */
         rootStyle.setProperty('--pf-scale', (basePf * userScale).toFixed(3));
         rootStyle.setProperty('--ui-scale', (baseUi * userScale).toFixed(3));
 
-        /* Hiển thị % */
         indicator.textContent = Math.round(userScale * 100) + '%';
 
-        /* Disable nút khi đạt giới hạn */
         btnPlus.disabled = (userScale >= MAX_SCALE - 0.001);
         btnMinus.disabled = (userScale <= MIN_SCALE + 0.001);
     }
@@ -8308,7 +8410,6 @@ function initPracticeFull() {
         saveUserScale(currentScale);
     });
 
-    /* Reset về 100% khi double-click vào indicator */
     indicator.addEventListener('dblclick', function(e) {
         e.stopPropagation();
         e.preventDefault();
