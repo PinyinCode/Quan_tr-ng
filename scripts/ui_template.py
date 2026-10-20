@@ -3225,13 +3225,20 @@ body.practice-full-open .pf-tiktok-float {
 /* ═══════════════════════════════════════════════════════════ */
 /* HEADER LOGO - HỌC TIẾNG TRUNG HSK (FIX BADGE HIỂN THỊ)      */
 /* ═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════ */
+/* HEADER LOGO: HÀNG TRÊN NỔI BẬT - HÀNG DƯỚI HIỆN ĐẠI         */
+/* ═══════════════════════════════════════════════════════════ */
 .logo-text {
     display: flex;
-    align-items: center;
+    flex-direction: column; /* Chuyển thành 2 hàng dọc */
+    justify-content: center;
+    line-height: 1.15;
+    gap: 4px; /* Khoảng cách giữa 2 hàng */
     min-width: 0;
     overflow: visible;
 }
 
+/* HÀNG TRÊN: Tên thương hiệu (To, Đậm, Gradient) */
 .logo-text .title {
     font-size: clamp(1.2rem, 2.2vw, 1.75rem);
     font-weight: 900;
@@ -3267,7 +3274,7 @@ body.practice-full-open .pf-tiktok-float {
     -webkit-text-fill-color: transparent;
 }
 
-/* ⭐ BADGE HSK — Đảm bảo chữ "HSK" luôn hiển thị rõ */
+/* ⭐ BADGE HSK (Giữ nguyên animation nhưng chỉnh lại vị trí) */
 .logo-text .title .hsk-badge {
     display: inline-flex;
     align-items: center;
@@ -3278,7 +3285,7 @@ body.practice-full-open .pf-tiktok-float {
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     font-family: inherit;
-    font-size: 0.62em;
+    font-size: 0.55em; /* Nhỏ lại một chút để không lấn át tên chính */
     font-weight: 900;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -3305,15 +3312,57 @@ body.practice-full-open .pf-tiktok-float {
     }
 }
 
+/* HÀNG DƯỚI: Văn phòng & Công xưởng (Nhỏ, Hiện đại) */
+.logo-text .subtitle {
+    font-size: clamp(0.65rem, 1vw, 0.8rem);
+    font-weight: 700;
+    color: #64748b; /* Màu xám thanh lịch */
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Thêm icon chấm tròn nhỏ xíu ở trước dòng chữ cho sinh động */
+.logo-text .subtitle::before {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #8b5cf6; /* Chấm màu tím */
+    flex-shrink: 0;
+}
+
+/* Dark mode cho hàng dưới */
+[data-theme="dark"] .logo-text .subtitle {
+    color: #94a3b8;
+}
+[data-theme="dark"] .logo-text .subtitle::before {
+    background: #c084fc;
+}
+
+/* Mobile: Thu nhỏ lại cho vừa vặn màn hình */
 @media (max-width: 500px) {
+    .logo-text {
+        gap: 2px;
+    }
     .logo-text .title {
         font-size: 1.1rem;
         gap: 0.4rem;
     }
     .logo-text .title .hsk-badge {
-        font-size: 0.6em;
+        font-size: 0.5em;
         padding: 0.2em 0.55em;
         min-width: 2.5em;
+    }
+    .logo-text .subtitle {
+        font-size: 0.6rem;
+        letter-spacing: 0.02em;
     }
 }
 .ds-btn[data-dataset="tonghop"] {
@@ -3780,11 +3829,13 @@ def build_ui_html():
 <div class="logo">
     <div class="logo-icon"><i class="fas fa-language"></i></div>
     <div class="logo-text">
-        <div class="title">
-            <span class="title-text">Tuhoctiengtrung</span>
-            <span class="hsk-badge">.org</span>
-        </div>
+    <div class="title">
+        <span class="title-text">Tuhoctiengtrung</span>
+        <span class="hsk-badge">.org</span>
     </div>
+    <!-- Dòng chữ mới thêm vào -->
+    <div class="subtitle">Văn phòng & Công xưởng</div>
+</div>
 </div>
 <div class="header-actions">
 <div class="trial-badge" id="trialBadge"><i class="fas fa-gem"></i> <span id="trialBadgeText">Trial</span></div>
