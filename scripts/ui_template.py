@@ -3376,118 +3376,96 @@ body.practice-full-open .pf-tiktok-float {
 
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* HÀNG DƯỚI: Văn phòng & Công xưởng (PREMIUM SHIMMER FIXED)      */
+/* HÀNG DƯỚI: 2 ĐƯỜNG LINE ÁNH SÁNG CHẠY (MẢNH, TINH TẾ)         */
 /* ═══════════════════════════════════════════════════════════════ */
 .logo-text .subtitle {
-    display: flex;
+    position: relative;
+    display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding-left: 1px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Chấ.logm tròn nhỏ "hoít thở" trước dòng chữ */
--text .subtitle::before {
-    content: '';
-    display: inline-block;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: #a78bfa;
-    flex-shrink: 0;
-    box-shadow: 0 0 6px rgba(167, 139, 250, 0.6);
-    animation: dotBreathe 2s ease-in-out infinite;
-}
-
-/* Thẻ span bọc chữ (Fix lỗi mất chữ khi dùng flex) */
-.logo-text .subtitle span {
-    font-size: clamp(0.55rem, 0.85vw, 0.7rem);
-    font-weight: 600;
-    font-style: italic;
-    letter-spacing: 0.06em;
-    text-transform: none;
+    justify-content: center;
     
-    /* Light mode: Gradient xám -> Tím -> xám */
-    background: linear-gradient(
-        90deg, 
-        #94a3b8 0%, 
-        #94a3b8 35%, 
-        #8b5cf6 50%,
-        #94a3b8 65%, 
-        #94a3b8 100%
-    );
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-    animation: shimmerSubtitle 4s linear infinite;
+    /* Reset toàn bộ khung nền và padding thừa */
+    background: none !important;
+    border: none !important;
+    padding: 6px 0 !important; 
+    margin-top: 2px;
+    width: fit-content;
+    
+    /* Typography: Nhỏ, mảnh, không in hoa */
+    font-size: 0.65rem;
+    font-weight: 500;
+    font-style: italic;
+    letter-spacing: 0.05em;
+    text-transform: none;
+    color: #64748b; /* Xám thanh lịch cho Light Mode */
+    line-height: 1;
 }
 
-/* Dark Mode */
-[data-theme="dark"] .logo-text .subtitle::before {
-    background: #c084fc;
-    box-shadow: 0 0 8px rgba(192, 132, 252, 0.8);
+/* Lớp giả ::before (Line trên) và ::after (Line dưới) */
+.logo-text .subtitle::before,
+.logo-text .subtitle::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1.5px;
+    /* Line nền màu xám mờ */
+    background-color: rgba(148, 163, 184, 0.3); 
+    border-radius: 2px;
+    overflow: hidden;
 }
 
-[data-theme="dark"] .logo-text .subtitle span {
-    background: linear-gradient(
-        90deg, 
-        #64748b 0%, 
-        #64748b 35%, 
-        #c084fc 50%, 
-        #64748b 65%, 
-        #64748b 100%
-    );
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    background-clip: text;
+/* Định vị line trên và line dưới */
+.logo-text .subtitle::before { top: 0; }
+.logo-text .subtitle::after  { bottom: 0; }
+
+/* Hiệu ứng ánh sáng chạy (Lớp phủ) */
+.logo-text .subtitle {
+    /* Gradient ánh sáng màu Tím Violet */
+    --shine-color: #8b5cf6;
 }
 
-/* Fallback cho trình duyệt cũ không hỗ trợ background-clip */
-@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
-    .logo-text .subtitle span {
-        color: #64748b;
-        -webkit-text-fill-color: #64748b;
-        animation: none;
-    }
-    [data-theme="dark"] .logo-text .subtitle span {
-        color: #94a3b8;
-        -webkit-text-fill-color: #94a3b8;
-    }
+.logo-text .subtitle::before,
+.logo-text .subtitle::after {
+    background-image: linear-gradient(90deg, transparent 0%, var(--shine-color) 50%, transparent 100%);
+    background-size: 50% 100%;
+    background-repeat: no-repeat;
+    background-position: -100% 0;
+    animation: runningLight 3s linear infinite;
 }
 
-/* Keyframes cho ánh sáng chạy subtitle */
-@keyframes shimmerSubtitle {
-    0% { background-position: 100% center; }
-    100% { background-position: -100% center; }
+/* Lệch nhịp 2 line cho đẹp mắt */
+.logo-text .subtitle::after {
+    animation-delay: 1.5s;
 }
 
-/* Keyframes cho chấm tròn "hít thở" */
-@keyframes dotBreathe {
-    0%, 100% { transform: scale(1); opacity: 0.8; }
-    50% { transform: scale(1.4); opacity: 1; }
+/* Keyframes ánh sáng chạy */
+@keyframes runningLight {
+    0% { background-position: -100% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* DARK MODE                                                       */
+/* ═══════════════════════════════════════════════════════════════ */
+[data-theme="dark"] .logo-text .subtitle {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .logo-text .subtitle::before,
+[data-theme="dark"] .logo-text .subtitle::after {
+    background-color: rgba(100, 116, 139, 0.3); /* Line nền tối mờ */
+}
+
+[data-theme="dark"] .logo-text .subtitle {
+    --shine-color: #c084fc; /* Ánh sáng màu tím nhạt hơn cho nền tối */
 }
 
 /* Mobile */
 @media (max-width: 500px) {
-    .logo-text {
-        gap: 3px;
-    }
-    .logo-text .title {
-        font-size: 1.1rem;
-        gap: 0.4rem;
-    }
-    .logo-text .title .hsk-badge {
-        font-size: 0.48em;
-        padding: 0.2em 0.5em;
-        min-width: 2.5em;
-    }
-    .logo-text .subtitle span {
+    .logo-text .subtitle {
         font-size: 0.58rem;
-        letter-spacing: 0.04em;
+        padding: 4px 0 !important; 
     }
 }
 .ds-btn[data-dataset="tonghop"] {
