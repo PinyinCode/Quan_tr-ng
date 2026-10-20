@@ -8244,15 +8244,13 @@ function initPracticeFull() {
     /* ═══════════════════════════════════════════════════════════
        ⭐ NÚT +/- ĐIỀU KHIỂN SCALE (PRACTICE FULL MODE)
        - Chỉnh --pf-scale → chỉ ảnh hưởng Practice Full
-       - Lưu scale + vị trí vào localStorage
-       - Kéo thả được, tự reset vị trí khi xoay màn hình
-       - Tự mờ sau 5s không tương tác
+       - KHÔNG lưu vị trí, mỗi lần mở Full Mode sẽ reset về mặc định
+       - Kéo thả tự do, tự mờ sau 5s không tương tác
        ═══════════════════════════════════════════════════════════ */
     var MIN_SCALE = 0.7;
     var MAX_SCALE = 1.6;
     var STEP = 0.05;
     var STORAGE_KEY = 'pfUserScale_v1';
-    var POS_STORAGE_KEY = 'pfWidthCtrlPos_v1';
     var FADE_TIMEOUT = 5000;
 
     var btnPlus = document.getElementById('pfWidthPlus');
@@ -8263,38 +8261,21 @@ function initPracticeFull() {
     if (!btnPlus || !btnMinus || !indicator || !ctrlWrap) return;
 
     /* ═══════════════════════════════════════════════════════════
+       ⭐ HÀM RESET VỊ TRÍ VỀ MẶC ĐỊNH (GÓC PHẢI, GIỮA MÀN HÌNH)
+       ═══════════════════════════════════════════════════════════ */
+    function resetPosition() {
+        ctrlWrap.style.left = 'auto';
+        ctrlWrap.style.top = '50%';
+        ctrlWrap.style.right = 'clamp(8px, 1.5vw, 16px)';
+        ctrlWrap.style.transform = 'translateY(-50%)';
+    }
+
+    /* ═══════════════════════════════════════════════════════════
        ⭐ KÉO THẢ CỤM NÚT (DRAG & DROP)
        ═══════════════════════════════════════════════════════════ */
     var isDragging = false;
     var startX, startY;
     var initialX, initialY;
-
-    function loadPosition() {
-        try {
-            var saved = JSON.parse(localStorage.getItem(POS_STORAGE_KEY));
-            if (saved && typeof saved.left === 'number') {
-                var maxLeft = window.innerWidth - ctrlWrap.offsetWidth - 5;
-                var maxTop = window.innerHeight - ctrlWrap.offsetHeight - 5;
-                saved.left = Math.max(5, Math.min(saved.left, maxLeft));
-                saved.top = Math.max(5, Math.min(saved.top, maxTop));
-
-                ctrlWrap.style.left = saved.left + 'px';
-                ctrlWrap.style.top = saved.top + 'px';
-                ctrlWrap.style.right = 'auto';
-                ctrlWrap.style.transform = 'none';
-            }
-        } catch(e) {}
-    }
-
-    function savePosition() {
-        var rect = ctrlWrap.getBoundingClientRect();
-        try {
-            localStorage.setItem(POS_STORAGE_KEY, JSON.stringify({
-                left: rect.left,
-                top: rect.top
-            }));
-        } catch(e) {}
-    }
 
     function dragStart(e) {
         if (e.target.closest('.pf-width-btn')) return;
@@ -8340,7 +8321,6 @@ function initPracticeFull() {
         if (!isDragging) return;
         isDragging = false;
         ctrlWrap.style.transition = 'opacity .25s ease';
-        savePosition();
     }
 
     ctrlWrap.addEventListener('mousedown', dragStart);
@@ -8351,10 +8331,8 @@ function initPracticeFull() {
     window.addEventListener('touchmove', dragMove, { passive: false });
     window.addEventListener('touchend', dragEnd);
 
-    loadPosition();
-
     /* ═══════════════════════════════════════════════════════════
-       ⭐ XỬ LÝ RESIZE / XOAY MÀN HÌNH
+       ⭐ XỬ LÝ XOAY MÀN HÌNH — Reset vị trí
        ═══════════════════════════════════════════════════════════ */
     var lastOrientation = (window.innerWidth > window.innerHeight) ? 'landscape' : 'portrait';
 
@@ -8363,26 +8341,7 @@ function initPracticeFull() {
 
         if (currentOrientation !== lastOrientation) {
             lastOrientation = currentOrientation;
-
-            // Đổi hướng → reset về vị trí mặc định (góc phải giữa)
-            try { localStorage.removeItem(POS_STORAGE_KEY); } catch(e) {}
-
-            ctrlWrap.style.left = 'auto';
-            ctrlWrap.style.top = '50%';
-            ctrlWrap.style.right = 'clamp(8px, 1.5vw, 16px)';
-            ctrlWrap.style.transform = 'translateY(-50%)';
-        } else {
-            // Resize nhẹ → giữ nguyên vị trí, chỉ đẩy vào trong nếu tràn
-            var rect = ctrlWrap.getBoundingClientRect();
-            var maxLeft = window.innerWidth - ctrlWrap.offsetWidth;
-            var maxTop = window.innerHeight - ctrlWrap.offsetHeight;
-
-            var newLeft = Math.max(0, Math.min(rect.left, maxLeft));
-            var newTop = Math.max(0, Math.min(rect.top, maxTop));
-
-            ctrlWrap.style.left = newLeft + 'px';
-            ctrlWrap.style.top = newTop + 'px';
-            savePosition();
+            resetPosition();
         }
     });
 
@@ -8459,9 +8418,7 @@ function initPracticeFull() {
 
     function resetFadeTimer() {
         ctrlWrap.classList.remove('auto-faded');
-
         if (fadeTimer) clearTimeout(fadeTimer);
-
         fadeTimer = setTimeout(function() {
             ctrlWrap.classList.add('auto-faded');
         }, FADE_TIMEOUT);
@@ -8476,6 +8433,26 @@ function initPracticeFull() {
 
     // Khởi động timer lần đầu
     resetFadeTimer();
+
+    /* ═══════════════════════════════════════════════════════════
+       ⭐ RESET VỊ TRÍ MỖI KHI MỞ FULL MODE (QUAY LẠI TỪ MÀN HÌNH CHÍNH)
+       ═══════════════════════════════════════════════════════════ */
+    var pfModal = document.getElementById('practiceFullModal');
+    if (pfModal) {
+        // Theo dõi sự thay đổi class của modal để biết khi nào mở/đóng
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'class') {
+                    if (pfModal.classList.contains('show')) {
+                        // Khi mở Full Mode → reset vị trí + reset fade timer
+                        resetPosition();
+                        resetFadeTimer();
+                    }
+                }
+            });
+        });
+        observer.observe(pfModal, { attributes: true });
+    }
 
     console.log('[PF Scale] Control setup OK — current userScale: ' + currentScale);
 })();
