@@ -3734,6 +3734,41 @@ html body .practice-full-header .pf-counter {
 html body .practice-full-header .pf-tags {
     gap: 0.25rem !important;
 }
+/* ═══════════════════════════════════════════════════════════════ */
+/* 3. KHÓA CỨNG KHU VỰC BỘ LỌC TRONG FULL MODE (MOBILE & PC)     */
+/* ═══════════════════════════════════════════════════════════════ */
+html body .pf-filters,
+html body .pf-filter-row,
+html body .pf-chip,
+html body .pf-dataset-row,
+html body .pf-dataset-select,
+html body .pf-dataset-search input,
+html body .pf-quick-nav,
+html body .pf-quick-nav-select,
+html body .pf-dataset-label,
+html body .pf-quick-nav-label {
+    /* Vô hiệu hóa scale */
+    --pf-scale: 1 !important;
+    --ui-scale: 1 !important;
+    
+    /* Khóa cứng font-size không cho co giãn */
+    font-size: 0.78rem !important;
+}
+
+/* Đảm bảo input/select nhỏ gọn, không bị phình to trên mobile */
+html body .pf-dataset-search input,
+html body .pf-dataset-select,
+html body .pf-quick-nav-select {
+    font-size: 0.78rem !important;
+    height: 32px !important; /* Khóa cứng chiều cao cho gọn */
+    padding: 0.2rem 1.5rem 0.2rem 0.6rem !important;
+}
+
+/* Khóa cứng chiều cao của các ô filter HSK và Chủ đề */
+html body .pf-chip {
+    height: 32px !important;
+    padding: 0 0.6rem !important;
+}
 
 """
 def build_ui_html():
