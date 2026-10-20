@@ -7,14 +7,13 @@
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" href="/favicon.png">
-<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
 <meta name="theme-color" content="#7c3aed">
-<title>Học tiếng Trung · Văn phòng & Công xưởng</title>
-    <meta name="description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
+<title>Học tiếng Trung · Văn phòng &amp; Công xưởng</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
@@ -3247,9 +3246,10 @@ body.practice-full-open .pf-tiktok-float {
     .fav-empty .fav-empty-desc{font-size:.78rem;}
     .pf-fav-btn{width:32px;height:32px;}
 }
-/* ═══════════════════════════════════════════════════════════ */
-/* HEADER LOGO: TINH TẾ & HÀI HÒA CHO CẢ LIGHT/DARK MODE       */
-/* ═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════ */
+/* HEADER LOGO: PREMIUM EDITION (SHIMMER + GLOW + BREATHE)       */
+/* Tối ưu hài hòa cho cả Light & Dark Mode                        */
+/* ═══════════════════════════════════════════════════════════════ */
 .logo-text {
     display: flex;
     flex-direction: column;
@@ -3258,6 +3258,8 @@ body.practice-full-open .pf-tiktok-float {
     gap: 5px;
     min-width: 0;
     overflow: visible;
+    /* Tạo không gian 3D nhẹ cho chữ nổi bật hơn */
+    perspective: 800px;
 }
 
 /* HÀNG TRÊN: Tên thương hiệu */
@@ -3272,10 +3274,18 @@ body.practice-full-open .pf-tiktok-float {
     min-width: 0;
 }
 
-/* --- MÀU CHỮ CHÍNH: LIGHT MODE --- */
+/* --- HIỆU ỨNG ÁNH SÁNG CHẠY (SHIMMER) CHO TÊN CHÍNH --- */
 .logo-text .title .title-text {
-    /* Xanh Indigo đậm -> Tím Violet -> Hồng Magenta */
-    background: linear-gradient(135deg, #3730a3 0%, #7c3aed 50%, #be185d 100%);
+    /* Light mode: Xanh Indigo -> Tím Violet -> Hồng Magenta, kèm vệt sáng trắng */
+    background: linear-gradient(
+        110deg,
+        #3730a3 0%,
+        #7c3aed 30%,
+        #ffffff 45%,   /* Vệt sáng */
+        #be185d 60%,
+        #3730a3 100%
+    );
+    background-size: 250% auto;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -3283,17 +3293,31 @@ body.practice-full-open .pf-tiktok-float {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05));
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.08));
+    animation: shimmerTitle 5s linear infinite;
 }
 
-/* --- MÀU CHỮ CHÍNH: DARK MODE --- */
+/* Dark Mode: Gradient nhạt hơn + Vệt sáng vàng nhẹ */
 [data-theme="dark"] .logo-text .title .title-text {
-    /* Xanh lam nhạt -> Tím oải hương -> Hồng phấn */
-    background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
+    background: linear-gradient(
+        110deg,
+        #818cf8 0%,
+        #c084fc 30%,
+        #fef08a 45%,   /* Vệt sáng vàng */
+        #f472b6 60%,
+        #818cf8 100%
+    );
+    background-size: 250% auto;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 2px 4px rgba(192, 132, 252, 0.2));
+    filter: drop-shadow(0 2px 6px rgba(192, 132, 252, 0.3));
+}
+
+/* Animation di chuyển vệt sáng */
+@keyframes shimmerTitle {
+    0% { background-position: 0% center; }
+    100% { background-position: -200% center; }
 }
 
 /* Fallback cho trình duyệt cũ */
@@ -3301,6 +3325,7 @@ body.practice-full-open .pf-tiktok-float {
     .logo-text .title .title-text {
         color: #4f46e5;
         -webkit-text-fill-color: #4f46e5;
+        animation: none;
     }
     [data-theme="dark"] .logo-text .title .title-text {
         color: #a78bfa;
@@ -3308,7 +3333,7 @@ body.practice-full-open .pf-tiktok-float {
     }
 }
 
-/* ⭐ BADGE HSK (Tinh tế, không chói) */
+/* ⭐ BADGE HSK (PREMIUM) */
 .logo-text .title .hsk-badge {
     display: inline-flex;
     align-items: center;
@@ -3329,67 +3354,128 @@ body.practice-full-open .pf-tiktok-float {
     opacity: 1 !important;
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
+    position: relative;
+    overflow: hidden;
     
     /* Light mode: Vàng hổ phách -> Cam đào */
     background: linear-gradient(135deg, #fbbf24 0%, #ea580c 100%);
-    box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.5);
     transition: all 0.3s ease;
 }
 
-/* Dark mode: Vàng kim -> Cam gạch (dịu hơn, không chói mắt) */
-[data-theme="dark"] .logo-text .title .hsk-badge {
-    background: linear-gradient(135deg, #d97706 0%, #9a3412 100%);
-    box-shadow: 0 2px 6px rgba(154, 52, 18, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+/* Thêm vệt sáng lướt qua Badge khi hover */
+.logo-text .title .hsk-badge::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+    transition: left 0.5s ease;
+}
+.logo-text .title .hsk-badge:hover::after {
+    left: 100%;
+}
+.logo-text .title .hsk-badge:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
-/* Hiệu ứng Pulse nhẹ nhàng cho Badge */
+/* Dark mode: Vàng kim -> Cam gạch */
+[data-theme="dark"] .logo-text .title .hsk-badge {
+    background: linear-gradient(135deg, #d97706 0%, #9a3412 100%);
+    box-shadow: 0 2px 8px rgba(154, 52, 18, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+}
+[data-theme="dark"] .logo-text .title .hsk-badge:hover {
+    box-shadow: 0 4px 14px rgba(217, 119, 6, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+/* Hiệu ứng Pulse */
 @keyframes hskBadgePulse {
     0%, 100% { transform: translateY(-1px) scale(1); }
-    50% { transform: translateY(-1px) scale(1.04); }
+    50% { transform: translateY(-1px) scale(1.03); }
 }
 .logo-text .title .hsk-badge {
     animation: hskBadgePulse 3s ease-in-out infinite;
 }
 
 
-/* HÀNG DƯỚI: Văn phòng & Công xưởng */
+/* ═══════════════════════════════════════════════════════════════ */
+/* HÀNG DƯỚI: Văn phòng & Công xưởng (PREMIUM SHIMMER)            */
+/* ═══════════════════════════════════════════════════════════════ */
 .logo-text .subtitle {
-    font-size: clamp(0.65rem, 1vw, 0.75rem);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: clamp(0.55rem, 0.85vw, 0.7rem);
+    font-weight: 600;
+    font-style: italic;
+    letter-spacing: 0.06em;
+    text-transform: none;
     display: flex;
     align-items: center;
     gap: 0.4rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-left: 2px;
-    transition: color 0.3s ease;
+    padding-left: 1px;
+    
+    /* Light mode: Gradient xám -> Tím -> xám (ánh sáng chạy qua) */
+    background: linear-gradient(
+        90deg, 
+        #94a3b8 0%, 
+        #94a3b8 35%, 
+        #8b5cf6 50%,   /* Vệt sáng tím */
+        #94a3b8 65reat%, 
+        #94a3b8 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: shimmerSubtitle 4s linear infinite;
 }
 
-/* Light mode: Slate xám thanh lịch */
-.logo-text .subtitle {
-    color: #64748b;
-}
+/* Chấm tròn nhỏ trước dòng chữ */
 .logo-text .subtitle::before {
     content: '';
     display: inline-block;
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: #8b5cf6; /* Tím */
-    box-shadow: 0 0 4px rgba(139, 92, 246, 0.4);
+    background: #a78bfa;
     flex-shrink: 0;
+    -webkit-text-fill-color: #a78bfa; /* Giữ màu cho chấm */
+    box-shadow: 0 0 6px rgba(167, 139, 250, 0.6);
+he    animation: dotBreathe 2s ease-in-out {
+ infinite;
 }
 
-/* Dark mode: Xám bạc nhạt + Chấm tím phát sáng */
-[data-theme="dark"] .logo-text .subtitle {
-    color: #94a3b8;
+/* Dark Mode: Gradient tối ->     Tím nhạt sáng */
+[data0-theme="dark"] .logo-text .subtitle {
+    background: linear-gradient(
+        90deg, 
+        #64748b 0%, 
+        #64748b 35%, 
+        #c084fc 50%, 
+        #64748b 65%, 
+        #64748b 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
 }
 [data-theme="dark"] .logo-text .subtitle::before {
     background: #c084fc;
-    box-shadow: 0 0 6px rgba(192, 132, 252, 0.6);
+    box-shadow: 0 0 8px rgba(192, 132, 252, 0.8);
+}
+
+/* Keyframes cho ánh sáng chạy subtitle */
+@keyframes shimmerSubtitle {
+    0% { background-position: 100% center; }
+    100% { background-position: -100% center; }
+}
+
+/* Keyframes cho chấm tròn "hít thở"%, */
+@keyframes dotB 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.4); opacity: 1; }
 }
 
 /* Mobile */
@@ -3407,7 +3493,7 @@ body.practice-full-open .pf-tiktok-float {
         min-width: 2.5em;
     }
     .logo-text .subtitle {
-        font-size: 0.6rem;
+        font-size: 0.58rem;
         letter-spacing: 0.04em;
     }
 }
@@ -13142,14 +13228,6 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-<meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-<meta name="author" content="Tuhoctiengtrung.org">
-<link rel="canonical" href="https://tuhoctiengtrung.org/">
-<meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-<meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-<meta property="og:url" content="https://tuhoctiengtrung.org/">
-<meta property="og:type" content="website">
 </head>
 <body>
 
@@ -13310,7 +13388,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
