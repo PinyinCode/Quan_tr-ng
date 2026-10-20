@@ -3659,6 +3659,52 @@ body.practice-full-open .pf-tiktok-float {
     }
 }
 
+/* ═══════════════════════════════════════════════════════════ */
+/* KHÓA CỨNG KÍCH THƯỚC FLASHCARD + TAG (KHÔNG BỊ SCALE)       */
+/* ═══════════════════════════════════════════════════════════ */
+html body .card,
+html body .card-header,
+html body .card-stt,
+html body .card-meta,
+html body .card-tag,
+html body .card-tag.hsk,
+html body .card-tag.topic,
+html body .card-tag.subject,
+html body .card-vi,
+html body .card-zh,
+html body .card-pinyin,
+html body .card-practice,
+html body .card-body {
+    --pf-scale: 1 !important;
+    --ui-scale: 1 !important;
+}
+
+/* Đảm bảo font-size không bị JS auto-fit phóng to sai */
+html body .card-stt {
+    font-size: clamp(.66rem, .8vw, .74rem) !important;
+    height: clamp(26px, 2.5vw, 30px) !important;
+    min-width: clamp(26px, 2.5vw, 30px) !important;
+    padding: 0 .5rem !important;
+}
+
+html body .card-tag {
+    font-size: clamp(.58rem, .72vw, .68rem) !important;
+    padding: .18rem .55rem !important;
+    line-height: normal !important;
+}
+
+html body .card-zh {
+    font-size: clamp(1.15rem, 1.6vw, 1.35rem) !important;
+    line-height: 1.55 !important;
+}
+
+html body .card-vi {
+    font-size: clamp(.78rem, .9vw, .88rem) !important;
+}
+
+html body .card-pinyin {
+    font-size: clamp(.72rem, .88vw, .82rem) !important;
+}
 """
 def build_ui_html():
     return r"""
