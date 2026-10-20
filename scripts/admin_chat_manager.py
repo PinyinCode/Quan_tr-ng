@@ -982,6 +982,11 @@ body.acm-bulk-mode .acm-select-all-row{display:flex;}
     transition:width .3s ease;
     width:0%;
 }
+/* VÔ HIỆU HÓA SCALE CHO ADMIN CHAT MANAGER */
+html body .acm-modal {
+    --ui-scale: 1 !important;
+    --pf-scale: 1 !important;
+}
 """
 
 
