@@ -335,6 +335,13 @@ else:
 
 
 FULLWIDTH_CSS = r"""
+body {
+  padding-top: env(safe-area-inset-top, 0px) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+.header {
+  padding-top: 10px !important;
+}
 .page-wrap{width:100%;max-width:100%;margin:0 auto;overflow-x:hidden}
 .container{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important;padding-left:1.25rem!important;padding-right:1.25rem!important}
 .sticky-top{position:relative!important;width:100%!important;max-width:100%!important}
