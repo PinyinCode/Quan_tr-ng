@@ -3660,11 +3660,8 @@ body.practice-full-open .pf-tiktok-float {
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* ĐÓNG BĂNG KÍCH THƯỚC: HEADER, FLASHCARD & HEADER FULL MODE     */
-/* (Vô hiệu hóa hoàn toàn tác dụng của nút +/-)                   */
+/* 1. ĐÓNG BĂNG KÍCH THƯỚC: VÔ HIỆU HÓA NÚT +/- CHO HEADER & CARD */
 /* ═══════════════════════════════════════════════════════════════ */
-
-/* 1. Toàn bộ Header trang chính */
 html body .sticky-top,
 html body .header,
 html body .header-inner,
@@ -3673,8 +3670,6 @@ html body .logo-text,
 html body .logo-icon,
 html body .header-actions,
 html body .icon-btn,
-
-/* 2. Toàn bộ Flashcard */
 html body .card,
 html body .card-header,
 html body .card-body,
@@ -3684,19 +3679,56 @@ html body .card-pinyin,
 html body .card-practice,
 html body .card-tag,
 html body .card-stt,
-
-/* 3. Header của màn hình Full Mode (Thanh chứa nút X, HSK, Công ty) */
 html body .practice-full-header,
 html body .pf-brand,
 html body .pf-brand-text,
 html body .pf-counter,
 html body .pf-tags,
 html body .practice-full-header .card-tag {
-    
-    /* Ép buộc scale luôn bằng 1, bất kể user bấm +/- thế nào */
     --pf-scale: 1 !important;
     --ui-scale: 1 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 2. THU NHỎ KÍCH THƯỚC MẶC ĐỊNH CỦA CÁC TAG (HSK, CHỦ ĐỀ, CÂU) */
+/* Áp dụng cho CẢ Flashcard ngoài màn hình chính VÀ Full Mode      */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* --- A. DÀNH CHO FLASHCARD NGOÀI MÀN HÌNH CHÍNH --- */
+html body .card-stt {
+    font-size: 0.68rem !important; /* Số thứ tự (VD: 1301) */
+    height: 24px !important;
+    min-width: 24px !important;
+    padding: 0 6px !important;
+}
+
+html body .card-tag {
+    font-size: 0.65rem !important; /* Chữ trong tag (HSK, Tiến độ...) */
+    padding: 0.15rem 0.45rem !important;
+    height: auto !important;
+    line-height: 1.2 !important;
+}
+
+html body .card-meta {
+    gap: 0.25rem !important; /* Khoảng cách giữa các tag */
+}
+
+/* --- B. DÀNH CHO HEADER TRONG FULL MODE --- */
+html body .practice-full-header .card-tag {
+    font-size: 0.65rem !important; /* Giảm size chữ */
+    padding: 0.15rem 0.45rem !important; /* Giảm padding */
+    height: auto !important;
+}
+
+html body .practice-full-header .pf-counter {
+    font-size: 0.65rem !important; /* Bộ đếm câu (VD: #1 · Câu 1) */
+    padding: 0.25rem 0.6rem !important;
+}
+
+html body .practice-full-header .pf-tags {
+    gap: 0.25rem !important;
+}
+
 """
 def build_ui_html():
     return r"""
