@@ -3375,96 +3375,7 @@ body.practice-full-open .pf-tiktok-float {
 }
 
 
-/* ═══════════════════════════════════════════════════════════════ */
-/* HÀNG DƯỚI: LINE ÁNH SÁNG CHẠY (CHỮ NHỎ, TINH TẾ)               */
-/* ═══════════════════════════════════════════════════════════════ */
-.logo-text .subtitle {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    
-    /* Xóa khung nền */
-    background: none !important;
-    border: none !important;
-    padding: 4px 0 !important; 
-    margin-top: 1px; /* Sát tên chính hơn */
-    width: fit-content;
-    
-    /* ⭐ CHỮ NHỎ HƠN HẲN SO VỚI TÊN CHÍNH */
-    font-size: 0.55rem; /* Chỉ bằng ~8.8px, nhỏ hơn nhiều so với tên chính */
-    font-weight: 400; /* Mảnh, không đậm */
-    font-style: italic;
-    letter-spacing: 0.05em;
-    text-transform: none;
-    color: #94a3b8; /* Xám nhạt hơn để không lấn át tên chính */
-    line-height: 1;
-    opacity: 0.85; /* Hơi mờ đi một chút */
-}
 
-/* Line trên và dưới */
-.logo-text .subtitle::before,
-.logo-text .subtitle::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    width: 100%;
-    height: 1px; /* Line siêu mảnh */
-    background-color: rgba(148, 163, 184, 0.2);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.logo-text .subtitle::before { top: 0; }
-.logo-text .subtitle::after  { bottom: 0; }
-
-/* Hiệu ứng ánh sáng chạy */
-.logo-text .subtitle {
-    --shine-color: #a78bfa; /* Tím nhạt */
-}
-
-.logo-text .subtitle::before,
-.logo-text .subtitle::after {
-    background-image: linear-gradient(90deg, transparent 0%, var(--shine-color) 50%, transparent 100%);
-    background-size: 50% 100%;
-    background-repeat: no-repeat;
-    background-position: -100% 0;
-    animation: runningLight 3s linear infinite;
-}
-
-.logo-text .subtitle::after {
-    animation-delay: 1.5s;
-}
-
-@keyframes runningLight {
-    0% { background-position: -100% 0; }
-    100% { background-position: 200% 0; }
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-/* DARK MODE                                                       */
-/* ═══════════════════════════════════════════════════════════════ */
-[data-theme="dark"] .logo-text .subtitle {
-    color: #64748b;
-    opacity: 0.9;
-}
-
-[data-theme="dark"] .logo-text .subtitle::before,
-[data-theme="dark"] .logo-text .subtitle::after {
-    background-color: rgba(100, 116, 139, 0.2);
-}
-
-[data-theme="dark"] .logo-text .subtitle {
-    --shine-color: #c084fc;
-}
-
-/* Mobile */
-@media (max-width: 500px) {
-    .logo-text .subtitle {
-        font-size: 0.5rem; /* Trên đt còn nhỏ hơn nữa */
-        padding: 3px 0 !important;
-    }
-}
 .ds-btn[data-dataset="tonghop"] {
     min-height: 68px;
     max-height: 68px;
@@ -3933,8 +3844,7 @@ def build_ui_html():
         <span class="title-text">Tuhoctiengtrung</span>
         <span class="hsk-badge">.org</span>
     </div>
-    <!-- Dòng chữ mới thêm vào -->
-    <div class="subtitle">Văn phòng & Công xưởng</div>
+    
 </div>
 </div>
 <div class="header-actions">
