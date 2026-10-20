@@ -3223,35 +3223,34 @@ body.practice-full-open .pf-tiktok-float {
     .pf-fav-btn{width:32px;height:32px;}
 }
 /* ═══════════════════════════════════════════════════════════ */
-/* HEADER LOGO - HỌC TIẾNG TRUNG HSK (FIX BADGE HIỂN THỊ)      */
-/* ═══════════════════════════════════════════════════════════ */
-/* ═══════════════════════════════════════════════════════════ */
-/* HEADER LOGO: HÀNG TRÊN NỔI BẬT - HÀNG DƯỚI HIỆN ĐẠI         */
+/* HEADER LOGO: TINH TẾ & HÀI HÒA CHO CẢ LIGHT/DARK MODE       */
 /* ═══════════════════════════════════════════════════════════ */
 .logo-text {
     display: flex;
-    flex-direction: column; /* Chuyển thành 2 hàng dọc */
+    flex-direction: column;
     justify-content: center;
     line-height: 1.15;
-    gap: 4px; /* Khoảng cách giữa 2 hàng */
+    gap: 5px;
     min-width: 0;
     overflow: visible;
 }
 
-/* HÀNG TRÊN: Tên thương hiệu (To, Đậm, Gradient) */
+/* HÀNG TRÊN: Tên thương hiệu */
 .logo-text .title {
     font-size: clamp(1.2rem, 2.2vw, 1.75rem);
     font-weight: 900;
     letter-spacing: -0.03em;
-    line-height: 1.15;
+    line-height: 1.1;
     display: flex;
     align-items: center;
     gap: 0.55rem;
     min-width: 0;
 }
 
+/* --- MÀU CHỮ CHÍNH: LIGHT MODE --- */
 .logo-text .title .title-text {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%);
+    /* Xanh Indigo đậm -> Tím Violet -> Hồng Magenta */
+    background: linear-gradient(135deg, #3730a3 0%, #7c3aed 50%, #be185d 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -3259,110 +3258,132 @@ body.practice-full-open .pf-tiktok-float {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05));
 }
-/* Fallback cho trình duyệt không hỗ trợ background-clip */
-@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
-    .logo-text .title .title-text {
-        color: #7c3aed;
-        -webkit-text-fill-color: #7c3aed;
-    }
-}
+
+/* --- MÀU CHỮ CHÍNH: DARK MODE --- */
 [data-theme="dark"] .logo-text .title .title-text {
-    background: linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #c084fc 100%);
+    /* Xanh lam nhạt -> Tím oải hương -> Hồng phấn */
+    background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(192, 132, 252, 0.2));
 }
 
-/* ⭐ BADGE HSK (Giữ nguyên animation nhưng chỉnh lại vị trí) */
+/* Fallback cho trình duyệt cũ */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+    .logo-text .title .title-text {
+        color: #4f46e5;
+        -webkit-text-fill-color: #4f46e5;
+    }
+    [data-theme="dark"] .logo-text .title .title-text {
+        color: #a78bfa;
+        -webkit-text-fill-color: #a78bfa;
+    }
+}
+
+/* ⭐ BADGE HSK (Tinh tế, không chói) */
 .logo-text .title .hsk-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.22em 0.65em;
-    border-radius: 8px;
-    background: linear-gradient(135deg, #f59e0b, #ef4444);
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    padding: 0.25em 0.65em;
+    border-radius: 6px;
     font-family: inherit;
-    font-size: 0.55em; /* Nhỏ lại một chút để không lấn át tên chính */
+    font-size: 0.52em;
     font-weight: 900;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-    box-shadow: 0 3px 10px rgba(239, 68, 68, 0.45);
-    animation: hskBadgePulse 2.5s ease-in-out infinite;
-    flex-shrink: 0;
     line-height: 1;
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     white-space: nowrap;
     min-width: 2.8em;
+    flex-shrink: 0;
     visibility: visible !important;
     opacity: 1 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    
+    /* Light mode: Vàng hổ phách -> Cam đào */
+    background: linear-gradient(135deg, #fbbf24 0%, #ea580c 100%);
+    box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    transition: all 0.3s ease;
 }
 
+/* Dark mode: Vàng kim -> Cam gạch (dịu hơn, không chói mắt) */
+[data-theme="dark"] .logo-text .title .hsk-badge {
+    background: linear-gradient(135deg, #d97706 0%, #9a3412 100%);
+    box-shadow: 0 2px 6px rgba(154, 52, 18, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+/* Hiệu ứng Pulse nhẹ nhàng cho Badge */
 @keyframes hskBadgePulse {
-    0%, 100% {
-        box-shadow: 0 3px 10px rgba(239, 68, 68, 0.45);
-        transform: translateY(-2px) scale(1);
-    }
-    50% {
-        box-shadow: 0 5px 18px rgba(239, 68, 68, 0.75);
-        transform: translateY(-2px) scale(1.06);
-    }
+    0%, 100% { transform: translateY(-1px) scale(1); }
+    50% { transform: translateY(-1px) scale(1.04); }
+}
+.logo-text .title .hsk-badge {
+    animation: hskBadgePulse 3s ease-in-out infinite;
 }
 
-/* HÀNG DƯỚI: Văn phòng & Công xưởng (Nhỏ, Hiện đại) */
+
+/* HÀNG DƯỚI: Văn phòng & Công xưởng */
 .logo-text .subtitle {
-    font-size: clamp(0.65rem, 1vw, 0.8rem);
+    font-size: clamp(0.65rem, 1vw, 0.75rem);
     font-weight: 700;
-    color: #64748b; /* Màu xám thanh lịch */
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.4rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    padding-left: 2px;
+    transition: color 0.3s ease;
 }
 
-/* Thêm icon chấm tròn nhỏ xíu ở trước dòng chữ cho sinh động */
+/* Light mode: Slate xám thanh lịch */
+.logo-text .subtitle {
+    color: #64748b;
+}
 .logo-text .subtitle::before {
     content: '';
     display: inline-block;
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: #8b5cf6; /* Chấm màu tím */
+    background: #8b5cf6; /* Tím */
+    box-shadow: 0 0 4px rgba(139, 92, 246, 0.4);
     flex-shrink: 0;
 }
 
-/* Dark mode cho hàng dưới */
+/* Dark mode: Xám bạc nhạt + Chấm tím phát sáng */
 [data-theme="dark"] .logo-text .subtitle {
     color: #94a3b8;
 }
 [data-theme="dark"] .logo-text .subtitle::before {
     background: #c084fc;
+    box-shadow: 0 0 6px rgba(192, 132, 252, 0.6);
 }
 
-/* Mobile: Thu nhỏ lại cho vừa vặn màn hình */
+/* Mobile */
 @media (max-width: 500px) {
     .logo-text {
-        gap: 2px;
+        gap: 3px;
     }
     .logo-text .title {
         font-size: 1.1rem;
         gap: 0.4rem;
     }
     .logo-text .title .hsk-badge {
-        font-size: 0.5em;
-        padding: 0.2em 0.55em;
+        font-size: 0.48em;
+        padding: 0.2em 0.5em;
         min-width: 2.5em;
     }
     .logo-text .subtitle {
         font-size: 0.6rem;
-        letter-spacing: 0.02em;
+        letter-spacing: 0.04em;
     }
 }
 .ds-btn[data-dataset="tonghop"] {
