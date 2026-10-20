@@ -1248,8 +1248,8 @@ __JS__
 window.__dataLoaded = false;
 window.__dataLoadPromise = (async function() {
     try {
-        var datasetsRes = await fetch('/data/all_datasets.json');
-        var registryRes = await fetch('/data/dataset_registry.json');
+        var datasetsRes = await fetch('data/all_datasets.json');
+        var registryRes = await fetch('data/dataset_registry.json');
 
         if (!datasetsRes.ok || !registryRes.ok) {
             throw new Error('Không tải được dữ liệu JSON');
