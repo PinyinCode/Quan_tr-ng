@@ -3380,14 +3380,105 @@ body.practice-full-open .pf-tiktok-float {
     animation: none;
 
 }
-.pf-width-ctrl{position:fixed;top:50%;right:clamp(8px,1.5vw,16px);transform:translateY(-50%);display:flex;flex-direction:column;gap:.5rem;z-index:2600;pointer-events:none;opacity:0;transition:opacity .25s ease}
-.practice-full-modal.show .pf-width-ctrl{opacity:1;pointer-events:auto}
-.pf-width-btn{width:clamp(36px,3.5vw,42px);height:clamp(36px,3.5vw,42px);border-radius:50%;border:1.5px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:clamp(.9rem,1.1vw,1rem);font-weight:900;transition:transform .2s cubic-bezier(.34,1.56,.64,1),background .15s,color .15s,border-color .15s;box-shadow:0 4px 14px rgba(15,23,42,.12);padding:0;font-family:inherit;user-select:none}
-.pf-width-btn:hover{background:var(--primary-light);color:var(--primary-dark);border-color:var(--primary);transform:scale(1.1)}
-.pf-width-btn:active{transform:scale(.95)}
-.pf-width-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
-.pf-width-indicator{font-size:.62rem;font-weight:800;color:var(--text-3);background:var(--surface-2);border:1px solid var(--border);border-radius:50px;padding:.15rem .4rem;text-align:center;min-width:34px;line-height:1;letter-spacing:.02em}
-@media (max-width:768px){.pf-width-ctrl{display:flex!important}}
+/* Mặc định: Neo ở góc phải, căn giữa dọc */
+.pf-width-ctrl {
+    position: fixed;
+    top: 50%;
+    right: clamp(8px, 1.5vw, 16px);
+    left: auto; /* Đảm bảo không bị dính left mặc định */
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    z-index: 2600;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .25s ease;
+    
+    /* Thêm các thuộc tính hỗ trợ kéo thả */
+    cursor: grab;
+    touch-action: none; /* Chặn trình duyệt tự cuộn trang khi đang kéo nút trên mobile */
+    user-select: none; /* Không bôi đen text khi kéo */
+}
+
+/* Hiệu ứng khi đang giữ chuột/ngón tay để kéo */
+.pf-width-ctrl:active {
+    cursor: grabbing;
+}
+
+/* Hiện lên khi mở Practice Full */
+.practice-full-modal.show .pf-width-ctrl {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.pf-width-btn {
+    width: clamp(36px, 3.5vw, 42px);
+    height: clamp(36px, 3.5vw, 42px);
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text-2);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(.9rem, 1.1vw, 1rem);
+    font-weight: 900;
+    transition: transform .2s cubic-bezier(.34,1.56,.64,1), background .15s, color .15s, border-color .15s;
+    box-shadow: 0 4px 14px rgba(15,23,42,.12);
+    padding: 0;
+    font-family: inherit;
+    user-select: none;
+}
+
+.pf-width-btn:hover {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    border-color: var(--primary);
+    transform: scale(1.1);
+}
+
+.pf-width-btn:active {
+    transform: scale(.95);
+}
+
+.pf-width-btn:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.pf-width-indicator {
+    font-size: .62rem;
+    font-weight: 800;
+    color: var(--text-3);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: .15rem .4rem;
+    text-align: center;
+    min-width: 34px;
+    line-height: 1;
+    letter-spacing: .02em;
+}
+
+/* Trên mobile: Hiển thị và có thể thu nhỏ lại một chút cho vừa màn hình */
+@media (max-width: 768px) {
+    .pf-width-ctrl {
+        display: flex !important;
+        right: 8px; /* Sát mép hơn trên mobile */
+    }
+    .pf-width-btn {
+        width: 34px;
+        height: 34px;
+        font-size: .85rem;
+    }
+    .pf-width-indicator {
+        font-size: .58rem;
+        min-width: 30px;
+    }
+}
 
 /* ═══════════════════════════════════════════════════════════ */
 /* PRACTICE FULL — GỘP TẤT CẢ 1 HÀNG KHI LANDSCAPE            */
