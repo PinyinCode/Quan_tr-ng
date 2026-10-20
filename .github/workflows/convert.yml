@@ -305,6 +305,10 @@ jobs:
           EOF
           cp index.html _site/
           if [ -d "assets" ]; then cp -r assets _site/; fi
+          cp index.html _site/
+          if [ -f "manifest.json" ]; then cp manifest.json _site/; fi
+          if [ -d "icons" ]; then cp -r icons _site/; fi
+          if [ -d "assets" ]; then cp -r assets _site/; fi
           if [ -d "static" ]; then cp -r static _site/; fi
           if [ -f "404.html" ]; then cp 404.html _site/; fi
           mkdir -p _site/data
