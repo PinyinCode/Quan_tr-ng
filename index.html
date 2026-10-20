@@ -7,14 +7,13 @@
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" href="/favicon.png">
-<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
 <meta name="theme-color" content="#7c3aed">
-<title>Học tiếng Trung · Văn phòng & Công xưởng</title>
-    <meta name="description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
+<title>Học tiếng Trung · Văn phòng &amp; Công xưởng</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
@@ -3685,11 +3684,8 @@ body.practice-full-open .pf-tiktok-float {
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* ĐÓNG BĂNG KÍCH THƯỚC: HEADER, FLASHCARD & HEADER FULL MODE     */
-/* (Vô hiệu hóa hoàn toàn tác dụng của nút +/-)                   */
+/* 1. ĐÓNG BĂNG KÍCH THƯỚC: VÔ HIỆU HÓA NÚT +/- CHO HEADER & CARD */
 /* ═══════════════════════════════════════════════════════════════ */
-
-/* 1. Toàn bộ Header trang chính */
 html body .sticky-top,
 html body .header,
 html body .header-inner,
@@ -3698,8 +3694,6 @@ html body .logo-text,
 html body .logo-icon,
 html body .header-actions,
 html body .icon-btn,
-
-/* 2. Toàn bộ Flashcard */
 html body .card,
 html body .card-header,
 html body .card-body,
@@ -3709,19 +3703,56 @@ html body .card-pinyin,
 html body .card-practice,
 html body .card-tag,
 html body .card-stt,
-
-/* 3. Header của màn hình Full Mode (Thanh chứa nút X, HSK, Công ty) */
 html body .practice-full-header,
 html body .pf-brand,
 html body .pf-brand-text,
 html body .pf-counter,
 html body .pf-tags,
 html body .practice-full-header .card-tag {
-    
-    /* Ép buộc scale luôn bằng 1, bất kể user bấm +/- thế nào */
     --pf-scale: 1 !important;
     --ui-scale: 1 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 2. THU NHỎ KÍCH THƯỚC MẶC ĐỊNH CỦA CÁC TAG (HSK, CHỦ ĐỀ, CÂU) */
+/* Áp dụng cho CẢ Flashcard ngoài màn hình chính VÀ Full Mode      */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* --- A. DÀNH CHO FLASHCARD NGOÀI MÀN HÌNH CHÍNH --- */
+html body .card-stt {
+    font-size: 0.68rem !important; /* Số thứ tự (VD: 1301) */
+    height: 24px !important;
+    min-width: 24px !important;
+    padding: 0 6px !important;
+}
+
+html body .card-tag {
+    font-size: 0.65rem !important; /* Chữ trong tag (HSK, Tiến độ...) */
+    padding: 0.15rem 0.45rem !important;
+    height: auto !important;
+    line-height: 1.2 !important;
+}
+
+html body .card-meta {
+    gap: 0.25rem !important; /* Khoảng cách giữa các tag */
+}
+
+/* --- B. DÀNH CHO HEADER TRONG FULL MODE --- */
+html body .practice-full-header .card-tag {
+    font-size: 0.65rem !important; /* Giảm size chữ */
+    padding: 0.15rem 0.45rem !important; /* Giảm padding */
+    height: auto !important;
+}
+
+html body .practice-full-header .pf-counter {
+    font-size: 0.65rem !important; /* Bộ đếm câu (VD: #1 · Câu 1) */
+    padding: 0.25rem 0.6rem !important;
+}
+
+html body .practice-full-header .pf-tags {
+    gap: 0.25rem !important;
+}
+
 
 
 /* ═══ Nút Chấm điểm + Xem đáp án ═══ */
@@ -13049,14 +13080,6 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-<meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-<meta name="author" content="Tuhoctiengtrung.org">
-<link rel="canonical" href="https://tuhoctiengtrung.org/">
-<meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-<meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-<meta property="og:url" content="https://tuhoctiengtrung.org/">
-<meta property="og:type" content="website">
 </head>
 <body>
 
@@ -13215,7 +13238,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo đổi tên miền + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
