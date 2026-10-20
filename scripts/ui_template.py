@@ -3376,7 +3376,7 @@ body.practice-full-open .pf-tiktok-float {
 
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* HÀNG DƯỚI: 2 ĐƯỜNG LINE ÁNH SÁNG CHẠY (MẢNH, TINH TẾ)         */
+/* HÀNG DƯỚI: LINE ÁNH SÁNG CHẠY (CHỮ NHỎ, TINH TẾ)               */
 /* ═══════════════════════════════════════════════════════════════ */
 .logo-text .subtitle {
     position: relative;
@@ -3384,45 +3384,43 @@ body.practice-full-open .pf-tiktok-float {
     align-items: center;
     justify-content: center;
     
-    /* Reset toàn bộ khung nền và padding thừa */
+    /* Xóa khung nền */
     background: none !important;
     border: none !important;
-    padding: 6px 0 !important; 
-    margin-top: 2px;
+    padding: 4px 0 !important; 
+    margin-top: 1px; /* Sát tên chính hơn */
     width: fit-content;
     
-    /* Typography: Nhỏ, mảnh, không in hoa */
-    font-size: 0.65rem;
-    font-weight: 500;
+    /* ⭐ CHỮ NHỎ HƠN HẲN SO VỚI TÊN CHÍNH */
+    font-size: 0.55rem; /* Chỉ bằng ~8.8px, nhỏ hơn nhiều so với tên chính */
+    font-weight: 400; /* Mảnh, không đậm */
     font-style: italic;
     letter-spacing: 0.05em;
     text-transform: none;
-    color: #64748b; /* Xám thanh lịch cho Light Mode */
+    color: #94a3b8; /* Xám nhạt hơn để không lấn át tên chính */
     line-height: 1;
+    opacity: 0.85; /* Hơi mờ đi một chút */
 }
 
-/* Lớp giả ::before (Line trên) và ::after (Line dưới) */
+/* Line trên và dưới */
 .logo-text .subtitle::before,
 .logo-text .subtitle::after {
     content: '';
     position: absolute;
     left: 0;
     width: 100%;
-    height: 1.5px;
-    /* Line nền màu xám mờ */
-    background-color: rgba(148, 163, 184, 0.3); 
+    height: 1px; /* Line siêu mảnh */
+    background-color: rgba(148, 163, 184, 0.2);
     border-radius: 2px;
     overflow: hidden;
 }
 
-/* Định vị line trên và line dưới */
 .logo-text .subtitle::before { top: 0; }
 .logo-text .subtitle::after  { bottom: 0; }
 
-/* Hiệu ứng ánh sáng chạy (Lớp phủ) */
+/* Hiệu ứng ánh sáng chạy */
 .logo-text .subtitle {
-    /* Gradient ánh sáng màu Tím Violet */
-    --shine-color: #8b5cf6;
+    --shine-color: #a78bfa; /* Tím nhạt */
 }
 
 .logo-text .subtitle::before,
@@ -3434,12 +3432,10 @@ body.practice-full-open .pf-tiktok-float {
     animation: runningLight 3s linear infinite;
 }
 
-/* Lệch nhịp 2 line cho đẹp mắt */
 .logo-text .subtitle::after {
     animation-delay: 1.5s;
 }
 
-/* Keyframes ánh sáng chạy */
 @keyframes runningLight {
     0% { background-position: -100% 0; }
     100% { background-position: 200% 0; }
@@ -3449,23 +3445,24 @@ body.practice-full-open .pf-tiktok-float {
 /* DARK MODE                                                       */
 /* ═══════════════════════════════════════════════════════════════ */
 [data-theme="dark"] .logo-text .subtitle {
-    color: #94a3b8;
+    color: #64748b;
+    opacity: 0.9;
 }
 
 [data-theme="dark"] .logo-text .subtitle::before,
 [data-theme="dark"] .logo-text .subtitle::after {
-    background-color: rgba(100, 116, 139, 0.3); /* Line nền tối mờ */
+    background-color: rgba(100, 116, 139, 0.2);
 }
 
 [data-theme="dark"] .logo-text .subtitle {
-    --shine-color: #c084fc; /* Ánh sáng màu tím nhạt hơn cho nền tối */
+    --shine-color: #c084fc;
 }
 
 /* Mobile */
 @media (max-width: 500px) {
     .logo-text .subtitle {
-        font-size: 0.58rem;
-        padding: 4px 0 !important; 
+        font-size: 0.5rem; /* Trên đt còn nhỏ hơn nữa */
+        padding: 3px 0 !important;
     }
 }
 .ds-btn[data-dataset="tonghop"] {
