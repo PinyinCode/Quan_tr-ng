@@ -235,15 +235,11 @@ def build_social_css():
 body.hide-floating .floating-left-group,
 body.hide-floating .tiktok-bar { display: none !important; }
 
-/* ═══════════════════════════════════════════════════════════════
-   MOBILE FIX — Thu nhỏ nút Zalo + TikTok
-   Chuyển thành nút tròn compact, chỉ hiện icon
-   ═══════════════════════════════════════════════════════════════ */
-/* ═══════════════════════════════════════════════════════════════
-   MOBILE FIX — SỬA LỖI LỆCH ICON ZALO/TIKTOK & NÚT BỊ NHỎ PWA
+/* ═══════════════════════════════════════════════════════════
+   MOBILE FIX — CĂN TÂM TUYỆT ĐỐI ICON ZALO/TIKTOK
    ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-    /* Wrapper — dồn về góc trái, gap nhỏ hơn */
+    /* Wrapper */
     .floating-left-group {
         gap: 0.5rem;
         left: 16px;
@@ -254,33 +250,35 @@ body.hide-floating .tiktok-bar { display: none !important; }
     .zalo-btn {
         width: 48px !important;
         height: 48px !important;
-        min-width: 48px !important;  /* Khóa cứng để PWA không thu nhỏ */
+        min-width: 48px !important;
         min-height: 48px !important;
         padding: 0 !important;
         border-radius: 50% !important;
+        /* Ép nút cha thành flexbox căn giữa */
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        gap: 0 !important;
+        border: 3px solid #fff !important;
+        box-sizing: border-box !important;
     }
-    /* Ẩn hoàn toàn text để icon không bị lệch */
+    /* Ẩn text */
     .zalo-btn .zalo-text {
         display: none !important;
     }
-    /* Căn giữa icon tuyệt đối */
+    /* Căn giữa icon bên trong */
     .zalo-btn i {
-        font-size: 1.4rem !important;
-        line-height: 1 !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        font-size: 22px !important;
+        width: 22px !important;
+        height: 22px !important;
+        line-height: 1 !important; /* Triệt tiêu line-height thừa */
+        margin: 0 !important;      /* Xóa margin mặc định */
+        padding: 0 !important;     /* Xóa padding mặc định */
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        color: #fff !important;
     }
     .zalo-btn::before { border-radius: 50% !important; }
-    .zalo-btn:hover, .zalo-btn:active {
-        transform: scale(1.08) !important;
-    }
 
     /* --- NÚT TIKTOK --- */
     .tiktok-float-btn {
@@ -290,73 +288,37 @@ body.hide-floating .tiktok-bar { display: none !important; }
         min-height: 48px !important;
         padding: 0 !important;
         border-radius: 50% !important;
+        /* Ép nút cha thành flexbox căn giữa */
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        gap: 0 !important;
+        border: 3px solid #fff !important;
+        box-sizing: border-box !important;
     }
-    /* Ẩn hoàn toàn text */
+    /* Ẩn text */
     .tiktok-float-btn .tiktok-text {
         display: none !important;
     }
-    /* Căn giữa icon tuyệt đối */
+    /* Căn giữa icon bên trong */
     .tiktok-float-btn i {
-        font-size: 1.4rem !important;
+        font-size: 22px !important;
+        width: 22px !important;
+        height: 22px !important;
         line-height: 1 !important;
         margin: 0 !important;
         padding: 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        color: #fff !important;
     }
     .tiktok-float-btn::before { border-radius: 50% !important; }
-    .tiktok-float-btn:hover, .tiktok-float-btn:active {
-        transform: scale(1.08) !important;
-    }
 
-    /* Hover card TikTok trên mobile */
-    .tiktok-float-wrap.show-mobile .tiktok-hover-card {
+    /* Hover n card TikTok trên mobile */
+   ằ .tiktok-float-wrap.show-mmobile .tiktok-hover-card đ {
         left: -4px;
         width: min(280px, calc(100vw - 32px));
         padding: 0.85rem;
-    }
-
-    /* TikTok bar dưới header — thu nhỏ */
-    .tiktok-bar {
-        padding: 0.4rem 0.65rem;
-        gap: 0.5rem;
-    }
-    .tiktok-bar-avatar {
-        width: 28px;
-        height: 28px;
-    }
-    .tiktok-bar-info .tiktok-nick {
-        font-size: 0.85rem;
-    }
-    .tiktok-bar-info .tiktok-user {
-        font-size: 0.7rem;
-    }
-    .tiktok-bar-link {
-        padding: 0.35rem 0.65rem;
-        font-size: 0.7rem;
-    }
-    .tiktok-bar-link i {
-        font-size: 0.75rem;
-    }
-}
-
-/* Mobile rất nhỏ (≤ 400px) — vẫn giữ form chuẩn */
-@media (max-width: 400px) {
-    .zalo-btn,
-    .tiktok-float-btn {
-        width: 44px !important;
-        height: 44px !important;
-        min-width: 44px !important;
-        min-height: 44px !important;
-    }
-    .zalo-btn i,
-    .tiktok-float-btn i {
-        font-size: 1.25rem !important;
     }
 }
 """
