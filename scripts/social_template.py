@@ -239,65 +239,82 @@ body.hide-floating .tiktok-bar { display: none !important; }
    MOBILE FIX — Thu nhỏ nút Zalo + TikTok
    Chuyển thành nút tròn compact, chỉ hiện icon
    ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE FIX — SỬA LỖI LỆCH ICON ZALO/TIKTOK & NÚT BỊ NHỎ PWA
+   ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
     /* Wrapper — dồn về góc trái, gap nhỏ hơn */
     .floating-left-group {
-        gap: 0.4rem;
-        left: 12px;
+        gap: 0.5rem;
+        left: 16px;
         bottom: calc(80px + env(safe-area-inset-bottom));
     }
 
-    /* Nút Zalo — chuyển thành nút tròn */
+    /* --- NÚT ZALO --- */
     .zalo-btn {
-        width: 46px;
-        height: 46px;
-        padding: 0;
-        border-radius: 50%;
-        justify-content: center;
-        gap: 0;
+        width: 48px !important;
+        height: 48px !important;
+        min-width: 48px !important;  /* Khóa cứng để PWA không thu nhỏ */
+        min-height: 48px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0 !important;
     }
-    .zalo-btn i {
-        font-size: 1.25rem;
-    }
+    /* Ẩn hoàn toàn text để icon không bị lệch */
     .zalo-btn .zalo-text {
-        opacity: 0;
-        max-width: 0;
-        overflow: hidden;
+        display: none !important;
     }
-    .zalo-btn::before {
-        border-radius: 50%;
+    /* Căn giữa icon tuyệt đối */
+    .zalo-btn i {
+        font-size: 1.4rem !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
-    .zalo-btn:hover,
-    .zalo-btn:active {
-        transform: scale(1.08);
+    .zalo-btn::before { border-radius: 50% !important; }
+    .zalo-btn:hover, .zalo-btn:active {
+        transform: scale(1.08) !important;
     }
 
-    /* Nút TikTok — chuyển thành nút tròn */
+    /* --- NÚT TIKTOK --- */
     .tiktok-float-btn {
-        width: 46px;
-        height: 46px;
-        padding: 0;
-        border-radius: 50%;
-        justify-content: center;
-        gap: 0;
+        width: 48px !important;
+        height: 48px !important;
+        min-width: 48px !important;
+        min-height: 48px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0 !important;
     }
-    .tiktok-float-btn i {
-        font-size: 1.25rem;
-    }
+    /* Ẩn hoàn toàn text */
     .tiktok-float-btn .tiktok-text {
-        opacity: 0;
-        max-width: 0;
-        overflow: hidden;
+        display: none !important;
     }
-    .tiktok-float-btn::before {
-        border-radius: 50%;
+    /* Căn giữa icon tuyệt đối */
+    .tiktok-float-btn i {
+        font-size: 1.4rem !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
-    .tiktok-float-btn:hover,
-    .tiktok-float-btn:active {
-        transform: scale(1.08);
+    .tiktok-float-btn::before { border-radius: 50% !important; }
+    .tiktok-float-btn:hover, .tiktok-float-btn:active {
+        transform: scale(1.08) !important;
     }
 
-    /* Hover card TikTok trên mobile — hiện khi double-tap, thu nhỏ */
+    /* Hover card TikTok trên mobile */
     .tiktok-float-wrap.show-mobile .tiktok-hover-card {
         left: -4px;
         width: min(280px, calc(100vw - 32px));
@@ -328,16 +345,18 @@ body.hide-floating .tiktok-bar { display: none !important; }
     }
 }
 
-/* Mobile rất nhỏ (≤ 400px) — thu nhỏ thêm */
+/* Mobile rất nhỏ (≤ 400px) — vẫn giữ form chuẩn */
 @media (max-width: 400px) {
     .zalo-btn,
     .tiktok-float-btn {
-        width: 42px;
-        height: 42px;
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
     }
     .zalo-btn i,
     .tiktok-float-btn i {
-        font-size: 1.1rem;
+        font-size: 1.25rem !important;
     }
 }
 """
