@@ -2099,29 +2099,29 @@ html body .tiktok-float-btn > i {
     margin: 0 !important;
 }
 
-/* 3. FIX TRÊN MOBILE (<= 768px) */
+/* 3. FIX TRÊN MOBILE (<= 768px) - ĐƠN GIẢN HÓA TỐI ĐA */
 @media (max-width: 768px) {
-    /* Căn vị trí cụm nút */
     html body .floating-left-group {
         left: 16px !important;
         bottom: calc(80px + env(safe-area-inset-bottom)) !important;
-        gap: 0.5rem !important;
     }
 
-    /* Nút Zalo & TikTok */
+    /* Khóa cứng nút, bỏ mọi scale */
     html body .zalo-btn,
     html body .tiktok-float-btn {
+        --ui-scale: 1 !important;
+        --pf-scale: 1 !important;
         width: 48px !important;
         height: 48px !important;
         min-width: 48px !important;
         min-height: 48px !important;
-        padding: 0 !important; /* Xóa sạch padding */
+        padding: 0 !important; 
         border-radius: 50% !important;
         border: 3px solid #fff !important;
+        /* Trả lại display flex nguyên thủy để nó tự căn giữa */
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        position: relative !important;
     }
     
     /* Ẩn text */
@@ -2130,32 +2130,19 @@ html body .tiktok-float-btn > i {
         display: none !important;
     }
 
-    /* Icon bên trong - Đưa về trạng thái tĩnh, dùng flexbox căn giữa */
+    /* Trả icon về trạng thái bình thường, chỉ set kích thước */
     html body .zalo-btn > i,
     html body .tiktok-float-btn > i {
-        position: static !important;        
-        transform: none !important;
         font-size: 22px !important; 
-        width: 22px !important;
-        height: 22px !important;
         line-height: 1 !important; 
         margin: 0 !important;      
         padding: 0 !important;     
         color: #fff !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-
-    /* Fix vòng hào quang */
-    html body .zalo-btn::before,
-    html body .tiktok-float-btn::before { 
-        border-radius: 50% !important; 
-        position: absolute !important;
-        inset: 0 !important;
+        /* Tuyệt đối không dùng position: absolute hay transform ở đây */
     }
 }
 """
+
 
 def build_auto_scale_js():
     return r"""
