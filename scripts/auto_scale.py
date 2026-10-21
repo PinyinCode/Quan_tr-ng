@@ -2130,12 +2130,12 @@ html body .tiktok-float-btn > i {
         display: none !important;
     }
 
-    /* Icon bên trong - Đưa về trạng thái tĩ:nh, dùng flexbox căn giữa none */
-    html body .zalo-btn > i !,
-    html body .tiktimportantok-float-btn > i {
-       ;
- position: static !important;        
-        transform font-size: 22px !important; 
+    /* Icon bên trong - Đưa về trạng thái tĩnh, dùng flexbox căn giữa */
+    html body .zalo-btn > i,
+    html body .tiktok-float-btn > i {
+        position: static !important;        
+        transform: none !important;
+        font-size: 22px !important; 
         width: 22px !important;
         height: 22px !important;
         line-height: 1 !important; 
