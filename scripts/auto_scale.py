@@ -2104,6 +2104,56 @@ html body .load-more,
 html body .result-count {
     font-size: revert !important;
 }
+/* ═══════════════════════════════════════════════════════════════ */
+/* FIX TRIỆT ĐỂ: CÔ LẬP ZALO/TIKTOK KHỎI HỆ THỐNG AUTO-SCALE      */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* 1. Reset scale cho 2 nút này */
+html body .zalo-btn,
+html body .tiktok-float-btn {
+    --ui-scale: 1 !important; 
+}
+
+/* 2. Ghi đè kích thước cố định (Mobile & PWA) */
+@media (max-width: 768px) {
+    html body .zalo-btn,
+    html body .tiktok-float-btn {
+        width: 48px !important;
+        height: 48px !important;
+        min-width: 48px !important;
+        min-height: 48px !important;
+        padding: 0 !important; /* Xóa bỏ padding tính toán của clamp */
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    /* Ẩn text */
+    html body .zalo-btn .zalo-text,
+    html body .tiktok-float-btn .tiktok-text {
+        display: none !important;
+    }
+    
+    /* 3. Căn giữa icon tuyệt đối bằng position absolute */
+    html body .zalo-btn i,
+    html body .tiktok-float-btn i {
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        
+        font-size: 22px !important; /* Dùng px cố định, không dùng rem/vmin */
+        width: 22px !important;
+        height: 22px !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+}
 """
 
 def build_auto_scale_js():
