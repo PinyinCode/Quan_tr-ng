@@ -238,8 +238,10 @@ body.hide-floating .tiktok-bar { display: none !important; }
 /* ═══════════════════════════════════════════════════════════
    MOBILE FIX — CĂN TÂM TUYỆT ĐỐI ICON ZALO/TIKTOK
    ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE FIX — TRỊ TẬN GỐC LỖI LỆCH TÂM ICON
+   ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-    /* Wrapper */
     .floating-left-group {
         gap: 0.5rem;
         left: 16px;
@@ -254,31 +256,36 @@ body.hide-floating .tiktok-bar { display: none !important; }
         min-height: 48px !important;
         padding: 0 !important;
         border-radius: 50% !important;
-        /* Ép nút cha thành flexbox căn giữa */
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
         border: 3px solid #fff !important;
         box-sizing: border-box !important;
+        /* Đặt position relative làm mốc tọa độ */
+        position: relative !important; 
+        display: block !important; /* Bỏ flex để trị dứt điểm */
     }
-    /* Ẩn text */
     .zalo-btn .zalo-text {
         display: none !important;
     }
-    /* Căn giữa icon bên trong */
     .zalo-btn i {
+        /* Đưa icon ra khỏi luồng, căn giữa bằng tọa độ tuyệt đối */
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important; 
+        
+        /* Khóa cứng kích thước và xóa mọi rào cản */
         font-size: 22px !important;
         width: 22px !important;
         height: 22px !important;
-        line-height: 1 !important; /* Triệt tiêu line-height thừa */
-        margin: 0 !important;      /* Xóa margin mặc định */
-        padding: 0 !important;     /* Xóa padding mặc định */
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
         color: #fff !important;
     }
-    .zalo-btn::before { border-radius: 50% !important; }
+    .zalo-btn::before { 
+        border-radius: 50% !important; 
+        position: absolute !important;
+        inset: 0 !important;
+    }
 
     /* --- NÚT TIKTOK --- */
     .tiktok-float-btn {
@@ -288,34 +295,38 @@ body.hide-floating .tiktok-bar { display: none !important; }
         min-height: 48px !important;
         padding: 0 !important;
         border-radius: 50% !important;
-        /* Ép nút cha thành flexbox căn giữa */
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
         border: 3px solid #fff !important;
         box-sizing: border-box !important;
+        /* Đặt position relative làm mốc tọa độ */
+        position: relative !important;
+        display: block !important;
     }
-    /* Ẩn text */
     .tiktok-float-btn .tiktok-text {
         display: none !important;
     }
-    /* Căn giữa icon bên trong */
     .tiktok-float-btn i {
+        /* Đưa icon ra khỏi luồng, căn giữa bằng tọa độ tuyệt đối */
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        
+        /* Khóa cứng kích thước và xóa mọi rào cản */
         font-size: 22px !important;
         width: 22px !important;
         height: 22px !important;
         line-height: 1 !important;
         margin: 0 !important;
         padding: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
         color: #fff !important;
     }
-    .tiktok-float-btn::before { border-radius: 50% !important; }
+    .tiktok-float-btn::before { 
+        border-radius: 50% !important; 
+        position: absolute !important;
+        inset: 0 !important;
+    }
 
-    /* Hover n card TikTok trên mobile */
-   ằ .tiktok-float-wrap.show-mmobile .tiktok-hover-card đ {
+    .tiktok-float-wrap.show-mobile .tiktok-hover-card {
         left: -4px;
         width: min(280px, calc(100vw - 32px));
         padding: 0.85rem;
