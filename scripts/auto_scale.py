@@ -1430,34 +1430,7 @@ html body .chat-toast{
 /* ═══════════════════════════════════════════════════════════════ */
 /* SOCIAL                                                        */
 /* ═══════════════════════════════════════════════════════════════ */
-html body .zalo-btn,
-html body .tiktok-float-btn{
-    padding:calc(clamp(.65rem,1.3vmin,1rem) * var(--ui-scale,1))
-             calc(clamp(1rem,2vmin,1.5rem) * var(--ui-scale,1))!important;
-    font-size:calc(clamp(.82rem,1.55vmin,1.15rem) * var(--ui-scale,1))!important;
-    gap:calc(clamp(.45rem,.9vmin,.7rem) * var(--ui-scale,1))!important
-}
-html body .zalo-btn i,
-html body .tiktok-float-btn i{
-    font-size:calc(clamp(1.1rem,2.1vmin,1.55rem) * var(--ui-scale,1))!important
-}
-html body .zalo-btn .zalo-label,
-html body .tiktok-float-btn .tiktok-label{
-    font-size:calc(clamp(.62rem,1.2vmin,.88rem) * var(--ui-scale,1))!important
-}
-html body .zalo-btn .zalo-name,
-html body .tiktok-float-btn .tiktok-name{
-    font-size:calc(clamp(.82rem,1.55vmin,1.15rem) * var(--ui-scale,1))!important
-}
-html body .zalo-btn.compact,
-html body .tiktok-float-btn.compact{
-    width:calc(clamp(50px,7vmin,80px) * var(--ui-scale,1))!important;
-    height:calc(clamp(50px,7vmin,80px) * var(--ui-scale,1))!important
-}
-html body .zalo-btn.compact i,
-html body .tiktok-float-btn.compact i{
-    font-size:calc(clamp(1.3rem,2.5vmin,1.9rem) * var(--ui-scale,1))!important
-}
+
 html body .floating-left-group{
     gap:calc(clamp(.5rem,1vmin,.8rem) * var(--ui-scale,1))!important;
     left:calc(clamp(16px,2vmin,28px) * var(--ui-scale,1))!important;
@@ -2105,28 +2078,50 @@ html body .result-count {
     font-size: revert !important;
 }
 /* ═══════════════════════════════════════════════════════════════ */
-/* FIX TRIỆT ĐỂ: CÔ LẬP ZALO/TIKTOK KHỎI HỆ THỐNG AUTO-SCALE      */
+/* FIX TRIỆT ĐỂ: ZALO/TIKTOK (KHÔNG DÙNG CLAMP, KHÔNG DÙNG SCALE) */
 /* ═══════════════════════════════════════════════════════════════ */
 
-/* 1. Reset scale cho 2 nút này */
+/* 1. Ghi đè kích thước nút trên DESKTOP */
 html body .zalo-btn,
 html body .tiktok-float-btn {
     --ui-scale: 1 !important; 
+    --pf-scale: 1 !important;
+    padding: .7rem 1.1rem !important; /* Trả lại padding gốc cho desktop */
+    font-size: .85rem !important;
+    gap: .5rem !important;
 }
 
-/* 2. Ghi đè kích thước cố định (Mobile & PWA) */
+/* 2. Ghi đè kích thước ICON trên DESKTOP */
+html body .zalo-btn > i,
+html body .tiktok-float-btn > i {
+    font-size: 1.2rem !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+}
+
+/* 3. FIX TRÊN MOBILE (<= 768px) */
 @media (max-width: 768px) {
+    /* Căn vị trí cụm nút */
+    html body .floating-left-group {
+        left: 16px !important;
+        bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+        gap: 0.5rem !important;
+    }
+
+    /* Nút Zalo & TikTok */
     html body .zalo-btn,
     html body .tiktok-float-btn {
         width: 48px !important;
         height: 48px !important;
         min-width: 48px !important;
         min-height: 48px !important;
-        padding: 0 !important; /* Xóa bỏ padding tính toán của clamp */
+        padding: 0 !important; /* Xóa sạch padding */
         border-radius: 50% !important;
+        border: 3px solid #fff !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        position: relative !important;
     }
     
     /* Ẩn text */
@@ -2134,24 +2129,30 @@ html body .tiktok-float-btn {
     html body .tiktok-float-btn .tiktok-text {
         display: none !important;
     }
-    
-    /* 3. Căn giữa icon tuyệt đối bằng position absolute */
-    html body .zalo-btn i,
-    html body .tiktok-float-btn i {
-        position: absolute !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        
-        font-size: 22px !important; /* Dùng px cố định, không dùng rem/vmin */
+
+    /* Icon bên trong - Đưa về trạng thái tĩ:nh, dùng flexbox căn giữa none */
+    html body .zalo-btn > i !,
+    html body .tiktimportantok-float-btn > i {
+       ;
+ position: static !important;        
+        transform font-size: 22px !important; 
         width: 22px !important;
         height: 22px !important;
-        line-height: 1 !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        line-height: 1 !important; 
+        margin: 0 !important;      
+        padding: 0 !important;     
+        color: #fff !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+    }
+
+    /* Fix vòng hào quang */
+    html body .zalo-btn::before,
+    html body .tiktok-float-btn::before { 
+        border-radius: 50% !important; 
+        position: absolute !important;
+        inset: 0 !important;
     }
 }
 """
