@@ -29,20 +29,33 @@ if os.path.isdir(icon_dir):
     icon_files = os.listdir(icon_dir)
     print(f"🔍 Tìm thấy {len(icon_files)} file trong thư mục '{icon_dir}/'")
 
+    # 1. Apple Touch Icon
     if "apple-touch-icon.png" in icon_files:
         favicon_tags.append('<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">')
 
+    # 2. Icon thường (any purpose)
     if "icon-192.png" in icon_files:
         favicon_tags.append('<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">')
-    
     if "icon-512.png" in icon_files:
         favicon_tags.append('<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">')
-    
-    if not favicon_tags and "favicon.png" in icon_files:
-        favicon_tags.append('<link rel="icon" type="image/png" href="/icons/favicon.png">')
 
+    # 3. Icon Maskable (cho Android adaptive icons)
+    if "icon-maskable-192.png" in icon_files:
+        favicon_tags.append('<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-maskable-192.png">')
+    if "icon-maskable-512.png" in icon_files:
+        favicon_tags.append('<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-maskable-512.png">')
+
+    # 4. Manifest cho PWA
     if os.path.exists("manifest.json"):
         favicon_tags.append('<link rel="manifest" href="/manifest.json">')
+        
+    # 5. Fallback (Nếu không tìm thấy file nào tên chuẩn)
+    if not favicon_tags:
+        for fname in icon_files:
+            if fname.lower().endswith(('.png', '.ico', '.svg')):
+                favicon_tags.append(f'<link rel="icon" href="/icons/{fname}">')
+                print(f"⚠️ Không tìm thấy favicon chuẩn, dùng tạm: {fname}")
+                break
 else:
     print(f"⚠️ Không tìm thấy thư mục '{icon_dir}/'. Bỏ qua bước chèn favicon.")
 
