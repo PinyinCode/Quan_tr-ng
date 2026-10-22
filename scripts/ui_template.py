@@ -3911,6 +3911,13 @@ def build_ui_html():
             <i class="fas fa-chevron-down ds-arrow"></i>
             <span class="ds-new-badge" id="dsNewBadge">NEW</span>
         </button>
+        <!-- Nút Đời sống -->
+        <button class="ds-btn ds-btn-primary" data-dataset-group="doi-song" id="dsDoiSongBtn" disabled>
+            <i class="fas fa-coffee"></i>
+            <span>Đời sống</span>
+            <i class="fas fa-chevron-down ds-arrow"></i>
+            <span class="ds-new-badge" style="background:linear-gradient(135deg,#22c55e,#16a34a);">NEW</span>
+        </button>
         <!-- __FAV_DATASET_TAB__ -->
     </div>
     <div class="ds-sub-wrap" id="dsSubWrap" style="display:none">
