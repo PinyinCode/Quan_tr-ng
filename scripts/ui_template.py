@@ -6895,6 +6895,9 @@ function applyFilter() {
 /* RENDER CARDS                                                  */
 /* ============================================================ */
 function render(reset) {
+    if (!mobileWrapper || !document.getElementById('mobileWrapper')) {
+        return;
+    }
     if (reset) { renderedCount = 0; focusedStt = null; }
     if (!filtered.length) {
         mobileWrapper.innerHTML = '<div class="no-data"><i class="fas fa-search"></i>Không tìm thấy câu nào</div>';
