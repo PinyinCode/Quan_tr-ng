@@ -38342,8 +38342,18 @@ window.__switchRawData = function(datasetId) {
                     window.FIXPY_DATASETS = d || {};
                 }
                 console.log('[fix.py] preview loaded');
-                if (typeof window.__fixpyOnDataReady === 'function') {
-                    window.__fixpyOnDataReady();
+                if (typeof window.waitForData === 'function') {
+                    window.waitForData(function() {
+                        if (typeof window.__fixpyOnDataReady === 'function') {
+                            window.__fixpyOnDataReady();
+                        }
+                    });
+                } else {
+                    setTimeout(function() {
+                        if (typeof window.__fixpyOnDataReady === 'function') {
+                            window.__fixpyOnDataReady();
+                        }
+                    }, 1000);
                 }
             })
             .catch(function(e) {
