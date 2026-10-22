@@ -4,23 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       industry_name:
-        description: 'Chọn nhóm ngành nghề muốn tạo từ vựng'
+        description: 'Chọn nhóm ngành nghề/chủ đề muốn tạo từ vựng chuyên sâu'
         required: true
-        default: 'Công Nghệ Cao & AI'
+        default: 'Đầu Tư & Tài Chính'
         type: choice
         options:
-          - 'Công Nghệ Cao & AI'
-          - 'Du Lịch - Khách Sạn & Xuất Nhập Cảnh'
-          - 'Giáo Dục & Du Học'
-          - 'Bán Hàng & Marketing'
-          - 'Văn Hóa & Ngày Lễ'
-          - 'May Mặc'
-          - 'Y Tế'
-          - 'Nông - Lâm - Thủy Sản'
+          - 'Đầu Tư & Tài Chính'
           - 'Cơ Khí & Chế Tạo'
-          - 'Hàng Không Vũ Trụ'
+          - 'May Mặc'
+          - 'Điện Tử & SMT'
+          - 'Đời Sống & Du Lịch'
+          - 'Văn Hóa & Ngày Lễ'
+          - 'Y Tế & Sức Khỏe'
           - 'Logistics & Kho Vận'
-          - 'Nghệ Thuật'
+          - 'Bán Hàng & Marketing'
+          - 'Công Nghệ Cao & AI'
 
 jobs:
   run-generation:
