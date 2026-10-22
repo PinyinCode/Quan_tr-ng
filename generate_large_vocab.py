@@ -4,7 +4,7 @@ import re
 import time
 from openai import OpenAI
 import openpyxl
-from pypinyin import Style, pypinyin
+from pypinyin import Style, lazy_pinyin  # ⭐ Sửa đúng tên function lazy_pinyin
 
 # Lấy biến môi trường từ GitHub Actions hoặc hệ thống
 api_key = os.environ.get("DASHSCOPE_API_KEY")
@@ -22,7 +22,7 @@ os.makedirs(output_dir, exist_ok=True)
 # Lấy nhóm ngành từ workflow (mặc định 'Công Nghệ Cao & AI' nếu chạy cục bộ)
 TARGET_INDUSTRY = os.environ.get("TARGET_INDUSTRY", "Công Nghệ Cao & AI")
 
-# Xử lý tên file đẹp, giữ tiếng Việt có dấu (VD: "Công Nghệ Cao & AI" -> "Công_Nghệ_Cao_AI_Full.xlsx")
+# Xử lý tên file đẹp, giữ tiếng Việt có dấu
 clean_name = (
     TARGET_INDUSTRY.strip()
     .replace("&", "")
@@ -32,7 +32,7 @@ clean_name = (
 )
 filename_prefix = f"{clean_name}_Full"
 
-# Bản đồ cấu hình các chủ điểm/chủ đề đã được nhóm & tối ưu
+# Bản đồ cấu hình các chủ điểm/chủ đề
 INDUSTRY_TOPICS_MAP = {
     "Công Nghệ Cao & AI": [
         {
@@ -340,23 +340,16 @@ industry_topics = INDUSTRY_TOPICS_MAP.get(TARGET_INDUSTRY, default_topics)
 def clean_pinyin(zh_text, py_text):
     """
     Hàm làm sạch Pinyin:
-    - Nếu Pinyin rỗng hoặc có chứa chữ Hán, sử dụng pypinyin để tạo lại Pinyin sạch 100%.
-    - Loại bỏ bất kỳ ký tự chữ Hán nào sót lại.
+    - Sử dụng lazy_pinyin từ pypinyin để tạo Pinyin chuẩn sạch 100%.
     """
-    # Pattern nhận biết ký tự chữ Hán
     has_chinese = re.search(r'[\u4e00-\u9fff]', str(py_text or ""))
     
     if not py_text or has_chinese:
-        # Tự động tạo Pinyin sạch bằng pypinyin
-        py_list = pypinyin(zh_text, style=Style.TONE)
-        clean_py = " ".join([item[0] for item in py_list])
-        return clean_py.strip()
+        py_list = lazy_pinyin(zh_text, style=Style.TONE)
+        return " ".join(py_list).strip()
     
-    # Loại bỏ ký tự tiếng Trung nếu còn dính
     cleaned = re.sub(r'[\u4e00-\u9fff]', '', str(py_text)).strip()
-    # Thu gọn khoảng trắng thừa
-    cleaned = re.sub(r'\s+', ' ', cleaned)
-    return cleaned
+    return re.sub(r'\s+', ' ', cleaned)
 
 
 def generate_vocabulary_batch(chu_diem, chu_de):
@@ -485,7 +478,6 @@ for topic in industry_topics:
         if not zh or not vi:
             continue
 
-        # Làm sạch Pinyin từ vựng gốc
         py = clean_pinyin(zh, raw_py)
 
         # 1. HÀNG 1: TỪ VỰNG GỐC
@@ -499,7 +491,7 @@ for topic in industry_topics:
         current_row += 1
         global_stt += 1
 
-        # 2. HÀNG 2: CÂU NGẮN CHỨA TỪ ĐÓ (Dành cho từ/cụm ngắn <= 12 ký tự)
+        # 2. HÀNG 2: CÂU NGẮN CHỨA TỪ ĐÓ (<= 12 ký tự)
         if len(str(zh)) <= 12:
             ex_vi, ex_zh, ex_py = generate_example_sentence(vi, zh)
 
