@@ -6,6 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
@@ -13216,19 +13219,7 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-    <meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-    <meta name="author" content="Tuhoctiengtrung.org">
-    <link rel="canonical" href="https://tuhoctiengtrung.org/">
-    <meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-    <meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-    <meta property="og:url" content="https://tuhoctiengtrung.org/">
-    <meta property="og:type" content="website">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
-    <meta name="theme-color" content="#7c3aed">
-  </head>
+</head>
 <body>
 
 <div class="page-wrap">
@@ -13342,6 +13333,13 @@ body.has-floating-group #quickSearchRoot{
             <i class="fas fa-chevron-down ds-arrow"></i>
             <span class="ds-new-badge" id="dsNewBadge">NEW</span>
         </button>
+        <!-- Nút Đời sống -->
+        <button class="ds-btn ds-btn-primary" data-dataset-group="doi-song" id="dsDoiSongBtn" disabled>
+            <i class="fas fa-coffee"></i>
+            <span>Đời sống</span>
+            <i class="fas fa-chevron-down ds-arrow"></i>
+            <span class="ds-new-badge" style="background:linear-gradient(135deg,#22c55e,#16a34a);">NEW</span>
+        </button>
         <button class="ds-btn ds-btn-primary" data-dataset-group="favorites" id="dsFavBtn">
             <i class="far fa-heart"></i>
             <span>Yêu thích</span>
@@ -13387,7 +13385,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
@@ -14626,7 +14624,7 @@ body.has-floating-group #quickSearchRoot{
 </div>
 
 <script>
-var DATASET_REGISTRY_META = {"tonghop":{"id":"tonghop","name":"1750 câu phản xạ tổng hợp VPCX","icon":"fa-book-open","color":"#4f46e5","count":1750,"source":"data/input.xlsx"},"chat-luong":{"id":"chat-luong","name":"Chất lượng","icon":"fa-award","color":"#7c3aed","count":706,"source":"Chất_lượng.xlsx"},"giay-da":{"id":"giay-da","name":"Giày da","icon":"fa-shoe-prints","color":"#7c3aed","count":423,"source":"Giày_da.xlsx"},"hanh-chinh-nhan-su":{"id":"hanh-chinh-nhan-su","name":"Hành chính - Nhân sự","icon":"fa-briefcase","color":"#7c3aed","count":1326,"source":"Hành_chính_-_Nhân_sự.xlsx"},"ke-toan":{"id":"ke-toan","name":"Kế toán","icon":"fa-calculator","color":"#7c3aed","count":365,"source":"Kế_toán.xlsx"},"logistics-kho-van":{"id":"logistics-kho-van","name":"Logistics - Kho Vận","icon":"fa-truck","color":"#7c3aed","count":955,"source":"Logistics_-_Kho_Vận.xlsx"},"may-mac":{"id":"may-mac","name":"May Mặc","icon":"fa-tshirt","color":"#7c3aed","count":570,"source":"May_Mặc.xlsx"},"may-tinh-it":{"id":"may-tinh-it","name":"Máy tính & IT","icon":"fa-laptop-code","color":"#7c3aed","count":286,"source":"Máy_tính_&_IT.xlsx"},"thu-mua":{"id":"thu-mua","name":"Thu mua","icon":"fa-shopping-cart","color":"#7c3aed","count":1051,"source":"Thu_mua.xlsx"},"to-truong-quan-li-san-xuat":{"id":"to-truong-quan-li-san-xuat","name":"Tổ trưởng - Quản lí sản xuất","icon":"fa-industry","color":"#7c3aed","count":350,"source":"Tổ_trưởng_-_Quản_lí_sản_xuất.xlsx"},"van-thu-tro-ly-san-xuat":{"id":"van-thu-tro-ly-san-xuat","name":"Văn thư - Trợ lý sản xuất","icon":"fa-industry","color":"#7c3aed","count":1050,"source":"Văn_thư_-_Trợ_lý_sản_xuất.xlsx"},"xuat-nhap-khau":{"id":"xuat-nhap-khau","name":"Xuất nhập khẩu","icon":"fa-ship","color":"#7c3aed","count":300,"source":"Xuất_nhập_khẩu.xlsx"}};
+var DATASET_REGISTRY_META = {"tonghop":{"id":"tonghop","name":"1750 câu phản xạ tổng hợp VPCX","icon":"fa-book-open","color":"#4f46e5","count":1750,"source":"data/input.xlsx","group":""},"chat-luong":{"id":"chat-luong","name":"Chất lượng","icon":"fa-award","color":"#7c3aed","count":706,"source":"Chất_lượng.xlsx","group":"chuyen-nganh"},"giay-da":{"id":"giay-da","name":"Giày da","icon":"fa-shoe-prints","color":"#7c3aed","count":423,"source":"Giày_da.xlsx","group":"chuyen-nganh"},"hanh-chinh-nhan-su":{"id":"hanh-chinh-nhan-su","name":"Hành chính - Nhân sự","icon":"fa-briefcase","color":"#7c3aed","count":1326,"source":"Hành_chính_-_Nhân_sự.xlsx","group":"chuyen-nganh"},"ke-toan":{"id":"ke-toan","name":"Kế toán","icon":"fa-calculator","color":"#7c3aed","count":365,"source":"Kế_toán.xlsx","group":"chuyen-nganh"},"logistics-kho-van":{"id":"logistics-kho-van","name":"Logistics - Kho Vận","icon":"fa-truck","color":"#7c3aed","count":955,"source":"Logistics_-_Kho_Vận.xlsx","group":"chuyen-nganh"},"may-mac":{"id":"may-mac","name":"May Mặc","icon":"fa-tshirt","color":"#7c3aed","count":570,"source":"May_Mặc.xlsx","group":"chuyen-nganh"},"may-tinh-it":{"id":"may-tinh-it","name":"Máy tính & IT","icon":"fa-laptop-code","color":"#7c3aed","count":286,"source":"Máy_tính_&_IT.xlsx","group":"chuyen-nganh"},"thu-mua":{"id":"thu-mua","name":"Thu mua","icon":"fa-shopping-cart","color":"#7c3aed","count":1051,"source":"Thu_mua.xlsx","group":"chuyen-nganh"},"to-truong-quan-li-san-xuat":{"id":"to-truong-quan-li-san-xuat","name":"Tổ trưởng - Quản lí sản xuất","icon":"fa-industry","color":"#7c3aed","count":350,"source":"Tổ_trưởng_-_Quản_lí_sản_xuất.xlsx","group":"chuyen-nganh"},"van-thu-tro-ly-san-xuat":{"id":"van-thu-tro-ly-san-xuat","name":"Văn thư - Trợ lý sản xuất","icon":"fa-industry","color":"#7c3aed","count":1050,"source":"Văn_thư_-_Trợ_lý_sản_xuất.xlsx","group":"chuyen-nganh"},"xuat-nhap-khau":{"id":"xuat-nhap-khau","name":"Xuất nhập khẩu","icon":"fa-ship","color":"#7c3aed","count":300,"source":"Xuất_nhập_khẩu.xlsx","group":"chuyen-nganh"}};
 var DATASET_REGISTRY = {};
 var RAW_DATA = [];
 var CURRENT_DATASET = 'tonghop';
@@ -15012,7 +15010,10 @@ function autoFitLabel(el) {
 /* ============================================================ */
 function initDatasetSelector() {
     var cnBtnInit = $('dsChuyenNganhBtn');
+    var dsBtnInit = $('dsDoiSongBtn');
+    
     if (cnBtnInit) cnBtnInit.disabled = true;
+    if (dsBtnInit) dsBtnInit.disabled = true;
 
     if (typeof DATASET_REGISTRY === 'undefined' || !DATASET_REGISTRY || !DATASET_REGISTRY.tonghop) {
         if (window.__dataLoadPromise) {
@@ -15023,6 +15024,8 @@ function initDatasetSelector() {
 
     /* ⭐ Data đã sẵn sàng → mở khoá nút */
     if (cnBtnInit) cnBtnInit.disabled = false;
+    if (dsBtnInit) dsBtnInit.disabled = false;
+
     var labelEl = $('dsTonghopLabel');
     if (labelEl) {
         var count = DATASET_REGISTRY.tonghop.count
@@ -15050,67 +15053,119 @@ function initDatasetSelector() {
         }
     }
 
-    var chuyenNganhKeys = Object.keys(DATASET_REGISTRY).filter(function(id) {
-        return id !== 'tonghop';
-    });
-
-    var cnBtn = $('dsChuyenNganhBtn');
-    if (chuyenNganhKeys.length === 0) {
-        if (cnBtn) cnBtn.style.display = 'none';
-        return;
-    }
-
     var canAccess = canAccessChuyenNganh();
 
-    var subGrid = $('dsSubGrid');
-    if (subGrid) {
-        subGrid.innerHTML = '';
-        chuyenNganhKeys.forEach(function(id) {
-            var ds = DATASET_REGISTRY[id];
+    // Phân loại dataset theo group (chuyen-nganh và doi-song)
+    var groups = { 'chuyen-nganh': [], 'doi-song': [] };
+    Object.keys(DATASET_REGISTRY).forEach(function(id) {
+        if (id === 'tonghop') return;
+        var g = DATASET_REGISTRY[id].group;
+        if (groups[g]) {
+            groups[g].push(id);
+        } else {
+            // Fallback: nếu data cũ chưa có group, mặc định cho vào chuyên ngành
+            groups['chuyen-nganh'].push(id);
+        }
+    });
 
-            var btn = document.createElement('button');
-            btn.className = 'ds-sub-btn' + (canAccess ? '' : ' locked');
-            btn.dataset.dataset = ds.id;
-            btn.dataset.locked = canAccess ? '0' : '1';
-            btn.style.setProperty('--ds-color', ds.color || '#64748b');
-            btn.title = ds.name + ' (' + ds.count + ' câu)' +
-                        (canAccess ? '' : ' - Cần gia hạn để mở khoá');
+    // Hàm phụ trợ render từng nhóm
+    function setupGroup(groupName, keys, btnId) {
+        var mainBtn = $(btnId);
+        if (!mainBtn) return;
 
-            var icon = document.createElement('i');
-            icon.className = 'fas ' + (ds.icon || 'fa-folder');
-            btn.appendChild(icon);
+        if (keys.length === 0) {
+            mainBtn.style.display = 'none';
+            return;
+        }
+        mainBtn.style.display = 'flex';
 
-            var nameSpan = document.createElement('span');
-            nameSpan.textContent = ds.name.normalize ? ds.name.normalize('NFC') : ds.name;
-            btn.appendChild(nameSpan);
-
-            if (!canAccess) {
-                var lock = document.createElement('i');
-                lock.className = 'fas fa-lock ds-sub-lock';
-                btn.appendChild(lock);
-            }
-
-            subGrid.appendChild(btn);
-        });
-    }
-
-    if (cnBtn) {
-        var oldLock = cnBtn.querySelector('.ds-main-lock');
+        // Cập nhật lock state cho nút chính
+        var oldLock = mainBtn.querySelector('.ds-main-lock');
         if (oldLock) oldLock.remove();
 
         if (!canAccess) {
-            var span = cnBtn.querySelector('span');
-            if (span) {
-                span.insertAdjacentHTML('afterend',
-                    '<i class="fas fa-lock ds-main-lock"></i>');
-            }
-            cnBtn.classList.add('has-lock');
-            cnBtn.title = 'Cần đăng nhập + gia hạn để mở khoá chuyên ngành';
+            var span = mainBtn.querySelector('span');
+            if (span) span.insertAdjacentHTML('afterend', '<i class="fas fa-lock ds-main-lock"></i>');
+            mainBtn.classList.add('has-lock');
+            mainBtn.title = 'Cần đăng nhập + gia hạn để mở khoá';
         } else {
-            cnBtn.classList.remove('has-lock');
-            cnBtn.title = 'Chọn chuyên ngành';
+            mainBtn.classList.remove('has-lock');
+            mainBtn.title = 'Chọn ' + (groupName === 'doi-song' ? 'đời sống' : 'chuyên ngành');
+        }
+
+        // Bind sự kiện đóng/mở dropdown cho nút chính
+        if (!mainBtn.__boundToggle) {
+            mainBtn.__boundToggle = true;
+            mainBtn.addEventListener('click', function() {
+                var sub = $('dsSubWrap');
+                if (!sub) return;
+                var currentGroup = sub.getAttribute('data-active-group');
+                var isOpen = sub.style.display !== 'none';
+
+                if (isOpen && currentGroup === groupName) {
+                    // Đang mở đúng group này -> Đóng lại
+                    sub.style.display = 'none';
+                    sub.removeAttribute('data-active-group');
+                    mainBtn.classList.remove('active');
+                } else {
+                    // Mở group mới
+                    sub.style.display = 'block';
+                    sub.setAttribute('data-active-group', groupName);
+                    
+                    document.querySelectorAll('.ds-btn').forEach(function(b) { b.classList.remove('active'); });
+                    mainBtn.classList.add('active');
+
+                    // Render sub-grid
+                    var subGrid = $('dsSubGrid');
+                    if (subGrid) {
+                        subGrid.innerHTML = '';
+                        keys.forEach(function(id) {
+                            var ds = DATASET_REGISTRY[id];
+                            var subBtn = document.createElement('button');
+                            subBtn.className = 'ds-sub-btn' + (canAccess ? '' : ' locked');
+                            subBtn.dataset.dataset = ds.id;
+                            subBtn.dataset.locked = canAccess ? '0' : '1';
+                            subBtn.style.setProperty('--ds-color', ds.color || '#64748b');
+                            subBtn.title = ds.name + ' (' + ds.count + ' câu)' + (canAccess ? '' : ' - Cần gia hạn');
+
+                            var icon = document.createElement('i');
+                            icon.className = 'fas ' + (ds.icon || 'fa-folder');
+                            subBtn.appendChild(icon);
+
+                            var nameSpan = document.createElement('span');
+                            nameSpan.textContent = ds.name.normalize ? ds.name.normalize('NFC') : ds.name;
+                            subBtn.appendChild(nameSpan);
+
+                            if (!canAccess) {
+                                var lock = document.createElement('i');
+                                lock.className = 'fas fa-lock ds-sub-lock';
+                                subBtn.appendChild(lock);
+                            }
+
+                            subBtn.addEventListener('click', function(e) {
+                                if (this.dataset.locked === '1') {
+                                    e.preventDefault(); e.stopPropagation();
+                                    showChuyenNganhLockMessage();
+                                    return;
+                                }
+                                document.querySelectorAll('.ds-sub-btn').forEach(function(b) { b.classList.remove('active'); });
+                                this.classList.add('active');
+                                switchDataset(id);
+
+                                document.querySelectorAll('.ds-btn').forEach(function(b) { b.classList.remove('active'); });
+                                mainBtn.classList.add('active');
+                            });
+                            subGrid.appendChild(subBtn);
+                        });
+                    }
+                }
+            });
         }
     }
+
+    // Gọi hàm render cho cả 2 nhóm
+    setupGroup('chuyen-nganh', groups['chuyen-nganh'], 'dsChuyenNganhBtn');
+    setupGroup('doi-song', groups['doi-song'], 'dsDoiSongBtn');
 
     /* NÚT TỔNG HỢP — Click để về tab tổng hợp */
     document.querySelectorAll('.ds-btn[data-dataset="tonghop"]').forEach(function(btn) {
@@ -15119,58 +15174,15 @@ function initDatasetSelector() {
         btn.addEventListener('click', function() {
             switchDataset('tonghop');
             var sub = $('dsSubWrap');
-            if (sub) sub.style.display = 'none';
+            if (sub) {
+                sub.style.display = 'none';
+                sub.removeAttribute('data-active-group');
+            }
 
             document.querySelectorAll('.ds-btn').forEach(function(b) {
                 b.classList.remove('active');
             });
             btn.classList.add('active');
-        });
-    });
-
-    /* NÚT CHUYÊN NGÀNH — Click để mở/đóng dropdown */
-    if (cnBtn && !cnBtn.__boundToggle) {
-        cnBtn.__boundToggle = true;
-        cnBtn.addEventListener('click', function() {
-            var sub = $('dsSubWrap');
-            if (!sub) return;
-            var isOpen = sub.style.display !== 'none';
-            if (isOpen) {
-                sub.style.display = 'none';
-                cnBtn.classList.remove('active');
-            } else {
-                sub.style.display = 'block';
-
-                document.querySelectorAll('.ds-btn').forEach(function(b) {
-                    b.classList.remove('active');
-                });
-                cnBtn.classList.add('active');
-            }
-        });
-    }
-
-    /* SUB-BUTTONS CHUYÊN NGÀNH — Click để chuyển dataset */
-    document.querySelectorAll('.ds-sub-btn').forEach(function(btn) {
-        if (btn.__boundSub) return;
-        btn.__boundSub = true;
-        btn.addEventListener('click', function(e) {
-            if (this.dataset.locked === '1') {
-                e.preventDefault();
-                e.stopPropagation();
-                showChuyenNganhLockMessage();
-                return;
-            }
-            var id = this.dataset.dataset;
-            document.querySelectorAll('.ds-sub-btn').forEach(function(b) {
-                b.classList.remove('active');
-            });
-            this.classList.add('active');
-            switchDataset(id);
-
-            document.querySelectorAll('.ds-btn').forEach(function(b) {
-                b.classList.remove('active');
-            });
-            if (cnBtn) cnBtn.classList.add('active');
         });
     });
 
@@ -15222,7 +15234,6 @@ function switchDataset(datasetId) {
         }
     }
 }
-
 /* ============================================================ */
 /* VOICE SETTINGS                                                */
 /* ============================================================ */
