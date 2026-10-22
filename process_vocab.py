@@ -21,7 +21,7 @@ client = OpenAI(api_key=api_key, base_url=base_url, timeout=60.0)
 output_dir = "scripts/data_copy"
 os.makedirs(output_dir, exist_ok=True)
 
-# Lấy nhóm ngành từ biến môi trường
+# Lấy nhóm ngành từ biến môi trường (Mặc định: Đầu Tư & Tài Chính)
 TARGET_INDUSTRY = os.environ.get("TARGET_INDUSTRY", "Đầu Tư & Tài Chính")
 
 # Xử lý tên file đẹp, chuẩn hóa
@@ -35,69 +35,167 @@ clean_name = (
 filename_prefix = f"{clean_name}_Chuyen_Sau"
 
 # ---------------------------------------------------------------------------
-# 2. BẢN ĐỒ CHỦ ĐIỂM & CHỦ ĐỀ CHUYÊN SÂU
+# 2. BẢN ĐỒ CHỦ ĐIỂM & CHỦ ĐỀ CHUYÊN SÂU (ĐẦU TƯ, TÀI CHÍNH, CHỨNG KHOÁN, FOREX, CRYPTO)
 # ---------------------------------------------------------------------------
 INDUSTRY_TOPICS_MAP = {
     "Đầu Tư & Tài Chính": [
+        # --- THỊ TRƯỜNG CHỨNG KHOÁN ---
         {
-            "chu_diem": "Vàng và hàng hóa",
-            "chu_de": "Vàng miếng nhẫn tròn",
+            "chu_diem": "Sàn giao dịch",
+            "chu_de": "Hệ thống niêm yết",
         },
         {
-            "chu_diem": "Tiền tệ và lãi suất",
-            "chu_de": "Lãi suất điều hành FED",
+            "chu_diem": "Cổ đông lớn",
+            "chu_de": "Cổ đông sáng lập",
         },
         {
-            "chu_diem": "Kinh tế vĩ mô",
-            "chu_de": "Lạm phát báo cáo CPI",
+            "chu_diem": "Nhà tạo lập",
+            "chu_de": "Đội lái thao túng",
         },
         {
-            "chu_diem": "Giao dịch phái sinh",
-            "chu_de": "Bán khống hợp đồng",
+            "chu_diem": "Lệnh giao dịch",
+            "chu_de": "Khớp lệnh ATO ATC",
+        },
+        {
+            "chu_diem": "Đòn bẩy margin",
+            "chu_de": "Cho vay ký quỹ",
+        },
+        # --- THỊ TRƯỜNG FOREX & TIỀN TỆ ---
+        {
+            "chu_diem": "Thị trường Forex",
+            "chu_de": "Tỷ giá ngoại tệ",
+        },
+        {
+            "chu_diem": "Ký quỹ đòn bẩy",
+            "chu_de": "Cặp tiền chính",
+        },
+        {
+            "chu_diem": "Ngân hàng trung",
+            "chu_de": "Biên độ lãi suất",
+        },
+        # --- TIỀN MÃ HÓA (CRYPTO) ---
+        {
+            "chu_diem": "Tiền mã hóa",
+            "chu_de": "Ví sàn crypto",
+        },
+        {
+            "chu_diem": "Phái sinh crypto",
+            "chu_de": "Hợp đồng tương lai",
+        },
+        # --- KINH TẾ VĨ MÔ, VÀNG & DẦU ---
+        {
+            "chu_diem": "Thị trường vàng",
+            "chu_de": "Lạm phát trú ẩn",
+        },
+        {
+            "chu_diem": "Năng lượng dầu",
+            "chu_de": "Cung cầu OPEC",
+        },
+        {
+            "chu_diem": "Lãi suất FED",
+            "chu_de": "Chính sách tiền tệ",
+        },
+        {
+            "chu_diem": "Chỉ số CPI",
+            "chu_de": "Báo cáo việc làm",
+        },
+        {
+            "chu_diem": "Chỉ số DXY",
+            "chu_de": "Sức mạnh đồng đô",
         },
     ],
     "Cơ Khí & Chế Tạo": [
         {
-            "chu_diem": "Máy CNC",
-            "chu_de": "Tiện phay trung tâm",
+            "chu_diem": "Máy phay tiện",
+            "chu_de": "Trung tâm CNC",
         },
         {
             "chu_diem": "Gia công điện",
-            "chu_de": "Xung điện cắt dây",
+            "chu_de": "Cắt dây xung",
         },
         {
             "chu_diem": "Dao cụ cắt",
-            "chu_de": "Dao cụ bầu kẹp",
+            "chu_de": "Bầu kẹp mũi",
         },
         {
             "chu_diem": "Đo kiểm KCS",
-            "chu_de": "Dung sai kích thước",
+            "chu_de": "Dung sai kích",
         },
     ],
     "May Mặc": [
         {
             "chu_diem": "Thiết bị may",
-            "chu_de": "Máy vắt sổ kansai",
+            "chu_de": "Máy vắt sổ",
         },
         {
             "chu_diem": "Phòng cắt mẫu",
-            "chu_de": "Trải vải sơ đồ",
+            "chu_de": "Trải sơ đồ",
         },
         {
             "chu_diem": "Quy trình may",
-            "chu_de": "Ráp thân chỉnh lỗi",
+            "chu_de": "Sửa lỗi may",
         },
         {
             "chu_diem": "Hoàn thiện KCS",
-            "chu_de": "Là ủi đóng gói",
+            "chu_de": "Là ủi đồ",
+        },
+    ],
+    "Đời Sống & Du Lịch": [
+        {
+            "chu_diem": "Xe buýt tàu",
+            "chu_de": "Đi lại xe",
+        },
+        {
+            "chu_diem": "Hỏi đường đi",
+            "chu_de": "Bến xe buýt",
+        },
+        {
+            "chu_diem": "Thuê nhà trọ",
+            "chu_de": "Ký túc xá",
+        },
+        {
+            "chu_diem": "Xuất nhập cảnh",
+            "chu_de": "Hải quan visa",
+        },
+    ],
+    "Văn Hóa & Ngày Lễ": [
+        {
+            "chu_diem": "Tết Nguyên Đán",
+            "chu_de": "Lì xì tết",
+        },
+        {
+            "chu_diem": "Tết Trung Thu",
+            "chu_de": "Đèn trung thu",
+        },
+        {
+            "chu_diem": "Ngày lễ lớn",
+            "chu_de": "Ngày lao động",
+        },
+        {
+            "chu_diem": "Cưới hỏi giỗ",
+            "chu_de": "Tập quán xưa",
+        },
+    ],
+    "Y Tế & Sức Khỏe": [
+        {
+            "chu_diem": "Khám chữa bệnh",
+            "chu_de": "Triệu chứng đau",
+        },
+        {
+            "chu_diem": "Mua thuốc tây",
+            "chu_de": "Liều dùng thuốc",
+        },
+        {
+            "chu_diem": "Phòng khám bệnh",
+            "chu_de": "Sổ khám bệnh",
         },
     ],
 }
 
 default_topics = [
     {
-        "chu_diem": "Kỹ thuật chuyên môn",
-        "chu_de": "Vận hành thiết bị",
+        "chu_diem": "Kỹ thuật chuyên",
+        "chu_de": "Vận hành máy",
     }
 ]
 
@@ -105,7 +203,7 @@ industry_topics = INDUSTRY_TOPICS_MAP.get(TARGET_INDUSTRY, default_topics)
 
 
 # ---------------------------------------------------------------------------
-# 3. HÀM LÀM SẠCH VÀ CHUẨN HÓA DỮ LIỆU 3 CỘT (VI, ZH, PY)
+# 3. HÀM LÀM SẠCH VÀ CHUẨN HÓA DỮ LIỆU TUYỆT ĐỐI
 # ---------------------------------------------------------------------------
 def clean_vietnamese(vi_text):
   """Bắt buộc loại bỏ 100% chữ Hán xuất hiện trong cột Tiếng Việt."""
@@ -116,16 +214,15 @@ def clean_vietnamese(vi_text):
 
 
 def clean_chinese(zh_text):
-  """Đảm bảo ô Tiếng Trung chỉ chứa chữ Hán và dấu câu Trung Quốc, loại bỏ sạch ký tự Latinh/tiếng Việt lạc vào."""
+  """Đảm bảo ô Tiếng Trung chỉ chứa chữ Hán và dấu câu, loại bỏ hoàn toàn ký tự Latinh/tiếng Việt."""
   if not zh_text:
     return ""
-  # Loại bỏ hoàn toàn các chữ cái tiếng Việt / chữ cái Latinh (a-z, A-Z) nếu bị dính vào ô tiếng Trung
   cleaned = re.sub(r"[a-zA-Zà-ỹÀ-Ỹ]", "", str(zh_text))
   return cleaned.strip()
 
 
 def clean_pinyin(zh_text, py_text):
-  """Hàm làm sạch Pinyin, đảm bảo 100% Latinh kèm dấu, không dính chữ Hán."""
+  """Làm sạch Pinyin, đảm bảo 100% Latinh kèm dấu, không dính chữ Hán."""
   has_chinese = re.search(r"[\u4e00-\u9fff]", str(py_text or ""))
   if not py_text or has_chinese:
     py_list = lazy_pinyin(zh_text, style=Style.TONE)
@@ -135,16 +232,16 @@ def clean_pinyin(zh_text, py_text):
 
 
 def generate_vocabulary_batch(chu_diem, chu_de):
-  """Sinh từ vựng chuyên sâu với ràng buộc định dạng nghiêm ngặt."""
-  prompt = f"""Bạn là chuyên gia hàng đầu và cố vấn cao cấp trong lĩnh vực: {TARGET_INDUSTRY}.
-Hãy cung cấp danh sách từ vựng và thuật ngữ chuyên ngành **thật sự cốt lõi, chuyên sâu và có tính thực chiến cao nhất** thuộc:
+  """Sinh từ vựng chuyên sâu với ràng buộc định dạng khắt khe."""
+  prompt = f"""Bạn là chuyên gia đầu tư tài chính, chứng khoán, forex và vĩ mô hàng đầu trong lĩnh vực: {TARGET_INDUSTRY}.
+Hãy cung cấp danh sách từ vựng và thuật ngữ chuyên ngành thật sự cốt lõi, chuyên sâu (bao gồm thị trường chứng khoán, cổ đông, đội lái, forex, crypto, lãi suất FED, vàng, dầu...) thuộc:
 - Chủ điểm: {chu_diem}
 - Chủ đề: {chu_de}
 
-YÊU CẦU BẮT BUỘC VỀ ĐỊNH DẠNG:
-1. Trường "vi" (Tiếng Việt): CHỈ DÙNG TIẾNG VIỆT CÓ DẤU, TUYỆT ĐỐI KHÔNG CHỨA CHỮ HÁN.
-2. Trường "zh" (Tiếng Trung): CHỈ CHỨA CHỮ HÁN VÀ DẤU CÂU TRUNG QUỐC, TUYỆT ĐỐI KHÔNG CHỨA CHỮ CÁI LATINH (a-z) HAY KÝ TỰ LẠ.
-3. Trường "py" (Pinyin): Chỉ chứa chữ cái Latinh có dấu thanh, KHÔNG CHỨA CHỮ HÁN.
+YÊU CẦU BẮT BUỘC:
+1. Trường "vi": CHỈ DÙNG TIẾNG VIỆT CÓ DẤU, TUYỆT ĐỐI KHÔNG CHỨA CHỮ HÁN.
+2. Trường "zh": CHỈ CHỨA CHỮ HÁN VÀ DẤU CÂU, KHÔNG CHỨA CHỮ CÁI LATINH (a-z) HAY KÝ TỰ KHÁC.
+3. Trường "py": Chỉ chứa chữ cái Latinh có dấu thanh, KHÔNG CHỨA CHỮ HÁN.
 
 Trả về đúng định dạng JSON mảng (array):
 [
@@ -152,7 +249,7 @@ Trả về đúng định dạng JSON mảng (array):
     "hsk": "HSK 4",
     "vi": "Nghĩa tiếng Việt chuẩn xác",
     "zh": "Thuật ngữ tiếng Trung",
-    "py": "Pinyin Latinh có dấu"
+    "py": "Pinyin có dấu"
   }},
   ...
 ]
@@ -180,20 +277,20 @@ Trả về đúng định dạng JSON mảng (array):
 
 
 def generate_example_sentence(vi, zh, industry_name):
-  """Tạo câu ví dụ giao tiếp ngắn gọn (<= 12 ký tự chữ Hán), làm sạch tuyệt đối."""
-  prompt = f"""Bạn là chuyên gia thực chiến trong lĩnh vực {industry_name}.
-Hãy đặt 01 câu giao tiếp hoặc nhận định ngắn gọn, thực tế có chứa từ vựng '{zh}' (nghĩa là: '{vi}').
+  """Tạo câu ví dụ giao tiếp/nhận định ngắn gọn (<= 12 ký tự chữ Hán)."""
+  prompt = f"""Bạn là chuyên gia đầu tư thực chiến trong lĩnh vực {industry_name}.
+Hãy đặt 01 câu giao tiếp hoặc nhận định đầu tư ngắn gọn có chứa từ vựng '{zh}' (nghĩa là: '{vi}').
 
 YÊU CẦU BẮT BUỘC:
-1. Trường "vi" (Tiếng Việt): BẢN DỊCH HOÀN TOÀN BẰNG TIẾNG VIỆT, KHÔNG DÍNH CHỮ HÁN.
-2. Trường "zh" (Tiếng Trung): CHỈ CHỨA CHỮ HÁN VÀ DẤU CÂU, KHÔNG CHỨA CHỮ CÁI LATINH. ĐỘ DÀI KHÔNG QUÁ 12 KÝ TỰ CHỮ HÁN.
-3. Trường "py" (Pinyin): Chỉ chứa chữ cái Latinh kèm dấu thanh.
+1. Trường "vi": Hoàn toàn bằng tiếng Việt, không dính chữ Hán.
+2. Trường "zh": Chỉ chứa chữ Hán và dấu câu, tối đa 12 ký tự chữ Hán, không chứa chữ cái Latinh.
+3. Trường "py": Chỉ chứa chữ cái Latinh kèm dấu thanh.
 
 Trả về đúng định dạng JSON:
 {{
   "zh": "Câu tiếng Trung dưới 12 ký tự",
   "py": "Pinyin đầy đủ có dấu",
-  "vi": "Bản dịch tiếng Việt hoàn chỉnh"
+  "vi": "Bản dịch tiếng Việt"
 }}
 """
   try:
@@ -204,9 +301,9 @@ Trả về đúng định dạng JSON:
         response_format={"type": "json_object"},
     )
     data = json.loads(response.choices[0].message.content)
-    ex_vi = clean_vietnamese(data.get("vi", f"Cần thao tác {vi}."))
+    ex_vi = clean_vietnamese(data.get("vi", f"Cần theo dõi {vi}."))
     if not ex_vi:
-      ex_vi = f"Thao tác {vi} ngay."
+      ex_vi = f"Theo dõi {vi}."
 
     ex_zh = clean_chinese(data.get("zh", f"注意{zh}。"))
     if not ex_zh:
@@ -216,7 +313,7 @@ Trả về đúng định dạng JSON:
     return ex_vi, ex_zh, ex_py
   except Exception:
     fallback_zh = f"注意{zh}。"
-    return (f"Thao tác {vi} ngay.", fallback_zh, clean_pinyin(fallback_zh, ""))
+    return (f"Theo dõi {vi}.", fallback_zh, clean_pinyin(fallback_zh, ""))
 
 
 # ---------------------------------------------------------------------------
@@ -245,9 +342,7 @@ current_row = 2
 global_stt = 1
 seen_chinese_words = set()
 
-print(
-    f"🚀 BẮT ĐẦU TẠO DỮ LIỆU CỰC CHUYÊN SÂU CHO NGÀNH: [{TARGET_INDUSTRY}]..."
-)
+print(f"🚀 BẮT ĐẦU TẠO DỮ LIỆU CHUYÊN SÂU CHO NGÀNH: [{TARGET_INDUSTRY}]...")
 
 for topic in industry_topics:
   c_diem = topic["chu_diem"]
@@ -266,14 +361,12 @@ for topic in industry_topics:
     if not zh_raw or not vi_raw:
       continue
 
-    # 1. Làm sạch cột Tiếng Việt và Tiếng Trung
     vi = clean_vietnamese(vi_raw)
     zh = clean_chinese(zh_raw)
 
     if not vi or not zh:
       continue
 
-    # 2. Bỏ qua từ bị trùng lặp
     if zh in seen_chinese_words:
       continue
     seen_chinese_words.add(zh)
@@ -291,7 +384,7 @@ for topic in industry_topics:
     current_row += 1
     global_stt += 1
 
-    # --- HÀNG 2: CÂU VÍ DỤ (<= 12 KÝ TỰ CHỮ HÁN) ---
+    # --- HÀNG 2: CÂU VÍ DỤ (<= 12 KÝ TỰ) ---
     if len(zh) <= 12:
       ex_vi, ex_zh, ex_py = generate_example_sentence(vi, zh, TARGET_INDUSTRY)
 
@@ -308,7 +401,7 @@ for topic in industry_topics:
     added_count += 1
     time.sleep(0.3)
 
-  print(f"   ✅ Đã lưu {added_count} từ vựng sạch chuẩn 100%.")
+  print(f"   ✅ Đã lưu {added_count} từ vựng sạch chuẩn.")
 
 wb.save(file_output)
 print(f"🎉 HOÀN TẤT! File lưu tại: {file_output}")
