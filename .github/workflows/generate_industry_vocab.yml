@@ -36,7 +36,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pandas openpyxl openai
+          pip install pandas openpyxl openai pypinyin
 
       - name: Run generation script for selected industry
         env:
