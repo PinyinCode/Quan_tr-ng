@@ -1,8 +1,10 @@
 import json
 import os
+import re
 import time
 from openai import OpenAI
 import openpyxl
+from pypinyin import Style, pypinyin
 
 # Lấy thông tin cấu hình từ biến môi trường
 api_key = os.environ.get("DASHSCOPE_API_KEY")
@@ -43,12 +45,31 @@ else:
     excel_files = []
 
 
+def clean_pinyin(zh_text, py_text):
+  """Hàm làm sạch và chuẩn hóa Pinyin:
+
+  - Nếu Pinyin rỗng hoặc dính chữ Hán, dùng pypinyin tự tạo Pinyin chuẩn.
+  - Loại bỏ hoàn toàn ký tự tiếng Trung còn sót lại.
+  """
+  has_chinese = re.search(r"[\u4e00-\u9fff]", str(py_text or ""))
+
+  if not py_text or has_chinese:
+    py_list = pypinyin(zh_text, style=Style.TONE)
+    clean_py = " ".join([item[0] for item in py_list])
+    return clean_py.strip()
+
+  cleaned = re.sub(r"[\u4e00-\u9fff]", "", str(py_text)).strip()
+  cleaned = re.sub(r"\s+", " ", cleaned)
+  return cleaned
+
+
 def generate_example_sentence(vi, zh):
   prompt = f"""Bạn là chuyên gia ngôn ngữ giỏi tiếng Trung.
 Hãy đặt 01 câu giao tiếp ngắn gọn, tự nhiên có chứa từ vựng '{zh}' (nghĩa là: '{vi}').
 
 YÊU CẦU BẮT BUỘC:
 - Câu tiếng Trung KHÔNG ĐƯỢC VƯỢT QUÁ 12 KÝ TỰ chữ Hán.
+- Pinyin (py) BẮT BUỘC chỉ là chữ cái Latinh kèm dấu thanh, KHÔNG ĐƯỢC CHỨA BẤT KỲ KÝ TỰ CHỮ HÁN NÀO.
 - Tự nhiên, ngắn gọn, dễ nhớ.
 
 Trả về đúng định dạng JSON:
@@ -66,13 +87,16 @@ Trả về đúng định dạng JSON:
         response_format={"type": "json_object"},
     )
     data = json.loads(response.choices[0].message.content)
-    return data["vi"], data["zh"], data["py"]
+    ex_vi = data.get("vi", f"Cần chú ý {vi}.")
+    ex_zh = data.get("zh", f"要注意{zh}。")
+    ex_py = clean_pinyin(ex_zh, data.get("py", ""))
+    return ex_vi, ex_zh, ex_py
   except Exception:
-    # Fallback ngắn gọn dưới 12 ký tự nếu có lỗi
+    fallback_zh = f"要注意{zh}。"
     return (
         f"Cần chú ý {vi}.",
-        f"要注意{zh}。",
-        f"Yào zhùyì {zh}.",
+        fallback_zh,
+        clean_pinyin(fallback_zh, ""),
     )
 
 
@@ -134,7 +158,10 @@ for index, file_name in enumerate(excel_files, 1):
     c_de = item["chu_de"]
     vi = item["vi"]
     zh = item["zh"]
-    py = item["py"]
+    raw_py = item["py"]
+
+    # Chuẩn hóa Pinyin của từ vựng gốc
+    py = clean_pinyin(zh, raw_py)
 
     # --- HÀNG 1: TỪ VỰNG GỐC ---
     sheet.cell(row=current_row, column=1, value=global_stt)
@@ -157,7 +184,7 @@ for index, file_name in enumerate(excel_files, 1):
       sheet.cell(row=current_row, column=4, value=c_de)
       sheet.cell(row=current_row, column=5, value=ex_vi)  # Câu tiếng Việt ngắn
       sheet.cell(row=current_row, column=6, value=ex_zh)  # Câu tiếng Trung ngắn (<= 12 ký tự)
-      sheet.cell(row=current_row, column=7, value=ex_py)  # Pinyin của câu
+      sheet.cell(row=current_row, column=7, value=ex_py)  # Pinyin chuẩn hóa
       current_row += 1
       global_stt += 1
 
