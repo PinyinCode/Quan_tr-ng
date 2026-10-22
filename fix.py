@@ -1649,6 +1649,31 @@ def main():
         _data_dir = "data"
         os.makedirs(_data_dir, exist_ok=True)
         
+        # ⭐ FIX: Nạp dataset_registry.json (từ build_html) để không bị mất tab con
+        _registry_path = os.path.join(_data_dir, "dataset_registry.json")
+        _all_datasets_path = os.path.join(_data_dir, "all_datasets.json")
+        if os.path.isfile(_registry_path) and os.path.isfile(_all_datasets_path):
+            try:
+                with open(_registry_path, "r", encoding="utf-8") as _f:
+                    _reg_data = json.load(_f)
+                with open(_all_datasets_path, "r", encoding="utf-8") as _f:
+                    _all_data = json.load(_f)
+                for _rid, _rmeta in _reg_data.items():
+                    if _rid not in datasets_dict:  # Tránh trùng lặp
+                        datasets_dict[_rid] = {
+                            "id": _rid,
+                            "name": _rmeta["name"],
+                            "icon": _rmeta["icon"],
+                            "color": _rmeta["color"],
+                            "count": _rmeta["count"],
+                            "source": _rmeta["source"],
+                            "type": "main",  # hoặc "sub"
+                            "group": "chuyen-nganh", # Quan trọng!
+                            "data": _all_data.get(_rid, [])
+                        }
+            except Exception as e:
+                print(f"⚠️ Không gộp được dataset_registry: {e}")
+        
         # 1. Ghi file full 20MB
         _fixpy_path = os.path.join(_data_dir, "fixpy_datasets.json")
         with open(_fixpy_path, "w", encoding="utf-8") as _f:
