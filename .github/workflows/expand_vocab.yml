@@ -35,7 +35,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pandas openpyxl openai
+          python -m pip install --upgrade pip
+          pip install pandas openpyxl openai pypinyin
 
       - name: Run Python script for selected file
         env:
