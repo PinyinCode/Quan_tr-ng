@@ -21,8 +21,8 @@ client = OpenAI(api_key=api_key, base_url=base_url, timeout=60.0)
 output_dir = "scripts/data_copy"
 os.makedirs(output_dir, exist_ok=True)
 
-# Lấy nhóm ngành từ biến môi trường (Mặc định: Đầu Tư & Tài Chính)
-TARGET_INDUSTRY = os.environ.get("TARGET_INDUSTRY", "Đầu Tư & Tài Chính")
+# Lấy nhóm ngành từ biến môi trường (Mặc định: May Mặc)
+TARGET_INDUSTRY = os.environ.get("TARGET_INDUSTRY", "May Mặc")
 
 # Xử lý tên file đẹp, chuẩn hóa
 clean_name = (
@@ -35,73 +35,90 @@ clean_name = (
 filename_prefix = f"{clean_name}_Chuyen_Sau"
 
 # ---------------------------------------------------------------------------
-# 2. BẢN ĐỒ CHỦ ĐIỂM & CHỦ ĐỀ CHUYÊN SÂU (ĐẦU TƯ, TÀI CHÍNH, CHỨNG KHOÁN, FOREX, CRYPTO)
+# 2. BẢN ĐỒ CHỦ ĐIỂM & CHỦ ĐỀ CHUYÊN SÂU (2-4 TỪ, CÔNG XƯỞNG & ĐẦU TƯ)
 # ---------------------------------------------------------------------------
 INDUSTRY_TOPICS_MAP = {
+    "May Mặc": [
+        # --- CÁC BỘ PHẬN SẢN PHẨM & CÔNG ĐOẠN MAY ---
+        {
+            "chu_diem": "May ráp thân",
+            "chu_de": "Thân trước sau",
+        },
+        {
+            "chu_diem": "Ráp vai áo",
+            "chu_de": "Đường diễu vai",
+        },
+        {
+            "chu_diem": "May tra tay",
+            "chu_de": "Vòng nách tay",
+        },
+        {
+            "chu_diem": "Cuốn gấu áo",
+            "chu_de": "Lai áo quần",
+        },
+        # --- DẬP, LÀ ỦI & HOÀN THIỆN ---
+        {
+            "chu_diem": "Dập khuy cúc",
+            "chu_de": "Đóng nút cúc",
+        },
+        {
+            "chu_diem": "Là ủi nhiệt",
+            "chu_de": "Ép keo dập",
+        },
+        {
+            "chu_diem": "Kiểm tra KCS",
+            "chu_de": "Soi chỉ lỗi",
+        },
+        # --- MÁY MÓC & THIẾT BỊ XƯỞNG ---
+        {
+            "chu_diem": "Máy may một",
+            "chu_de": "Kim ổ chao",
+        },
+        {
+            "chu_diem": "Máy vắt sổ",
+            "chu_de": "Dao cắt chỉ",
+        },
+        {
+            "chu_diem": "Máy kansai",
+            "chu_de": "Cuốn lai áo",
+        },
+    ],
     "Đầu Tư & Tài Chính": [
-        # --- THỊ TRƯỜNG CHỨNG KHOÁN ---
         {
             "chu_diem": "Sàn giao dịch",
-            "chu_de": "Hệ thống niêm yết",
+            "chu_de": "Hệ thống niêm",
         },
         {
             "chu_diem": "Cổ đông lớn",
-            "chu_de": "Cổ đông sáng lập",
+            "chu_de": "Cổ đông sáng",
         },
         {
             "chu_diem": "Nhà tạo lập",
-            "chu_de": "Đội lái thao túng",
+            "chu_de": "Đội lái thao",
         },
         {
             "chu_diem": "Lệnh giao dịch",
-            "chu_de": "Khớp lệnh ATO ATC",
+            "chu_de": "Khớp lệnh ATO",
         },
         {
             "chu_diem": "Đòn bẩy margin",
-            "chu_de": "Cho vay ký quỹ",
+            "chu_de": "Cho vay ký",
         },
-        # --- THỊ TRƯỜNG FOREX & TIỀN TỆ ---
         {
             "chu_diem": "Thị trường Forex",
-            "chu_de": "Tỷ giá ngoại tệ",
+            "chu_de": "Tỷ giá ngoại",
         },
-        {
-            "chu_diem": "Ký quỹ đòn bẩy",
-            "chu_de": "Cặp tiền chính",
-        },
-        {
-            "chu_diem": "Ngân hàng trung",
-            "chu_de": "Biên độ lãi suất",
-        },
-        # --- TIỀN MÃ HÓA (CRYPTO) ---
         {
             "chu_diem": "Tiền mã hóa",
             "chu_de": "Ví sàn crypto",
         },
         {
-            "chu_diem": "Phái sinh crypto",
-            "chu_de": "Hợp đồng tương lai",
-        },
-        # --- KINH TẾ VĨ MÔ, VÀNG & DẦU ---
-        {
             "chu_diem": "Thị trường vàng",
-            "chu_de": "Lạm phát trú ẩn",
-        },
-        {
-            "chu_diem": "Năng lượng dầu",
-            "chu_de": "Cung cầu OPEC",
+            "chu_de": "Lạm phát trú",
         },
         {
             "chu_diem": "Lãi suất FED",
-            "chu_de": "Chính sách tiền tệ",
-        },
-        {
-            "chu_diem": "Chỉ số CPI",
-            "chu_de": "Báo cáo việc làm",
-        },
-        {
-            "chu_diem": "Chỉ số DXY",
-            "chu_de": "Sức mạnh đồng đô",
+            "chu_de": "Chính sách tiền",
         },
     ],
     "Cơ Khí & Chế Tạo": [
@@ -120,24 +137,6 @@ INDUSTRY_TOPICS_MAP = {
         {
             "chu_diem": "Đo kiểm KCS",
             "chu_de": "Dung sai kích",
-        },
-    ],
-    "May Mặc": [
-        {
-            "chu_diem": "Thiết bị may",
-            "chu_de": "Máy vắt sổ",
-        },
-        {
-            "chu_diem": "Phòng cắt mẫu",
-            "chu_de": "Trải sơ đồ",
-        },
-        {
-            "chu_diem": "Quy trình may",
-            "chu_de": "Sửa lỗi may",
-        },
-        {
-            "chu_diem": "Hoàn thiện KCS",
-            "chu_de": "Là ủi đồ",
         },
     ],
     "Đời Sống & Du Lịch": [
@@ -167,14 +166,6 @@ INDUSTRY_TOPICS_MAP = {
             "chu_diem": "Tết Trung Thu",
             "chu_de": "Đèn trung thu",
         },
-        {
-            "chu_diem": "Ngày lễ lớn",
-            "chu_de": "Ngày lao động",
-        },
-        {
-            "chu_diem": "Cưới hỏi giỗ",
-            "chu_de": "Tập quán xưa",
-        },
     ],
     "Y Tế & Sức Khỏe": [
         {
@@ -184,10 +175,6 @@ INDUSTRY_TOPICS_MAP = {
         {
             "chu_diem": "Mua thuốc tây",
             "chu_de": "Liều dùng thuốc",
-        },
-        {
-            "chu_diem": "Phòng khám bệnh",
-            "chu_de": "Sổ khám bệnh",
         },
     ],
 }
@@ -233,8 +220,8 @@ def clean_pinyin(zh_text, py_text):
 
 def generate_vocabulary_batch(chu_diem, chu_de):
   """Sinh từ vựng chuyên sâu với ràng buộc định dạng khắt khe."""
-  prompt = f"""Bạn là chuyên gia đầu tư tài chính, chứng khoán, forex và vĩ mô hàng đầu trong lĩnh vực: {TARGET_INDUSTRY}.
-Hãy cung cấp danh sách từ vựng và thuật ngữ chuyên ngành thật sự cốt lõi, chuyên sâu (bao gồm thị trường chứng khoán, cổ đông, đội lái, forex, crypto, lãi suất FED, vàng, dầu...) thuộc:
+  prompt = f"""Bạn là quản đốc xưởng may và chuyên gia kỹ thuật công nghiệp hàng đầu trong lĩnh vực: {TARGET_INDUSTRY}.
+Hãy cung cấp danh sách từ vựng và thuật ngữ chuyên ngành thật sự cốt lõi, chuyên sâu (tập trung vào các bộ phận sản phẩm như thân, vai, tay, gấu; thao tác dập, là ủi; vận hành máy móc xưởng may) thuộc:
 - Chủ điểm: {chu_diem}
 - Chủ đề: {chu_de}
 
@@ -277,9 +264,9 @@ Trả về đúng định dạng JSON mảng (array):
 
 
 def generate_example_sentence(vi, zh, industry_name):
-  """Tạo câu ví dụ giao tiếp/nhận định ngắn gọn (<= 12 ký tự chữ Hán)."""
-  prompt = f"""Bạn là chuyên gia đầu tư thực chiến trong lĩnh vực {industry_name}.
-Hãy đặt 01 câu giao tiếp hoặc nhận định đầu tư ngắn gọn có chứa từ vựng '{zh}' (nghĩa là: '{vi}').
+  """Tạo câu ví dụ giao tiếp/chỉ đạo ngắn gọn (<= 12 ký tự chữ Hán)."""
+  prompt = f"""Bạn là chuyền trưởng thực chiến trong xưởng công nghiệp {industry_name}.
+Hãy đặt 01 câu giao tiếp hoặc chỉ đạo công việc ngắn gọn trong xưởng có chứa từ vựng '{zh}' (nghĩa là: '{vi}').
 
 YÊU CẦU BẮT BUỘC:
 1. Trường "vi": Hoàn toàn bằng tiếng Việt, không dính chữ Hán.
@@ -301,9 +288,9 @@ Trả về đúng định dạng JSON:
         response_format={"type": "json_object"},
     )
     data = json.loads(response.choices[0].message.content)
-    ex_vi = clean_vietnamese(data.get("vi", f"Cần theo dõi {vi}."))
+    ex_vi = clean_vietnamese(data.get("vi", f"Cần thao tác {vi}."))
     if not ex_vi:
-      ex_vi = f"Theo dõi {vi}."
+      ex_vi = f"Thao tác {vi}."
 
     ex_zh = clean_chinese(data.get("zh", f"注意{zh}。"))
     if not ex_zh:
@@ -313,7 +300,7 @@ Trả về đúng định dạng JSON:
     return ex_vi, ex_zh, ex_py
   except Exception:
     fallback_zh = f"注意{zh}。"
-    return (f"Theo dõi {vi}.", fallback_zh, clean_pinyin(fallback_zh, ""))
+    return (f"Thao tác {vi}.", fallback_zh, clean_pinyin(fallback_zh, ""))
 
 
 # ---------------------------------------------------------------------------
