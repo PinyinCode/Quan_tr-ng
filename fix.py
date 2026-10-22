@@ -1739,7 +1739,7 @@ def main():
                             "count": _rmeta["count"],
                             "source": _rmeta["source"],
                             "type": "main",  # hoặc "sub"
-                            "group": _rmeta.get("group", "chuyen-nganh"),
+                            "group": _rmeta.get("group") or ("doi-song" if "van-hoa" in _rid or "ngay-le" in _rid else "chuyen-nganh"),
                             "data": _all_data.get(_rid, [])
                         }
             except Exception as e:
