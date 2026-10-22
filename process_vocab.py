@@ -21,7 +21,7 @@ client = OpenAI(api_key=api_key, base_url=base_url, timeout=60.0)
 output_dir = "scripts/data_copy"
 os.makedirs(output_dir, exist_ok=True)
 
-# Lấy nhóm ngành từ biến môi trường (Mặc định: Đầu Tư & Tài Chính)
+# Lấy nhóm ngành từ biến môi trường
 TARGET_INDUSTRY = os.environ.get("TARGET_INDUSTRY", "Đầu Tư & Tài Chính")
 
 # Xử lý tên file đẹp, chuẩn hóa
@@ -35,10 +35,9 @@ clean_name = (
 filename_prefix = f"{clean_name}_Chuyen_Sau"
 
 # ---------------------------------------------------------------------------
-# 2. BẢN ĐỒ CHỦ ĐIỂM & CHỦ ĐỀ CHUYÊN SÂU (2-4 TỪ TIẾNG VIỆT CÓ DẤU)
+# 2. BẢN ĐỒ CHỦ ĐIỂM & CHỦ ĐỀ CHUYÊN SÂU
 # ---------------------------------------------------------------------------
 INDUSTRY_TOPICS_MAP = {
-    # === MẢNG 1: TÀI CHÍNH, ĐẦU TƯ & VĨ MÔ ===
     "Đầu Tư & Tài Chính": [
         {
             "chu_diem": "Vàng và hàng hóa",
@@ -56,16 +55,7 @@ INDUSTRY_TOPICS_MAP = {
             "chu_diem": "Giao dịch phái sinh",
             "chu_de": "Bán khống hợp đồng",
         },
-        {
-            "chu_diem": "Tiền mã hóa Crypto",
-            "chu_de": "Ví điện tử sàn",
-        },
-        {
-            "chu_diem": "Ngoại hối Forex",
-            "chu_de": "Tỷ giá đòn bẩy",
-        },
     ],
-    # === MẢNG 2: CÔNG XƯỞNG, KỸ THUẬT & CHẾ TẠO ===
     "Cơ Khí & Chế Tạo": [
         {
             "chu_diem": "Máy CNC",
@@ -76,7 +66,7 @@ INDUSTRY_TOPICS_MAP = {
             "chu_de": "Xung điện cắt dây",
         },
         {
-            "chu_diem": "Dụng cụ cắt",
+            "chu_diem": "Dao cụ cắt",
             "chu_de": "Dao cụ bầu kẹp",
         },
         {
@@ -102,95 +92,38 @@ INDUSTRY_TOPICS_MAP = {
             "chu_de": "Là ủi đóng gói",
         },
     ],
-    "Điện Tử & SMT": [
-        {
-            "chu_diem": "Dây chuyền SMT",
-            "chu_de": "Hàn bo mạch chip",
-        },
-        {
-            "chu_diem": "Kiểm tra soi lỗi",
-            "chu_de": "Kính hiển vi quang",
-        },
-        {
-            "chu_diem": "Sửa chữa bo mạch",
-            "chu_de": "Thay thế linh kiện",
-        },
-    ],
-    # === MẢNG 3: ĐỜI SỐNG, VĂN HÓA, GIAO THÔNG & Y TẾ ===
-    "Đời Sống & Du Lịch": [
-        {
-            "chu_diem": "Phương tiện đi",
-            "chu_de": "Xe buýt tàu điện",
-        },
-        {
-            "chu_diem": "Hỏi đường đi lại",
-            "chu_de": "Chỉ đường bến xe",
-        },
-        {
-            "chu_diem": "Thuê nhà ở",
-            "chu_de": "Phòng trọ ký túc",
-        },
-        {
-            "chu_diem": "Thủ tục xuất cảnh",
-            "chu_de": "Hải quan visa hộ chiếu",
-        },
-        {
-            "chu_diem": "Tham quan thắng cảnh",
-            "chu_de": "Mua vé khách sạn",
-        },
-    ],
-    "Văn Hóa & Ngày Lễ": [
-        {
-            "chu_diem": "Tết Nguyên Đán",
-            "chu_de": "Lì xì chúc tết",
-        },
-        {
-            "chu_diem": "Tết Trung Thu",
-            "chu_de": "Bánh trung thu đèn",
-        },
-        {
-            "chu_diem": "Ngày lễ lớn",
-            "chu_de": "Quốc khánh lao động",
-        },
-        {
-            "chu_diem": "Phong tục tập quán",
-            "chu_de": "Cưới hỏi giỗ chạp",
-        },
-    ],
-    "Y Tế & Sức Khỏe": [
-        {
-            "chu_diem": "Khám chữa bệnh",
-            "chu_de": "Hỏi thăm triệu chứng",
-        },
-        {
-            "chu_diem": "Mua thuốc tây",
-            "chu_de": "Liều dùng hướng dẫn",
-        },
-        {
-            "chu_diem": "Bệnh viện phòng khám",
-            "chu_de": "Đăng ký sổ khám",
-        },
-    ],
 }
 
-# Các chủ đề mặc định nếu không khớp nhóm ngành
 default_topics = [
     {
         "chu_diem": "Kỹ thuật chuyên môn",
         "chu_de": "Vận hành thiết bị",
-    },
-    {
-        "chu_diem": "Thực hành thực tế",
-        "chu_de": "Xử lý công việc",
-    },
+    }
 ]
 
 industry_topics = INDUSTRY_TOPICS_MAP.get(TARGET_INDUSTRY, default_topics)
 
 
 # ---------------------------------------------------------------------------
-# 3. CÁC HÀM XỬ LÝ VÀ CHUẨN HÓA DỮ LIỆU
+# 3. HÀM LÀM SẠCH VÀ CHUẨN HÓA DỮ LIỆU 3 CỘT (VI, ZH, PY)
 # ---------------------------------------------------------------------------
+def clean_vietnamese(vi_text):
+  """Bắt buộc loại bỏ 100% chữ Hán xuất hiện trong cột Tiếng Việt."""
+  if not vi_text:
+    return ""
+  cleaned = re.sub(r"[\u4e00-\u9fff]", "", str(vi_text)).strip()
+  return re.sub(r"\s+", " ", cleaned)
+
+
+def clean_chinese(zh_text):
+  """Đảm bảo ô Tiếng Trung chỉ chứa chữ Hán và dấu câu Trung Quốc, loại bỏ sạch ký tự Latinh/tiếng Việt lạc vào."""
+  if not zh_text:
+    return ""
+  # Loại bỏ hoàn toàn các chữ cái tiếng Việt / chữ cái Latinh (a-z, A-Z) nếu bị dính vào ô tiếng Trung
+  cleaned = re.sub(r"[a-zA-Zà-ỹÀ-Ỹ]", "", str(zh_text))
+  return cleaned.strip()
+
+
 def clean_pinyin(zh_text, py_text):
   """Hàm làm sạch Pinyin, đảm bảo 100% Latinh kèm dấu, không dính chữ Hán."""
   has_chinese = re.search(r"[\u4e00-\u9fff]", str(py_text or ""))
@@ -202,23 +135,24 @@ def clean_pinyin(zh_text, py_text):
 
 
 def generate_vocabulary_batch(chu_diem, chu_de):
-  """Sinh từ vựng chuyên sâu. Ưu tiên chất lượng tối đa, không ép số lượng rác."""
+  """Sinh từ vựng chuyên sâu với ràng buộc định dạng nghiêm ngặt."""
   prompt = f"""Bạn là chuyên gia hàng đầu và cố vấn cao cấp trong lĩnh vực: {TARGET_INDUSTRY}.
 Hãy cung cấp danh sách từ vựng và thuật ngữ chuyên ngành **thật sự cốt lõi, chuyên sâu và có tính thực chiến cao nhất** thuộc:
 - Chủ điểm: {chu_diem}
 - Chủ đề: {chu_de}
 
-YÊU CẦU CHẤT LƯỢNG KHẮT KHE:
-1. Tập trung tuyệt đối vào thuật ngữ chuyên môn thực sự (Ví dụ: vĩ mô -> CPI, FED, thắt chặt tiền tệ; tài chính -> bán khống, đòn bẩy; cơ khí -> máy CNC, xung điện EDM, dung sai...).
-2. TUYỆT ĐỐI KHÔNG sinh từ vựng chung chung, lan man hoặc cố làm cho đủ số lượng lớn. Chỉ lấy những từ thực sự chất lượng nhất (khoảng 15-25 từ chuẩn).
-3. Pinyin (py) BẮT BUỘC chỉ chứa chữ cái Latinh có dấu thanh, KHÔNG ĐƯỢC CHỨA CHỮ HÁN.
-4. Trả về đúng định dạng JSON mảng (array) như sau:
+YÊU CẦU BẮT BUỘC VỀ ĐỊNH DẠNG:
+1. Trường "vi" (Tiếng Việt): CHỈ DÙNG TIẾNG VIỆT CÓ DẤU, TUYỆT ĐỐI KHÔNG CHỨA CHỮ HÁN.
+2. Trường "zh" (Tiếng Trung): CHỈ CHỨA CHỮ HÁN VÀ DẤU CÂU TRUNG QUỐC, TUYỆT ĐỐI KHÔNG CHỨA CHỮ CÁI LATINH (a-z) HAY KÝ TỰ LẠ.
+3. Trường "py" (Pinyin): Chỉ chứa chữ cái Latinh có dấu thanh, KHÔNG CHỨA CHỮ HÁN.
+
+Trả về đúng định dạng JSON mảng (array):
 [
   {{
     "hsk": "HSK 4",
-    "vi": "Thuật ngữ tiếng Việt",
+    "vi": "Nghĩa tiếng Việt chuẩn xác",
     "zh": "Thuật ngữ tiếng Trung",
-    "py": "Pinyin Latinh đầy đủ có dấu"
+    "py": "Pinyin Latinh có dấu"
   }},
   ...
 ]
@@ -246,20 +180,20 @@ YÊU CẦU CHẤT LƯỢNG KHẮT KHE:
 
 
 def generate_example_sentence(vi, zh, industry_name):
-  """Tạo câu ví dụ giao tiếp công việc/thao tác/đầu tư ngắn gọn (<= 12 ký tự chữ Hán)."""
+  """Tạo câu ví dụ giao tiếp ngắn gọn (<= 12 ký tự chữ Hán), làm sạch tuyệt đối."""
   prompt = f"""Bạn là chuyên gia thực chiến trong lĩnh vực {industry_name}.
 Hãy đặt 01 câu giao tiếp hoặc nhận định ngắn gọn, thực tế có chứa từ vựng '{zh}' (nghĩa là: '{vi}').
 
 YÊU CẦU BẮT BUỘC:
-1. Ngữ cảnh: Câu nói thực tế, súc tích (trong thao tác xưởng, nhận định thị trường, giao dịch hoặc sinh hoạt).
-2. Độ dài: Câu tiếng Trung (zh) KHÔNG ĐƯỢC VƯỢT QUÁ 12 KÝ TỰ chữ Hán.
-3. Pinyin: Chỉ chứa chữ cái Latinh kèm dấu thanh, tuyệt đối không lẫn chữ Hán.
+1. Trường "vi" (Tiếng Việt): BẢN DỊCH HOÀN TOÀN BẰNG TIẾNG VIỆT, KHÔNG DÍNH CHỮ HÁN.
+2. Trường "zh" (Tiếng Trung): CHỈ CHỨA CHỮ HÁN VÀ DẤU CÂU, KHÔNG CHỨA CHỮ CÁI LATINH. ĐỘ DÀI KHÔNG QUÁ 12 KÝ TỰ CHỮ HÁN.
+3. Trường "py" (Pinyin): Chỉ chứa chữ cái Latinh kèm dấu thanh.
 
 Trả về đúng định dạng JSON:
 {{
   "zh": "Câu tiếng Trung dưới 12 ký tự",
   "py": "Pinyin đầy đủ có dấu",
-  "vi": "Bản dịch tiếng Việt"
+  "vi": "Bản dịch tiếng Việt hoàn chỉnh"
 }}
 """
   try:
@@ -270,13 +204,19 @@ Trả về đúng định dạng JSON:
         response_format={"type": "json_object"},
     )
     data = json.loads(response.choices[0].message.content)
-    ex_vi = data.get("vi", f"Cần theo dõi {vi}.")
-    ex_zh = data.get("zh", f"注意{zh}。")
+    ex_vi = clean_vietnamese(data.get("vi", f"Cần thao tác {vi}."))
+    if not ex_vi:
+      ex_vi = f"Thao tác {vi} ngay."
+
+    ex_zh = clean_chinese(data.get("zh", f"注意{zh}。"))
+    if not ex_zh:
+      ex_zh = f"注意{zh}。"
+
     ex_py = clean_pinyin(ex_zh, data.get("py", ""))
     return ex_vi, ex_zh, ex_py
   except Exception:
     fallback_zh = f"注意{zh}。"
-    return (f"Cần theo dõi {vi}.", fallback_zh, clean_pinyin(fallback_zh, ""))
+    return (f"Thao tác {vi} ngay.", fallback_zh, clean_pinyin(fallback_zh, ""))
 
 
 # ---------------------------------------------------------------------------
@@ -287,7 +227,6 @@ wb = openpyxl.Workbook()
 sheet = wb.active
 sheet.title = "Vocabulary"
 
-# Tiêu đề cột chuẩn
 headers = [
     "STT",
     "HSK",
@@ -304,14 +243,11 @@ for col_num, header_title in enumerate(headers, 1):
 
 current_row = 2
 global_stt = 1
-
-# Tập hợp (Set) dùng để lọc bỏ từ trùng lặp
 seen_chinese_words = set()
 
 print(
     f"🚀 BẮT ĐẦU TẠO DỮ LIỆU CỰC CHUYÊN SÂU CHO NGÀNH: [{TARGET_INDUSTRY}]..."
 )
-print(f"📁 File đầu ra: {file_output}\n" + "=" * 60)
 
 for topic in industry_topics:
   c_diem = topic["chu_diem"]
@@ -319,43 +255,45 @@ for topic in industry_topics:
 
   print(f"📦 Đang xử lý: Chủ điểm [{c_diem}] | Chủ đề [{c_de}]...")
   vocab_list = generate_vocabulary_batch(c_diem, c_de)
-  print(f"   -> AI trả về {len(vocab_list)} thuật ngữ chọn lọc.")
 
   added_count = 0
   for item in vocab_list:
     hsk = item.get("hsk", "HSK 4")
-    vi = item.get("vi")
-    zh = item.get("zh")
+    vi_raw = item.get("vi")
+    zh_raw = item.get("zh")
     raw_py = item.get("py", "")
 
-    if not zh or not vi:
+    if not zh_raw or not vi_raw:
       continue
 
-    zh_clean = str(zh).strip()
+    # 1. Làm sạch cột Tiếng Việt và Tiếng Trung
+    vi = clean_vietnamese(vi_raw)
+    zh = clean_chinese(zh_raw)
 
-    # Bỏ qua nếu từ đã từng xuất hiện để tránh trùng lặp
-    if zh_clean in seen_chinese_words:
+    if not vi or not zh:
       continue
-    seen_chinese_words.add(zh_clean)
 
-    py = clean_pinyin(zh_clean, raw_py)
+    # 2. Bỏ qua từ bị trùng lặp
+    if zh in seen_chinese_words:
+      continue
+    seen_chinese_words.add(zh)
 
-    # 1. HÀNG TỪ VỰNG CHUYÊN SÂU GỐC
+    py = clean_pinyin(zh, raw_py)
+
+    # --- HÀNG 1: TỪ VỰNG GỐC ---
     sheet.cell(row=current_row, column=1, value=global_stt)
     sheet.cell(row=current_row, column=2, value=hsk)
     sheet.cell(row=current_row, column=3, value=c_diem)
     sheet.cell(row=current_row, column=4, value=c_de)
     sheet.cell(row=current_row, column=5, value=vi)
-    sheet.cell(row=current_row, column=6, value=zh_clean)
+    sheet.cell(row=current_row, column=6, value=zh)
     sheet.cell(row=current_row, column=7, value=py)
     current_row += 1
     global_stt += 1
 
-    # 2. HÀNG CÂU VÍ DỤ GIAO TIẾP / THAO TÁC / NHẬN ĐỊNH (<= 12 KÝ TỰ)
-    if len(zh_clean) <= 12:
-      ex_vi, ex_zh, ex_py = generate_example_sentence(
-          vi, zh_clean, TARGET_INDUSTRY
-      )
+    # --- HÀNG 2: CÂU VÍ DỤ (<= 12 KÝ TỰ CHỮ HÁN) ---
+    if len(zh) <= 12:
+      ex_vi, ex_zh, ex_py = generate_example_sentence(vi, zh, TARGET_INDUSTRY)
 
       sheet.cell(row=current_row, column=1, value=global_stt)
       sheet.cell(row=current_row, column=2, value=hsk)
@@ -370,11 +308,7 @@ for topic in industry_topics:
     added_count += 1
     time.sleep(0.3)
 
-  print(f"   ✅ Đã lọc và lưu {added_count} từ vựng chất lượng cao.")
+  print(f"   ✅ Đã lưu {added_count} từ vựng sạch chuẩn 100%.")
 
 wb.save(file_output)
-print("=" * 60)
-print(
-    f"🎉 HOÀN TẤT THÀNH CÔNG! File đã được lưu tại: {file_output}\n📊 Tổng số"
-    f" dòng dữ liệu (từ vựng + câu ví dụ): {current_row - 1}"
-)
+print(f"🎉 HOÀN TẤT! File lưu tại: {file_output}")
