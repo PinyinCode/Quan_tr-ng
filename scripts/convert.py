@@ -135,6 +135,7 @@ OUTPUT_HTML = CONFIG["output_html"]
 SHEET_INDEX = CONFIG["sheet_index"]
 DATA_DIR = CONFIG.get("data_dir", "data")
 DATA_DOISONG_DIR = "scripts/data_doisong"
+DATA_OUTPUT_DIR = "data"
 
 data_tonghop = read_excel(EXCEL_FILE, SHEET_INDEX)
 print(f"📚 Tổng hợp: {len(data_tonghop)} câu")
