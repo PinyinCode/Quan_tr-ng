@@ -624,9 +624,10 @@ def convert_arabic_to_chinese(text):
 def _clean(s):
     if s is None:
         return ""
-    return (str(s).replace('\n', ' ').replace('\r', ' ')
+    # Loại bỏ các ký tự điều khiển ẩn (control characters) gây lỗi JSON
+    s = ''.join(c for c in str(s) if unicodedata.category(c)[0] != 'C' or c in '\n\r\t')
+    return (s.replace('\n', ' ').replace('\r', ' ')
             .replace('\t', ' ').replace('\\', '\\\\'))
-
 
 # =================================================================
 #  HELPERS
