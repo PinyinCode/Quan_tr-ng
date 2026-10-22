@@ -13,7 +13,12 @@ model_name = os.environ.get("QWEN_MODEL", "qwen-plus")
 
 client = OpenAI(api_key=api_key, base_url=base_url, timeout=60.0)
 
+# Định nghĩa thư mục nguồn và thư mục lưu bản sao
 input_dir = "scripts/data"
+output_dir = "scripts/data_copy"
+
+# Tự động tạo thư mục data_copy nếu chưa có
+os.makedirs(output_dir, exist_ok=True)
 
 # Nhận tên file được truyền từ GitHub Workflow (mặc định 'ALL' nếu chạy cục bộ)
 SELECTED_FILE = os.environ.get("TARGET_FILE", "ALL")
@@ -25,7 +30,7 @@ if SELECTED_FILE == "ALL":
       if f.endswith(".xlsx") and not f.startswith("~$")
   ]
   print(
-      f"📂 ĐÃ CHỌN: Xử lý TẤT CẢ các file trong thư mục (Tổng số:"
+      f"📂 ĐÃ CHỌN: Xử lý TẤT CẢ các file từ thư mục '{input_dir}' (Tổng số:"
       f" {len(excel_files)} file)"
   )
 else:
@@ -40,13 +45,13 @@ else:
 
 def generate_example_sentence(vi, zh):
   prompt = f"""Bạn là chuyên gia ngôn ngữ giỏi tiếng Trung.
-Hãy đặt 01 câu giao tiếp tự nhiên, chuẩn văn phong đời sống/công sở có chứa từ '{zh}' ({vi}).
+Hãy đặt 01 câu giao tiếp tự nhiên, câu dài hoàn chỉnh có chứa từ vựng '{zh}' (nghĩa là: '{vi}').
 
 Trả về đúng định dạng JSON:
 {{
-  "zh": "Câu tiếng Trung tự nhiên",
-  "py": "Pinyin đầy đủ có dấu",
-  "vi": "Bản dịch tiếng Việt tự nhiên"
+  "zh": "Câu tiếng Trung dài và tự nhiên",
+  "py": "Pinyin đầy đủ có dấu của cả câu",
+  "vi": "Bản dịch tiếng Việt hoàn chỉnh của câu"
 }}
 """
   try:
@@ -60,15 +65,17 @@ Trả về đúng định dạng JSON:
     return data["vi"], data["zh"], data["py"]
   except Exception:
     return (
-        f"Cần chú ý xử lý vấn đề {vi} này một cách cẩn thận.",
-        f"需要仔细处理这个{zh}问题。",
-        f"Xūyào zǐxì chǔlǐ zhè ge {zh} wèntí.",
+        f"Chúng ta cần chú ý xử lý vấn đề {vi} này một cách cẩn thận.",
+        f"我们需要仔细处理这个{zh}问题。",
+        f"Wǒmen xūyào zǐxì chǔlǐ zhè ge {zh} wèntí.",
     )
 
 
 # Vòng lặp xử lý từng file được chọn
 for index, file_name in enumerate(excel_files, 1):
-  file_path = os.path.join(input_dir, file_name)
+  src_file_path = os.path.join(input_dir, file_name)
+  dest_file_path = os.path.join(output_dir, file_name)
+
   print(
       f"\n=============================================================="
   )
@@ -77,45 +84,89 @@ for index, file_name in enumerate(excel_files, 1):
       f"=============================================================="
   )
 
-  wb = openpyxl.load_workbook(file_path)
+  wb = openpyxl.load_workbook(src_file_path)
   sheet = wb.active
 
-  # Đếm số lượng từ gốc và chuẩn bị mở rộng
-  rows_to_process = []
+  # Đọc toàn bộ dữ liệu cũ của file ra một danh sách (bỏ qua dòng tiêu đề hàng 1)
+  old_rows = []
   for row in range(2, sheet.max_row + 1):
+    hsk = sheet.cell(row=row, column=2).value
+    chu_diem = sheet.cell(row=row, column=3).value
+    chu_de = sheet.cell(row=row, column=4).value
     vi = sheet.cell(row=row, column=5).value
     zh = sheet.cell(row=row, column=6).value
-    # Nếu dòng nào có từ tiếng Trung và chưa có câu ví dụ/hoặc cần xử lý tiếp
+    py = sheet.cell(row=row, column=7).value
+
+    # Nếu dòng hợp lệ thì lưu lại
     if zh and vi:
-      rows_to_process.append((row, vi, zh))
+      old_rows.append({
+          "hsk": hsk,
+          "chu_diem": chu_diem,
+          "chu_de": chu_de,
+          "vi": vi,
+          "zh": zh,
+          "py": py,
+      })
 
   print(
-      f"📊 Tổng số dòng từ vựng trong file {file_name}:"
-      f" {len(rows_to_process)}"
+      f"📊 Tổng số từ vựng gốc trong file {file_name}: {len(old_rows)} từ."
+  )
+  print(
+      "🔄 Đang tiến hành tạo câu ví dụ dài và viết lại cấu trúc file"
+      " Excel..."
   )
 
+  # Xóa sạch dữ liệu cũ trong sheet (trừ hàng tiêu đề)
+  sheet.delete_rows(2, sheet.max_row + 1)
+
+  current_row = 2
+  global_stt = 1
   count = 0
-  for row_idx, vi, zh in rows_to_process:
-    # Chỉ sinh câu ví dụ cho từ ngắn gọn (<= 12 ký tự) nếu chưa có
-    current_practice = sheet.cell(row=row_idx, column=8).value
-    if len(str(zh)) <= 12 and not current_practice:
+
+  for item in old_rows:
+    hsk = item["hsk"]
+    c_diem = item["chu_diem"]
+    c_de = item["chu_de"]
+    vi = item["vi"]
+    zh = item["zh"]
+    py = item["py"]
+
+    # --- HÀNG 1: TỪ VỰNG GỐC ---
+    sheet.cell(row=current_row, column=1, value=global_stt)
+    sheet.cell(row=current_row, column=2, value=hsk)
+    sheet.cell(row=current_row, column=3, value=c_diem)
+    sheet.cell(row=current_row, column=4, value=c_de)
+    sheet.cell(row=current_row, column=5, value=vi)
+    sheet.cell(row=current_row, column=6, value=zh)
+    sheet.cell(row=current_row, column=7, value=py)
+    current_row += 1
+    global_stt += 1
+
+    # --- HÀNG 2: CÂU DÀI CHỨA TỪ ĐÓ (Chỉ với từ ngắn <= 12 ký tự) ---
+    if len(str(zh)) <= 12:
       ex_vi, ex_zh, ex_py = generate_example_sentence(vi, zh)
 
-      # Ghi dữ liệu mở rộng vào các cột tương ứng
-      sheet.cell(row=row_idx, column=8, value=ex_zh)
-      sheet.cell(row=row_idx, column=9, value=ex_py)
-      sheet.cell(row=row_idx, column=10, value=ex_vi)
+      sheet.cell(row=current_row, column=1, value=global_stt)
+      sheet.cell(row=current_row, column=2, value=hsk)
+      sheet.cell(row=current_row, column=3, value=c_diem)
+      sheet.cell(row=current_row, column=4, value=c_de)
+      sheet.cell(row=current_row, column=5, value=ex_vi)  # Câu tiếng Việt dài
+      sheet.cell(row=current_row, column=6, value=ex_zh)  # Câu tiếng Trung dài
+      sheet.cell(row=current_row, column=7, value=ex_py)  # Pinyin của câu dài
+      current_row += 1
+      global_stt += 1
 
       count += 1
       if count % 10 == 0:
-        print(f"   ⏳ Đã sinh câu cho {count} từ...")
-        wb.save(file_path)  # Lưu tạm định kỳ tránh mất dữ liệu
+        print(f"   ⏳ Đã tạo câu dài cho {count} từ...")
+        wb.save(dest_file_path)  # Lưu tạm vào thư mục data_copy định kỳ
       time.sleep(0.3)
 
-  # Lưu file hoàn tất sau khi xong mỗi file
-  wb.save(file_path)
-  print(f"✅ HOÀN TẤT VÀ LƯU FILE: {file_name} (Đã bổ sung {count} câu ví dụ).")
+  # Lưu file hoàn tất vào thư mục data_copy
+  wb.save(dest_file_path)
+  print(
+      f"✅ LƯU BẢN SAO THÀNH CÔNG TẠI: {dest_file_path} (Đã thêm {count} dòng"
+      f" câu ví dụ dài)."
+  )
 
-print(
-    "\n🎉 TẤT CẢ CÁC FILE ĐƯỢC CHỌN ĐÃ XỬ LÝ XONG XUÔI VÀ SẴN SÀNG COMMIT!"
-)
+print("\n🎉 TẤT CẢ CÁC FILE ĐÃ XỬ LÝ VÀ LƯU VÀO THƯ MỤC `scripts/data_copy/`!")
