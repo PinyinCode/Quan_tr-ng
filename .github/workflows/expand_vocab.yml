@@ -2,12 +2,27 @@ name: Expand Chinese Vocabulary with Qwen AI
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main # Hoặc master tùy nhánh của bạn
+    inputs:
+      target_file:
+        description: 'Chọn file Excel cụ thể muốn xử lý'
+        required: true
+        default: 'Kho.xlsx'
+        type: choice
+        options:
+          - 'ALL'
+          - 'Chất_lượng.xlsx'
+          - 'Giày_da.xlsx'
+          - 'Hành_chính_-_Nhân_sự.xlsx'
+          - 'Kế_toán.xlsx'
+          - 'Kho.xlsx'
+          - 'Máy_tính_&_IT.xlsx'
+          - 'Thu_mua.xlsx'
+          - 'Tổ_trưởng_-_Quản_lí_sản_xuất.xlsx'
+          - 'Văn_thư_-_Trợ_lý_sản_xuất.xlsx'
+          - 'Xuất_nhập_khẩu.xlsx'
 
 jobs:
-  run-ai-expansion:
+  run-expansion:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -22,20 +37,22 @@ jobs:
         run: |
           pip install pandas openpyxl openai
 
-      - name: Run Python script to process all excel files
+      - name: Run Python script for selected file
         env:
           DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
           QWEN_BASE_URL: ${{ secrets.QWEN_BASE_URL }}
           QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
+          TARGET_FILE: ${{ inputs.target_file }}
         run: |
           python -u process_vocab.py
 
-      - name: Commit and Push expanded Excel files
+      - name: Commit and Push processed file immediately
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add scripts/data_copy/
-          git commit -m "Auto-generate expanded vocabulary files in scripts/data_copy using Qwen AI" || echo "No changes to commit"
+          git config --global core.quotepath false
+          git add scripts/data/
+          git commit -m "Process and update file: ${{ inputs.target_file }} via Qwen AI" || echo "No changes to commit"
           git push
