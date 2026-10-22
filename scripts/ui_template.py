@@ -4556,17 +4556,22 @@ function initDatasetSelector() {
 }
 
 function switchDataset(datasetId) {
-    if (!DATASET_REGISTRY[datasetId]) return;
+    // ⭐ KIỂM TRA TỪ FIXPY_DATASETS (ưu tiên)
+    var isFixpyDataset = (window.FIXPY_DATASETS && window.FIXPY_DATASETS[datasetId]);
+    
+    if (!isFixpyDataset && !DATASET_REGISTRY[datasetId]) return;
 
     /* ❤️ Nếu rời tab Yêu thích → reset cờ */
     if (typeof favState !== 'undefined' && favState.currentView) {
         favState.currentView = false;
     }
 
-    if (datasetId !== 'tonghop' && !canAccessChuyenNganh()) {
+    // ⭐ CHỈ CHẶN NẾU KHÔNG PHẢI FIXPY_DATASET
+    if (!isFixpyDataset && datasetId !== 'tonghop' && !canAccessChuyenNganh()) {
         showChuyenNganhLockMessage();
         return;
     }
+    
 
     if (typeof window.__switchRawData === 'function') {
         window.__switchRawData(datasetId);
