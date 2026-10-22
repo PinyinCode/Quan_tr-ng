@@ -134,6 +134,7 @@ EXCEL_FILE = CONFIG["excel_file"]
 OUTPUT_HTML = CONFIG["output_html"]
 SHEET_INDEX = CONFIG["sheet_index"]
 DATA_DIR = CONFIG.get("data_dir", "data")
+DATA_DOISONG_DIR = "scripts/data_doisong"
 
 data_tonghop = read_excel(EXCEL_FILE, SHEET_INDEX)
 print(f"📚 Tổng hợp: {len(data_tonghop)} câu")
@@ -218,65 +219,67 @@ DATASET_REGISTRY = {
 _tonghop_abs = os.path.abspath(EXCEL_FILE)
 _chuyen_nganh_count = 0
 
-if os.path.isdir(DATA_DIR):
-    excel_files = []
-    for ext in ("*.xlsx", "*.xls", "*.csv"):
-        excel_files.extend(glob.glob(os.path.join(DATA_DIR, ext)))
-    excel_files.sort()
+def scan_folder(folder_path, group_name, start_index=0):
+    datasets = {}
+    idx = start_index
+    if os.path.isdir(folder_path):
+        excel_files = []
+        for ext in ("*.xlsx", "*.xls", "*.csv"):
+            excel_files.extend(glob.glob(os.path.join(folder_path, ext)))
+        excel_files.sort()
 
-    print(f"\n🔍 Quét '{DATA_DIR}/' — {len(excel_files)} file Excel")
+        print(f"\n🔍 Quét '{folder_path}/' — {len(excel_files)} file Excel")
 
-    for filepath in excel_files:
-        filename = os.path.basename(filepath)
-        if filename.startswith("~$"):
-            continue
-        if os.path.abspath(filepath) == _tonghop_abs:
-            print(f"⏭️  {filename} — bỏ qua (file tổng hợp)")
-            continue
+        for filepath in excel_files:
+            filename = os.path.basename(filepath)
+            if filename.startswith("~$"): continue
+            if os.path.abspath(filepath) == _tonghop_abs: continue
 
-        try:
-            sub_data = read_excel(filepath, 0)
-            if not sub_data:
-                print(f"⚠️  {filename}: rỗng")
-                continue
+            try:
+                sub_data = read_excel(filepath, 0)
+                if not sub_data: continue
 
-            display_name = filename.rsplit(".", 1)[0].replace("_", " ").strip()
-            display_name = unicodedata.normalize("NFC", display_name)
-            if display_name.islower() or display_name.isupper():
-                display_name = display_name.title()
+                display_name = filename.rsplit(".", 1)[0].replace("_", " ").strip()
+                display_name = unicodedata.normalize("NFC", display_name)
+                if display_name.islower() or display_name.isupper():
+                    display_name = display_name.title()
 
-            dataset_id = slugify_dataset_id(filename)
-            base_id = dataset_id
-            counter = 2
-            while dataset_id in DATASET_REGISTRY:
-                dataset_id = f"{base_id}-{counter}"
-                counter += 1
+                dataset_id = slugify_dataset_id(filename)
+                base_id = dataset_id
+                counter = 2
+                while dataset_id in DATASET_REGISTRY or dataset_id in datasets:
+                    dataset_id = f"{base_id}-{counter}"
+                    counter += 1
 
-            icon, color = auto_detect_icon_color(display_name)
+                icon, color = auto_detect_icon_color(display_name)
 
-            DATASET_REGISTRY[dataset_id] = {
-                "id": dataset_id,
-                "name": display_name,
-                "icon": icon,
-                "color": color,
-                "data": sub_data,
-                "count": len(sub_data),
-                "source": filename,
-            }
-            _chuyen_nganh_count += 1
-            print(f"🏭 {display_name:25s} ({filename}) — {len(sub_data)} câu")
-        except Exception as e:
-            print(f"❌ Lỗi đọc {filename}: {e}")
-            continue
+                datasets[dataset_id] = {
+                    "id": dataset_id,
+                    "name": display_name,
+                    "icon": icon,
+                    "color": color,
+                    "data": sub_data,
+                    "count": len(sub_data),
+                    "source": filename,
+                    "group": group_name # ⭐ Gắn nhãn nhóm
+                }
+                idx += 1
+                print(f"🏭 {display_name:25s} ({filename}) — {len(sub_data)} câu")
+            except Exception as e:
+                print(f"❌ Lỗi đọc {filename}: {e}")
+    return datasets, idx
 
-    if _chuyen_nganh_count == 0:
-        print(f"ℹ️  Không có file chuyên ngành nào.")
-else:
-    print(f"\nℹ️  Chưa có thư mục '{DATA_DIR}/'.")
+# Quét chuyên ngành
+_chuyen_nganh_data, _ = scan_folder(DATA_DIR, "chuyen-nganh", _chuyen_nganh_count)
+for k, v in _chuyen_nganh_data.items():
+    DATASET_REGISTRY[k] = v
 
-DATA_OUTPUT_DIR = "data"
-os.makedirs(DATA_OUTPUT_DIR, exist_ok=True)
+# Quét đời sống
+_doi_song_data, _ = scan_folder(DATA_DOISONG_DIR, "doi-song", 0)
+for k, v in _doi_song_data.items():
+    DATASET_REGISTRY[k] = v
 
+# Cập nhật lại meta
 dataset_registry_meta = {}
 for _ds_id, _ds in DATASET_REGISTRY.items():
     dataset_registry_meta[_ds_id] = {
@@ -286,6 +289,7 @@ for _ds_id, _ds in DATASET_REGISTRY.items():
         "color": _ds["color"],
         "count": _ds["count"],
         "source": _ds["source"],
+        "group": _ds.get("group", "")
     }
 
 all_datasets_data = {}
