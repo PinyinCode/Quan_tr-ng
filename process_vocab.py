@@ -1,7 +1,7 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import copy
 import json
 import os
+import time
 from openai import OpenAI
 import openpyxl
 
@@ -12,7 +12,6 @@ base_url = os.environ.get(
 )
 model_name = os.environ.get("QWEN_MODEL", "qwen-plus")
 
-# Khởi tạo client với timeout rõ ràng để tránh bị treo vô thời hạn
 client = OpenAI(api_key=api_key, base_url=base_url, timeout=30.0)
 
 input_dir = "scripts/data"
@@ -55,14 +54,14 @@ Yêu cầu BẮT BUỘC:
 
 excel_files = [f for f in os.listdir(input_dir) if f.endswith(".xlsx")]
 
-if not excel_files:
-  print(f"⚠️ Không tìm thấy file Excel nào trong thư mục {input_dir}")
-
 for filename in excel_files:
   file_input = os.path.join(input_dir, filename)
   file_output = os.path.join(output_dir, filename)
 
-  print(f"🚀 Bắt đầu xử lý file: {filename}...")
+  print(
+      f"🚀 Bắt đầu xử lý file: {filename} (Chế độ tuần tự an toàn chống lỗi"
+      " 429)..."
+  )
 
   src_wb = openpyxl.load_workbook(file_input)
   src_sheet = src_wb.active
@@ -85,7 +84,9 @@ for filename in excel_files:
       dst_cell.fill = copy(src_cell.fill)
       dst_cell.alignment = copy(src_cell.alignment)
 
-  rows_data = []
+  current_dst_row = 2
+  new_stt = 1
+
   for r in range(2, src_sheet.max_row + 1):
     hsk = src_sheet.cell(row=r, column=2).value
     chu_diem = src_sheet.cell(row=r, column=3).value
@@ -96,76 +97,37 @@ for filename in excel_files:
 
     if not zh or not vi:
       continue
-    rows_data.append(
-        {
-            "row_idx": r,
-            "hsk": hsk,
-            "chu_diem": chu_diem,
-            "chu_de": chu_de,
-            "vi": vi,
-            "zh": zh,
-            "py": py,
-        }
-    )
 
-  ai_results = {}
-  print(
-      f"⚡ Đang gửi request tới Qwen AI cho {len(rows_data)} từ vựng (chế độ"
-      " an toàn)..."
-  )
-
-  def process_single_row(item):
-    if len(str(item["zh"])) <= 12:
-      v, z, p = generate_unique_sentence_via_ai(
-          str(item["vi"]),
-          str(item["zh"]),
-          str(item["chu_diem"]),
-          str(item["chu_de"]),
-      )
-      return item["row_idx"], (v, z, p)
-    return item["row_idx"], None
-
-  # Giới hạn max_workers=5 để tránh nghẽn kết nối mạng của API
-  with ThreadPoolExecutor(max_workers=5) as executor:
-    futures = {
-        executor.submit(process_single_row, item): item for item in rows_data
-    }
-    for future in as_completed(futures):
-      try:
-        r_idx, res = future.result()
-        if res:
-          ai_results[r_idx] = res
-      except Exception as exc:
-        print(f"Lỗi luồng xử lý: {exc}")
-
-  current_dst_row = 2
-  new_stt = 1
-
-  for item in rows_data:
-    r = item["row_idx"]
-    # 1. Dòng gốc
+    # 1. Ghi dòng từ vựng gốc
     dst_sheet.cell(row=current_dst_row, column=1, value=new_stt)
-    dst_sheet.cell(row=current_dst_row, column=2, value=item["hsk"])
-    dst_sheet.cell(row=current_dst_row, column=3, value=item["chu_diem"])
-    dst_sheet.cell(row=current_dst_row, column=4, value=item["chu_de"])
-    dst_sheet.cell(row=current_dst_row, column=5, value=item["vi"])
-    dst_sheet.cell(row=current_dst_row, column=6, value=item["zh"])
-    dst_sheet.cell(row=current_dst_row, column=7, value=item["py"])
+    dst_sheet.cell(row=current_dst_row, column=2, value=hsk)
+    dst_sheet.cell(row=current_dst_row, column=3, value=chu_diem)
+    dst_sheet.cell(row=current_dst_row, column=4, value=chu_de)
+    dst_sheet.cell(row=current_dst_row, column=5, value=vi)
+    dst_sheet.cell(row=current_dst_row, column=6, value=zh)
+    dst_sheet.cell(row=current_dst_row, column=7, value=py)
     current_dst_row += 1
     new_stt += 1
 
-    # 2. Dòng mở rộng AI
-    if r in ai_results:
-      ex_vi, ex_zh, ex_py = ai_results[r]
+    # 2. Ghi dòng câu mở rộng AI (với từ ngắn <= 12 ký tự)
+    if len(str(zh)) <= 12:
+      print(f"Đang tạo câu AI cho từ: {zh} ({vi})...")
+      ex_vi, ex_zh, ex_py = generate_unique_sentence_via_ai(
+          str(vi), str(zh), str(chu_diem), str(chu_de)
+      )
+
       dst_sheet.cell(row=current_dst_row, column=1, value=new_stt)
-      dst_sheet.cell(row=current_dst_row, column=2, value=item["hsk"])
-      dst_sheet.cell(row=current_dst_row, column=3, value=item["chu_diem"])
-      dst_sheet.cell(row=current_dst_row, column=4, value=item["chu_de"])
+      dst_sheet.cell(row=current_dst_row, column=2, value=hsk)
+      dst_sheet.cell(row=current_dst_row, column=3, value=chu_diem)
+      dst_sheet.cell(row=current_dst_row, column=4, value=chu_de)
       dst_sheet.cell(row=current_dst_row, column=5, value=ex_vi)
       dst_sheet.cell(row=current_dst_row, column=6, value=ex_zh)
       dst_sheet.cell(row=current_dst_row, column=7, value=ex_py)
       current_dst_row += 1
       new_stt += 1
 
+      # Nghỉ 0.8 giây giữa mỗi request để không bao giờ bị lỗi quá giới hạn (Rate Limit)
+      time.sleep(0.8)
+
   dst_wb.save(file_output)
-  print(f"✅ Đã xử lý xong và lưu tại: {file_output}")
+  print(f"✅ Đã xử lý xong và lưu thành công tại: {file_output}")
