@@ -1721,7 +1721,9 @@ def main():
         datasets_dict[ds["id"]] = ds
 
     # ⭐ Gộp dữ liệu Đời sống
+    # ⭐ Gộp dữ liệu Đời sống (LUÔN GHI ĐÈ)
     for ds in doisong_datasets:
+        ds["group"] = "doi-song"  # ⭐ Ép cứng group
         datasets_dict[ds["id"]] = ds
 
     for ds in all_new:
@@ -1741,18 +1743,24 @@ def main():
                 with open(_all_datasets_path, "r", encoding="utf-8") as _f:
                     _all_data = json.load(_f)
                 for _rid, _rmeta in _reg_data.items():
-                    if _rid not in datasets_dict:  # Tránh trùng lặp
-                        datasets_dict[_rid] = {
-                            "id": _rid,
-                            "name": _rmeta["name"],
-                            "icon": _rmeta["icon"],
-                            "color": _rmeta["color"],
-                            "count": _rmeta["count"],
-                            "source": _rmeta["source"],
-                            "type": "main",  # hoặc "sub"
-                            "group": _rmeta.get("group") or ("doi-song" if "van-hoa" in _rid or "ngay-le" in _rid else "chuyen-nganh"),
-                            "data": _all_data.get(_rid, [])
-                        }
+                    # ⭐ KHÔNG gộp nếu ID này đã có trong datasets_dict (đã gộp từ doisong hoặc fixpy)
+                    if _rid in datasets_dict:
+                        continue
+                    
+                    # ⭐ Nếu là file Văn Hóa - Ngày Lễ, ép cứng group doi-song
+                    is_doi_song = ("van-hoa" in _rid.lower() or "ngay-le" in _rid.lower())
+                    
+                    datasets_dict[_rid] = {
+                        "id": _rid,
+                        "name": _rmeta["name"],
+                        "icon": _rmeta["icon"],
+                        "color": _rmeta["color"],
+                        "count": _rmeta["count"],
+                        "source": _rmeta["source"],
+                        "type": "main",
+                        "group": "doi-song" if is_doi_song else _rmeta.get("group", "chuyen-nganh"),
+                        "data": _all_data.get(_rid, [])
+                    }
             except Exception as e:
                 print(f"⚠️ Không gộp được dataset_registry: {e}")
         
