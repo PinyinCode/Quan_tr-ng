@@ -45,12 +45,16 @@ else:
 
 def generate_example_sentence(vi, zh):
   prompt = f"""Bạn là chuyên gia ngôn ngữ giỏi tiếng Trung.
-Hãy đặt 01 câu giao tiếp tự nhiên, câu dài hoàn chỉnh có chứa từ vựng '{zh}' (nghĩa là: '{vi}').
+Hãy đặt 01 câu giao tiếp ngắn gọn, tự nhiên có chứa từ vựng '{zh}' (nghĩa là: '{vi}').
+
+YÊU CẦU BẮT BUỘC:
+- Câu tiếng Trung KHÔNG ĐƯỢC VƯỢT QUÁ 12 KÝ TỰ chữ Hán.
+- Tự nhiên, ngắn gọn, dễ nhớ.
 
 Trả về đúng định dạng JSON:
 {{
-  "zh": "Câu tiếng Trung dài và tự nhiên",
-  "py": "Pinyin đầy đủ có dấu của cả câu",
+  "zh": "Câu tiếng Trung ngắn dưới 12 ký tự",
+  "py": "Pinyin đầy đủ có dấu của câu",
   "vi": "Bản dịch tiếng Việt hoàn chỉnh của câu"
 }}
 """
@@ -58,16 +62,17 @@ Trả về đúng định dạng JSON:
     response = client.chat.completions.create(
         model=model_name,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.8,
+        temperature=0.7,
         response_format={"type": "json_object"},
     )
     data = json.loads(response.choices[0].message.content)
     return data["vi"], data["zh"], data["py"]
   except Exception:
+    # Fallback ngắn gọn dưới 12 ký tự nếu có lỗi
     return (
-        f"Chúng ta cần chú ý xử lý vấn đề {vi} này một cách cẩn thận.",
-        f"我们需要仔细处理这个{zh}问题。",
-        f"Wǒmen xūyào zǐxì chǔlǐ zhè ge {zh} wèntí.",
+        f"Cần chú ý {vi}.",
+        f"要注意{zh}。",
+        f"Yào zhùyì {zh}.",
     )
 
 
@@ -112,8 +117,8 @@ for index, file_name in enumerate(excel_files, 1):
       f"📊 Tổng số từ vựng gốc trong file {file_name}: {len(old_rows)} từ."
   )
   print(
-      "🔄 Đang tiến hành tạo câu ví dụ dài và viết lại cấu trúc file"
-      " Excel..."
+      "🔄 Đang tiến hành tạo câu ví dụ ngắn gọn (<= 12 ký tự) và viết lại cấu"
+      " trúc file Excel..."
   )
 
   # Xóa sạch dữ liệu cũ trong sheet (trừ hàng tiêu đề)
@@ -142,7 +147,7 @@ for index, file_name in enumerate(excel_files, 1):
     current_row += 1
     global_stt += 1
 
-    # --- HÀNG 2: CÂU DÀI CHỨA TỪ ĐÓ (Chỉ với từ ngắn <= 12 ký tự) ---
+    # --- HÀNG 2: CÂU NGẮN CHỨA TỪ ĐÓ (Chỉ với từ/cụm ngắn <= 12 ký tự) ---
     if len(str(zh)) <= 12:
       ex_vi, ex_zh, ex_py = generate_example_sentence(vi, zh)
 
@@ -150,15 +155,15 @@ for index, file_name in enumerate(excel_files, 1):
       sheet.cell(row=current_row, column=2, value=hsk)
       sheet.cell(row=current_row, column=3, value=c_diem)
       sheet.cell(row=current_row, column=4, value=c_de)
-      sheet.cell(row=current_row, column=5, value=ex_vi)  # Câu tiếng Việt dài
-      sheet.cell(row=current_row, column=6, value=ex_zh)  # Câu tiếng Trung dài
-      sheet.cell(row=current_row, column=7, value=ex_py)  # Pinyin của câu dài
+      sheet.cell(row=current_row, column=5, value=ex_vi)  # Câu tiếng Việt ngắn
+      sheet.cell(row=current_row, column=6, value=ex_zh)  # Câu tiếng Trung ngắn (<= 12 ký tự)
+      sheet.cell(row=current_row, column=7, value=ex_py)  # Pinyin của câu
       current_row += 1
       global_stt += 1
 
       count += 1
       if count % 10 == 0:
-        print(f"   ⏳ Đã tạo câu dài cho {count} từ...")
+        print(f"   ⏳ Đã tạo câu ví dụ ngắn cho {count} từ...")
         wb.save(dest_file_path)  # Lưu tạm vào thư mục data_copy định kỳ
       time.sleep(0.3)
 
@@ -166,7 +171,7 @@ for index, file_name in enumerate(excel_files, 1):
   wb.save(dest_file_path)
   print(
       f"✅ LƯU BẢN SAO THÀNH CÔNG TẠI: {dest_file_path} (Đã thêm {count} dòng"
-      f" câu ví dụ dài)."
+      " câu ví dụ ngắn)."
   )
 
 print("\n🎉 TẤT CẢ CÁC FILE ĐÃ XỬ LÝ VÀ LƯU VÀO THƯ MỤC `scripts/data_copy/`!")
