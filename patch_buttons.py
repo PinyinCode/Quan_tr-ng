@@ -541,10 +541,13 @@ def patch_other_buttons(html):
 # =================================================================
 #  ⭐ FIX ACTIVE TAB — clear tab Yêu thích khi chuyển tab khác
 # =================================================================
-# =================================================================
-#  ⭐ FIX ACTIVE TAB — Xử lý active cho Chuyên ngành & Đời sống
-# =================================================================
 def add_active_fix_js(html):
+    """
+    Thêm JS nhỏ vào cuối HTML để:
+    - Khi bấm Chuyên ngành / Từ vựng / bất kỳ tab → clear active của Yêu thích
+    - Khi bấm sub-ngành → clear Yêu thích + Từ vựng
+    - ⭐ KHÔNG return sớm khi bấm Chuyên ngành → để dropdown vẫn mở được
+    """
     MARKER = "/* PATCH_BUTTONS: FIX ACTIVE TAB */"
     if MARKER in html:
         print("   [skip JS] Da co fix active tab")
@@ -557,44 +560,46 @@ def add_active_fix_js(html):
     'use strict';
     console.log('[patch_buttons] Fix active tab ready');
 
+    // Bấm bất kỳ nút dataset nào → clear Yêu thích ngay
+    // ⭐ KHÔNG stopPropagation → để handler khác (mở dropdown) vẫn chạy
     document.addEventListener('click', function(e) {
         var btn = e.target.closest('.ds-btn, .ds-sub-btn');
         if (!btn) return;
 
-        // 1. Kiểm tra xem nút được bấm có phải là nút "Chuyên ngành" hoặc "Đời sống" không
-        var isChuyenNganh = (btn.id === 'dsChuyenNganhBtn' || btn.getAttribute('data-dataset-group') === 'chuyen-nganh');
-        var isDoiSong = (btn.id === 'dsDoiSongBtn' || btn.getAttribute('data-dataset-group') === 'doi-song');
-        var isToggleBtn = isChuyenNganh || isDoiSong;
 
-        // 2. Nếu là nút Toggle (Chuyên ngành / Đời sống) -> Xóa active của tất cả các tab khác
-        if (isToggleBtn) {
+        // FIX_CONFLICT: bỏ qua nút Chuyên ngành
+        if (btn.id === 'dsChuyenNganhBtn' ||
+            btn.getAttribute('data-dataset-group') === 'chuyen-nganh') {
+            return;
+        }
+        // Nút Chuyên ngành (mở dropdown) → clear Yêu thích + Từ vựng
+        // ⭐ KHÔNG return — để dropdown handler chạy bình thường
+        if (btn.id === 'dsChuyenNganhBtn' ||
+            btn.getAttribute('data-dataset-group') === 'chuyen-nganh') {
+
             var fav = document.querySelector('.ds-btn[data-dataset-group="favorites"]');
             if (fav) fav.classList.remove('active');
             var tv = document.querySelector('.ds-btn[data-dataset="tu-vung"]');
             if (tv) tv.classList.remove('active');
-            
-            // Không return ở đây để handler trong ui_template.py vẫn chạy (mở dropdown)
-            return;
+            // KHÔNG return ở đây — để handler khác tự do chạy
         }
 
-        // 3. Nếu là tab con (ds-sub-btn) -> Xóa active của Yêu thích + Từ vựng
+        // Sub-ngành → clear Yêu thích + Từ vựng, active Chuyên ngành
         if (btn.classList.contains('ds-sub-btn')) {
             var fav2 = document.querySelector('.ds-btn[data-dataset-group="favorites"]');
             if (fav2) fav2.classList.remove('active');
             var tv2 = document.querySelector('.ds-btn[data-dataset="tu-vung"]');
             if (tv2) tv2.classList.remove('active');
-            
-            // Kích hoạt lại nút cha tương ứng (Chuyên ngành hoặc Đời sống)
-            var parentGroup = btn.closest('#dsSubWrap').getAttribute('data-active-group');
-            if (parentGroup) {
-                var parentBtn = document.querySelector('.ds-btn[data-dataset-group="' + parentGroup + '"]');
-                if (parentBtn) parentBtn.classList.add('active');
-            }
+            var cn = document.querySelector('.ds-btn[data-dataset-group="chuyen-nganh"]');
+            if (cn) cn.classList.add('active');
         }
 
-        // 4. Các tab khác (Tổng hợp, Giao tiếp...) -> Xóa active của Yêu thích
+        // Các tab khác (Từ vựng, Tổng hợp, Giao tiếp...) → clear Yêu thích
+        // Trừ khi chính là nút Yêu thích
         var favBtn = document.querySelector('.ds-btn[data-dataset-group="favorites"]');
-        if (favBtn && btn !== favBtn && !btn.classList.contains('ds-sub-btn') && !isToggleBtn) {
+        if (favBtn && btn !== favBtn &&
+            !btn.classList.contains('ds-sub-btn') &&
+            btn.getAttribute('data-dataset-group') !== 'chuyen-nganh') {
             favBtn.classList.remove('active');
         }
     }, true);
@@ -612,6 +617,7 @@ def add_active_fix_js(html):
     else:
         print("   [OK JS] Da chen fix active tab")
     return html
+
 
 # =================================================================
 #  MAIN
