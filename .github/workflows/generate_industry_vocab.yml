@@ -1,0 +1,59 @@
+name: Generate Custom Industry Vocabulary
+
+on:
+  workflow_dispatch:
+    inputs:
+      industry_name:
+        description: 'Chọn nhóm ngành nghề muốn tạo từ vựng'
+        required: true
+        default: 'Công Nghệ Cao & AI'
+        type: choice
+        options:
+          - 'Công Nghệ Cao & AI'
+          - 'Du Lịch - Khách Sạn & Xuất Nhập Cảnh'
+          - 'Giáo Dục & Du Học'
+          - 'Bán Hàng & Marketing'
+          - 'Văn Hóa & Ngày Lễ'
+          - 'May Mặc'
+          - 'Y Tế'
+          - 'Nông - Lâm - Thủy Sản'
+          - 'Cơ Khí & Chế Tạo'
+          - 'Hàng Không Vũ Trụ'
+          - 'Logistics & Kho Vận'
+          - 'Nghệ Thuật'
+
+jobs:
+  run-generation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas openpyxl openai
+
+      - name: Run generation script for selected industry
+        env:
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+          QWEN_BASE_URL: ${{ secrets.QWEN_BASE_URL }}
+          QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
+          TARGET_INDUSTRY: ${{ inputs.industry_name }}
+        run: |
+          python -u generate_large_vocab.py
+
+      - name: Commit and Push new generated file to data_copy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global core.quotepath false
+          git add scripts/data_copy/
+          git commit -m "Auto-generate vocabulary for industry: ${{ inputs.industry_name }} into data_copy" || echo "No changes to commit"
+          git push
