@@ -1,8 +1,10 @@
 import json
 import os
+import re
 import time
 from openai import OpenAI
 import openpyxl
+from pypinyin import Style, pypinyin
 
 # Lấy biến môi trường từ GitHub Actions hoặc hệ thống
 api_key = os.environ.get("DASHSCOPE_API_KEY")
@@ -335,73 +337,105 @@ default_topics = [
 industry_topics = INDUSTRY_TOPICS_MAP.get(TARGET_INDUSTRY, default_topics)
 
 
+def clean_pinyin(zh_text, py_text):
+    """
+    Hàm làm sạch Pinyin:
+    - Nếu Pinyin rỗng hoặc có chứa chữ Hán, sử dụng pypinyin để tạo lại Pinyin sạch 100%.
+    - Loại bỏ bất kỳ ký tự chữ Hán nào sót lại.
+    """
+    # Pattern nhận biết ký tự chữ Hán
+    has_chinese = re.search(r'[\u4e00-\u9fff]', str(py_text or ""))
+    
+    if not py_text or has_chinese:
+        # Tự động tạo Pinyin sạch bằng pypinyin
+        py_list = pypinyin(zh_text, style=Style.TONE)
+        clean_py = " ".join([item[0] for item in py_list])
+        return clean_py.strip()
+    
+    # Loại bỏ ký tự tiếng Trung nếu còn dính
+    cleaned = re.sub(r'[\u4e00-\u9fff]', '', str(py_text)).strip()
+    # Thu gọn khoảng trắng thừa
+    cleaned = re.sub(r'\s+', ' ', cleaned)
+    return cleaned
+
+
 def generate_vocabulary_batch(chu_diem, chu_de):
-  prompt = f"""Bạn là một chuyên gia ngôn ngữ và giảng viên tiếng Trung chuyên nghiệp.
+    prompt = f"""Bạn là một chuyên gia ngôn ngữ và giảng viên tiếng Trung chuyên nghiệp.
 Hãy tạo danh sách khoảng 50 từ vựng và thuật ngữ tiếng Trung thực tế thuộc lĩnh vực: {TARGET_INDUSTRY}
 - Chủ điểm: {chu_diem}
 - Chủ đề: {chu_de}
 
 Yêu cầu BẮT BUỘC:
 1. Từ vựng chuẩn xác, có tính ứng dụng cao thực tế trong đời sống, công việc.
-2. Trả về đúng định dạng JSON là một mảng (array) chứa các object:
+2. Pinyin (py) BẮT BUỘC chỉ là chữ cái Latinh kèm dấu thanh, KHÔNG ĐƯỢC CHỨA BẤT KỲ KÝ TỰ CHỮ HÁN NÀO.
+3. Trả về đúng định dạng JSON là một mảng (array) chứa các object:
 [
   {{
     "hsk": "HSK 3",
     "vi": "Nghĩa tiếng Việt",
     "zh": "Từ tiếng Trung",
-    "py": "Pinyin đầy đủ có dấu"
+    "py": "Pinyin Latinh đầy đủ có dấu"
   }},
   ...
 ]
 """
-  max_retries = 3
-  for attempt in range(max_retries):
-    try:
-      response = client.chat.completions.create(
-          model=model_name,
-          messages=[{"role": "user", "content": prompt}],
-          temperature=0.8,
-          response_format={"type": "json_object"},
-      )
-      data = json.loads(response.choices[0].message.content)
-      if isinstance(data, dict):
-        for k, v in data.items():
-          if isinstance(v, list):
-            data = v
-            break
-      return data
-    except Exception as e:
-      print(f"⚠️ Lỗi tạo từ vựng chủ đề {chu_de} (lần {attempt + 1}): {e}")
-      time.sleep(2)
-  return []
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.8,
+                response_format={"type": "json_object"},
+            )
+            data = json.loads(response.choices[0].message.content)
+            if isinstance(data, dict):
+                for k, v in data.items():
+                    if isinstance(v, list):
+                        data = v
+                        break
+            return data
+        except Exception as e:
+            print(f"⚠️ Lỗi tạo từ vựng chủ đề {chu_de} (lần {attempt + 1}): {e}")
+            time.sleep(2)
+    return []
 
 
 def generate_example_sentence(vi, zh):
-  prompt = f"""Bạn là chuyên gia ngôn ngữ giỏi tiếng Trung.
-Hãy đặt 01 câu giao tiếp tự nhiên, câu dài hoàn chỉnh có chứa từ vựng '{zh}' (nghĩa là: '{vi}').
+    prompt = f"""Bạn là chuyên gia ngôn ngữ giỏi tiếng Trung.
+Hãy đặt 01 câu giao tiếp ngắn gọn, tự nhiên có chứa từ vựng '{zh}' (nghĩa là: '{vi}').
+
+YÊU CẦU BẮT BUỘC:
+1. Câu tiếng Trung (zh) BẮT BUỘC KHÔNG VƯỢT QUÁ 12 KÝ TỰ chữ Hán.
+2. Pinyin (py) BẮT BUỘC chỉ là chữ cái Latinh kèm dấu thanh, KHÔNG ĐƯỢC CHỨA BẤT KỲ KÝ TỰ CHỮ HÁN NÀO.
+3. Ngắn gọn, dễ nhớ, tự nhiên.
 
 Trả về đúng định dạng JSON:
 {{
-  "zh": "Câu tiếng Trung dài và tự nhiên",
-  "py": "Pinyin đầy đủ có dấu của cả câu",
+  "zh": "Câu tiếng Trung ngắn dưới 12 ký tự",
+  "py": "Pinyin Latinh đầy đủ có dấu của câu",
   "vi": "Bản dịch tiếng Việt hoàn chỉnh của câu"
 }}
 """
-  try:
-    response = client.chat.completions.create(
-        model=model_name,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.8,
-        response_format={"type": "json_object"},
-    )
-    data = json.loads(response.choices[0].message.content)
-    return data["vi"], data["zh"], data["py"]
-  except Exception:
-    return (
-        f"Chúng ta cần chú ý xử lý vấn đề {vi} này một cách cẩn thận.",
-        f"我们需要仔细处理这个{zh}问题。",
-        f"Wǒmen xūyào zǐxì chǔlǐ zhè ge {zh} wèntí.",
-    )
+    try:
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            response_format={"type": "json_object"},
+        )
+        data = json.loads(response.choices[0].message.content)
+        ex_vi = data.get("vi", f"Cần chú ý {vi}.")
+        ex_zh = data.get("zh", f"要注意{zh}。")
+        ex_py = clean_pinyin(ex_zh, data.get("py", ""))
+        return ex_vi, ex_zh, ex_py
+    except Exception:
+        fallback_zh = f"要注意{zh}。"
+        return (
+            f"Cần chú ý {vi}.",
+            fallback_zh,
+            clean_pinyin(fallback_zh, ""),
+        )
 
 
 file_output = os.path.join(output_dir, f"{filename_prefix}.xlsx")
@@ -421,7 +455,7 @@ headers = [
     "Check đúng/sai",
 ]
 for col_num, header_title in enumerate(headers, 1):
-  sheet.cell(row=1, column=col_num, value=header_title)
+    sheet.cell(row=1, column=col_num, value=header_title)
 
 current_row = 2
 global_stt = 1
@@ -432,51 +466,54 @@ print(
 )
 
 for topic in industry_topics:
-  c_diem = topic["chu_diem"]
-  c_de = topic["chu_de"]
+    c_diem = topic["chu_diem"]
+    c_de = topic["chu_de"]
 
-  print(
-      f"\n📦 Đang sáng tạo từ vựng cho chủ điểm: [{c_diem}] - Chủ đề:"
-      f" [{c_de}]..."
-  )
-  vocab_list = generate_vocabulary_batch(c_diem, c_de)
-  print(f"   -> Đã tạo thành công {len(vocab_list)} từ vựng.")
+    print(
+        f"\n📦 Đang sáng tạo từ vựng cho chủ điểm: [{c_diem}] - Chủ đề:"
+        f" [{c_de}]..."
+    )
+    vocab_list = generate_vocabulary_batch(c_diem, c_de)
+    print(f"   -> Đã tạo thành công {len(vocab_list)} từ vựng.")
 
-  for item in vocab_list:
-    hsk = item.get("hsk", "HSK 3")
-    vi = item.get("vi")
-    zh = item.get("zh")
-    py = item.get("py")
+    for item in vocab_list:
+        hsk = item.get("hsk", "HSK 3")
+        vi = item.get("vi")
+        zh = item.get("zh")
+        raw_py = item.get("py", "")
 
-    if not zh or not vi:
-      continue
+        if not zh or not vi:
+            continue
 
-    # 1. HÀNG 1: TỪ VỰNG GỐC
-    sheet.cell(row=current_row, column=1, value=global_stt)
-    sheet.cell(row=current_row, column=2, value=hsk)
-    sheet.cell(row=current_row, column=3, value=c_diem)
-    sheet.cell(row=current_row, column=4, value=c_de)
-    sheet.cell(row=current_row, column=5, value=vi)
-    sheet.cell(row=current_row, column=6, value=zh)
-    sheet.cell(row=current_row, column=7, value=py)
-    current_row += 1
-    global_stt += 1
+        # Làm sạch Pinyin từ vựng gốc
+        py = clean_pinyin(zh, raw_py)
 
-    # 2. HÀNG 2: CÂU DÀI CHỨA TỪ ĐÓ (Dành cho từ ngắn <= 12 ký tự)
-    if len(str(zh)) <= 12:
-      ex_vi, ex_zh, ex_py = generate_example_sentence(vi, zh)
+        # 1. HÀNG 1: TỪ VỰNG GỐC
+        sheet.cell(row=current_row, column=1, value=global_stt)
+        sheet.cell(row=current_row, column=2, value=hsk)
+        sheet.cell(row=current_row, column=3, value=c_diem)
+        sheet.cell(row=current_row, column=4, value=c_de)
+        sheet.cell(row=current_row, column=5, value=vi)
+        sheet.cell(row=current_row, column=6, value=zh)
+        sheet.cell(row=current_row, column=7, value=py)
+        current_row += 1
+        global_stt += 1
 
-      sheet.cell(row=current_row, column=1, value=global_stt)
-      sheet.cell(row=current_row, column=2, value=hsk)
-      sheet.cell(row=current_row, column=3, value=c_diem)
-      sheet.cell(row=current_row, column=4, value=c_de)
-      sheet.cell(row=current_row, column=5, value=ex_vi)
-      sheet.cell(row=current_row, column=6, value=ex_zh)
-      sheet.cell(row=current_row, column=7, value=ex_py)
-      current_row += 1
-      global_stt += 1
+        # 2. HÀNG 2: CÂU NGẮN CHỨA TỪ ĐÓ (Dành cho từ/cụm ngắn <= 12 ký tự)
+        if len(str(zh)) <= 12:
+            ex_vi, ex_zh, ex_py = generate_example_sentence(vi, zh)
 
-      time.sleep(0.4)
+            sheet.cell(row=current_row, column=1, value=global_stt)
+            sheet.cell(row=current_row, column=2, value=hsk)
+            sheet.cell(row=current_row, column=3, value=c_diem)
+            sheet.cell(row=current_row, column=4, value=c_de)
+            sheet.cell(row=current_row, column=5, value=ex_vi)
+            sheet.cell(row=current_row, column=6, value=ex_zh)
+            sheet.cell(row=current_row, column=7, value=ex_py)
+            current_row += 1
+            global_stt += 1
+
+            time.sleep(0.4)
 
 wb.save(file_output)
 print(
