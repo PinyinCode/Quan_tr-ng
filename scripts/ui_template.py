@@ -4437,11 +4437,13 @@ function initDatasetSelector() {
         var mainBtn = $(btnId);
         if (!mainBtn) return;
 
+        // ⭐ LUÔN HIỂN THỊ NÚT (Không tự động ẩn nếu rỗng)
+        mainBtn.style.display = 'flex';
+
+        // Nếu không có dữ liệu thì bỏ qua việc tạo dropdown con
         if (keys.length === 0) {
-            mainBtn.style.display = 'none';
             return;
         }
-        mainBtn.style.display = 'flex';
 
         // Cập nhật lock state cho nút chính
         var oldLock = mainBtn.querySelector('.ds-main-lock');
