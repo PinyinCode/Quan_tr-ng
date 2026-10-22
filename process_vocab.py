@@ -4,7 +4,7 @@ import re
 import time
 from openai import OpenAI
 import openpyxl
-from pypinyin import Style, pypinyin
+from pypinyin import Style, lazy_pinyin  # ⭐ Sửa đúng tên function lazy_pinyin
 
 # Lấy thông tin cấu hình từ biến môi trường
 api_key = os.environ.get("DASHSCOPE_API_KEY")
@@ -15,14 +15,11 @@ model_name = os.environ.get("QWEN_MODEL", "qwen-plus")
 
 client = OpenAI(api_key=api_key, base_url=base_url, timeout=60.0)
 
-# Định nghĩa thư mục nguồn và thư mục lưu bản sao
 input_dir = "scripts/data"
 output_dir = "scripts/data_copy"
 
-# Tự động tạo thư mục data_copy nếu chưa có
 os.makedirs(output_dir, exist_ok=True)
 
-# Nhận tên file được truyền từ GitHub Workflow (mặc định 'ALL' nếu chạy cục bộ)
 SELECTED_FILE = os.environ.get("TARGET_FILE", "ALL")
 
 if SELECTED_FILE == "ALL":
@@ -46,21 +43,15 @@ else:
 
 
 def clean_pinyin(zh_text, py_text):
-  """Hàm làm sạch và chuẩn hóa Pinyin:
-
-  - Nếu Pinyin rỗng hoặc dính chữ Hán, dùng pypinyin tự tạo Pinyin chuẩn.
-  - Loại bỏ hoàn toàn ký tự tiếng Trung còn sót lại.
-  """
+  """Hàm làm sạch và chuẩn hóa Pinyin."""
   has_chinese = re.search(r"[\u4e00-\u9fff]", str(py_text or ""))
 
   if not py_text or has_chinese:
-    py_list = pypinyin(zh_text, style=Style.TONE)
-    clean_py = " ".join([item[0] for item in py_list])
-    return clean_py.strip()
+    py_list = lazy_pinyin(zh_text, style=Style.TONE)
+    return " ".join(py_list).strip()
 
   cleaned = re.sub(r"[\u4e00-\u9fff]", "", str(py_text)).strip()
-  cleaned = re.sub(r"\s+", " ", cleaned)
-  return cleaned
+  return re.sub(r"\s+", " ", cleaned)
 
 
 def generate_example_sentence(vi, zh):
@@ -116,7 +107,6 @@ for index, file_name in enumerate(excel_files, 1):
   wb = openpyxl.load_workbook(src_file_path)
   sheet = wb.active
 
-  # Đọc toàn bộ dữ liệu cũ của file ra một danh sách (bỏ qua dòng tiêu đề hàng 1)
   old_rows = []
   for row in range(2, sheet.max_row + 1):
     hsk = sheet.cell(row=row, column=2).value
@@ -126,7 +116,6 @@ for index, file_name in enumerate(excel_files, 1):
     zh = sheet.cell(row=row, column=6).value
     py = sheet.cell(row=row, column=7).value
 
-    # Nếu dòng hợp lệ thì lưu lại
     if zh and vi:
       old_rows.append({
           "hsk": hsk,
@@ -145,7 +134,6 @@ for index, file_name in enumerate(excel_files, 1):
       " trúc file Excel..."
   )
 
-  # Xóa sạch dữ liệu cũ trong sheet (trừ hàng tiêu đề)
   sheet.delete_rows(2, sheet.max_row + 1)
 
   current_row = 2
@@ -160,7 +148,6 @@ for index, file_name in enumerate(excel_files, 1):
     zh = item["zh"]
     raw_py = item["py"]
 
-    # Chuẩn hóa Pinyin của từ vựng gốc
     py = clean_pinyin(zh, raw_py)
 
     # --- HÀNG 1: TỪ VỰNG GỐC ---
@@ -174,7 +161,7 @@ for index, file_name in enumerate(excel_files, 1):
     current_row += 1
     global_stt += 1
 
-    # --- HÀNG 2: CÂU NGẮN CHỨA TỪ ĐÓ (Chỉ với từ/cụm ngắn <= 12 ký tự) ---
+    # --- HÀNG 2: CÂU NGẮN CHỨA TỪ ĐÓ (<= 12 ký tự) ---
     if len(str(zh)) <= 12:
       ex_vi, ex_zh, ex_py = generate_example_sentence(vi, zh)
 
@@ -182,19 +169,18 @@ for index, file_name in enumerate(excel_files, 1):
       sheet.cell(row=current_row, column=2, value=hsk)
       sheet.cell(row=current_row, column=3, value=c_diem)
       sheet.cell(row=current_row, column=4, value=c_de)
-      sheet.cell(row=current_row, column=5, value=ex_vi)  # Câu tiếng Việt ngắn
-      sheet.cell(row=current_row, column=6, value=ex_zh)  # Câu tiếng Trung ngắn (<= 12 ký tự)
-      sheet.cell(row=current_row, column=7, value=ex_py)  # Pinyin chuẩn hóa
+      sheet.cell(row=current_row, column=5, value=ex_vi)
+      sheet.cell(row=current_row, column=6, value=ex_zh)
+      sheet.cell(row=current_row, column=7, value=ex_py)
       current_row += 1
       global_stt += 1
 
       count += 1
       if count % 10 == 0:
         print(f"   ⏳ Đã tạo câu ví dụ ngắn cho {count} từ...")
-        wb.save(dest_file_path)  # Lưu tạm vào thư mục data_copy định kỳ
+        wb.save(dest_file_path)
       time.sleep(0.3)
 
-  # Lưu file hoàn tất vào thư mục data_copy
   wb.save(dest_file_path)
   print(
       f"✅ LƯU BẢN SAO THÀNH CÔNG TẠI: {dest_file_path} (Đã thêm {count} dòng"
