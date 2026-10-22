@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - main # Hoặc master tùy nhánh của bạn
 
 jobs:
   run-ai-expansion:
@@ -28,7 +28,7 @@ jobs:
           QWEN_BASE_URL: ${{ secrets.QWEN_BASE_URL }}
           QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
         run: |
-          python process_vocab.py
+          python -u process_vocab.py
 
       - name: Commit and Push expanded Excel files
         env:
