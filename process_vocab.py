@@ -34,22 +34,37 @@ Yêu cầu BẮT BUỘC:
   "vi": "Bản dịch tiếng Việt tự nhiên"
 }}
 """
-  try:
-    response = client.chat.completions.create(
-        model=model_name,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.8,
-        response_format={"type": "json_object"},
-    )
-    data = json.loads(response.choices[0].message.content)
-    return data["vi"], data["zh"], data["py"]
-  except Exception as e:
-    print(f"⚠️ Lỗi API cho từ '{word_zh}': {e}")
-    return (
-        f"Xử lý vấn đề {word_vi} này cần báo lại cho quản lý.",
-        f"处理这个{word_zh}问题需要向主管汇报。",
-        f"Chǔlǐ zhè ge {word_zh} wèntí xūyào xiàng zhǔguǎn huìbào.",
-    )
+  max_retries = 5
+  wait_time = 5  # Thời gian chờ ban đầu khi dính lỗi 429 (tăng dần mỗi lần thử lại)
+
+  for attempt in range(max_retries):
+    try:
+      response = client.chat.completions.create(
+          model=model_name,
+          messages=[{"role": "user", "content": prompt}],
+          temperature=0.8,
+          response_format={"type": "json_object"},
+      )
+      data = json.loads(response.choices[0].message.content)
+      return data["vi"], data["zh"], data["py"]
+    except Exception as e:
+      if "429" in str(e) or "rate limit" in str(e).lower():
+        print(
+            f"⚠️ Gặp giới hạn 429 ở từ '{word_zh}'. Đang đợi {wait_time}s để thử"
+            f" lại (lần {attempt + 1}/{max_retries})..."
+        )
+        time.sleep(wait_time)
+        wait_time *= 2  # Tăng thời gian chờ gấp đôi nếu vẫn bị lỗi
+      else:
+        print(f"⚠️ Lỗi API khác cho từ '{word_zh}': {e}")
+        break
+
+  # Fallback nếu thử lại hết số lần vẫn lỗi
+  return (
+      f"Xử lý vấn đề {word_vi} này cần báo lại cho quản lý.",
+      f"处理这个{word_zh}问题需要向主管汇报。",
+      f"Chǔlǐ zhè ge {word_zh} wèntí xūyào xiàng zhǔguǎn huìbào.",
+  )
 
 
 excel_files = [f for f in os.listdir(input_dir) if f.endswith(".xlsx")]
@@ -59,8 +74,8 @@ for filename in excel_files:
   file_output = os.path.join(output_dir, filename)
 
   print(
-      f"🚀 Bắt đầu xử lý file: {filename} (Chế độ tuần tự an toàn chống lỗi"
-      " 429)..."
+      f"🚀 Bắt đầu xử lý file: {filename} (Chế độ tuần tự + Tự động thử lại khi"
+      " quá tải)..."
   )
 
   src_wb = openpyxl.load_workbook(file_input)
@@ -126,8 +141,8 @@ for filename in excel_files:
       current_dst_row += 1
       new_stt += 1
 
-      # Nghỉ 0.8 giây giữa mỗi request để không bao giờ bị lỗi quá giới hạn (Rate Limit)
-      time.sleep(0.8)
+      # Nghỉ 1.5 giây giữa mỗi request để đảm bảo an toàn tuyệt đối với hạn mức miễn phí
+      time.sleep(1.5)
 
   dst_wb.save(file_output)
   print(f"✅ Đã xử lý xong và lưu thành công tại: {file_output}")
