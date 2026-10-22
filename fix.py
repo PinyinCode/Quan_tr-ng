@@ -1734,7 +1734,7 @@ def main():
                             "count": _rmeta["count"],
                             "source": _rmeta["source"],
                             "type": "main",  # hoặc "sub"
-                            "group": "chuyen-nganh", # Quan trọng!
+                            "group": _rmeta.get("group", "chuyen-nganh"),
                             "data": _all_data.get(_rid, [])
                         }
             except Exception as e:
