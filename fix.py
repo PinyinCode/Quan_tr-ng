@@ -23,7 +23,6 @@ import openpyxl
 INDEX_HTML = "index.html"
 CONFIG_JSON = "config.json"
 DATA_DIR = "data"
-DATA_DOISONG_DIR = "scripts/data_doisong"  # ⭐ Thư mục chứa file Đời sống
 
 SKIP_FILES = {"input.xlsx", "input.xls", "input.csv"}
 
@@ -624,10 +623,9 @@ def convert_arabic_to_chinese(text):
 def _clean(s):
     if s is None:
         return ""
-    # Loại bỏ các ký tự điều khiển ẩn (control characters) gây lỗi JSON
-    s = ''.join(c for c in str(s) if unicodedata.category(c)[0] != 'C' or c in '\n\r\t')
-    return (s.replace('\n', ' ').replace('\r', ' ')
+    return (str(s).replace('\n', ' ').replace('\r', ' ')
             .replace('\t', ' ').replace('\\', '\\\\'))
+
 
 # =================================================================
 #  HELPERS
@@ -839,67 +837,7 @@ def scan_data_dir():
               + "' (" + str(len(rows)) + " cau)")
 
     return datasets
-def scan_doisong_dir():
-    if not os.path.isdir(DATA_DOISONG_DIR):
-        print("[fix.py] Khong thay thu muc '" + DATA_DOISONG_DIR + "/' - bo qua.")
-        return []
 
-    files = []
-    for ext in ("*.xlsx", "*.xls", "*.csv"):
-        files.extend(glob.glob(os.path.join(DATA_DOISONG_DIR, ext)))
-    files = sorted(set(files))
-
-    if not files:
-        print("[fix.py] Khong co file Excel trong '" + DATA_DOISONG_DIR + "/'")
-        return []
-
-    print("")
-    print("[fix.py] Quet '" + DATA_DOISONG_DIR + "/' - " + str(len(files)) + " file")
-
-    datasets = []
-    used_ids = set()
-
-    for filepath in files:
-        fname = os.path.basename(filepath)
-
-        if fname.startswith("~$"):
-            print("   [skip] " + fname + " - file tam")
-            continue
-
-        print("   [file] " + fname)
-        rows = _read_excel_rows(filepath)
-        if not rows:
-            print("   [!] " + fname + " - rong hoac loi, bo qua")
-            continue
-
-        base_id = _slugify(fname)
-        dataset_id = base_id
-        counter = 2
-        while dataset_id in used_ids:
-            dataset_id = base_id + "-" + str(counter)
-            counter += 1
-        used_ids.add(dataset_id)
-
-        idx = len(datasets)
-        icon = TAB_ICONS[idx % len(TAB_ICONS)]
-        color = TAB_COLORS[idx % len(TAB_COLORS)]
-
-        display = _display_name(fname)
-        datasets.append({
-            "id": dataset_id,
-            "name": display,
-            "icon": icon,
-            "color": color,
-            "data": rows,
-            "count": len(rows),
-            "source": fname,
-            "type": "main",
-            "group": "doi-song",  # ⭐ Gắn nhóm là doi-song
-        })
-        print("   [OK] " + fname + " -> tab '" + display
-              + "' (" + str(len(rows)) + " cau)")
-
-    return datasets
 
 # =================================================================
 #  BUILD JS OVERRIDE (CẬP NHẬT LOAD PREVIEW TRƯỚC, DATA ĐẦY ĐỦ SAU)
@@ -950,18 +888,8 @@ def build_js_override(ids_js, datasets_meta_json):
     add("                    window.FIXPY_DATASETS = d || {};")
     add("                }")
     add("                console.log('[fix.py] preview loaded');")
-    add("                if (typeof window.waitForData === 'function') {")
-    add("                    window.waitForData(function() {")
-    add("                        if (typeof window.__fixpyOnDataReady === 'function') {")
-    add("                            window.__fixpyOnDataReady();")
-    add("                        }")
-    add("                    });")
-    add("                } else {")
-    add("                    setTimeout(function() {")
-    add("                        if (typeof window.__fixpyOnDataReady === 'function') {")
-    add("                            window.__fixpyOnDataReady();")
-    add("                        }")
-    add("                    }, 1000);")
+    add("                if (typeof window.__fixpyOnDataReady === 'function') {")
+    add("                    window.__fixpyOnDataReady();")
     add("                }")
     add("            })")
     add("            .catch(function(e) {")
@@ -1084,13 +1012,8 @@ def build_js_override(ids_js, datasets_meta_json):
     add("            }")
     add("            var subBtn = document.querySelector('.ds-sub-btn[data-dataset=\"' + cur + '\"]');")
     add("            if (subBtn) subBtn.classList.add('active');")
-    add("            ")
-    add("            /* ⭐ Lấy group của dataset đang chọn và active đúng nút cha */")
-    add("            var curGroup = (window.FIXPY_DATASETS && window.FIXPY_DATASETS[cur]) ")
-    add("                         ? window.FIXPY_DATASETS[cur].group ")
-    add("                         : (typeof DATASET_REGISTRY !== 'undefined' && DATASET_REGISTRY[cur] ? DATASET_REGISTRY[cur].group : null);")
-    add("            var mainGroupBtn = document.querySelector('.ds-btn[data-dataset-group=\"' + curGroup + '\"]');")
-    add("            if (mainGroupBtn && subBtn) mainGroupBtn.classList.add('active');")
+    add("            var cnBtn = document.querySelector('.ds-btn[data-dataset-group=\"chuyen-nganh\"]');")
+    add("            if (cnBtn && subBtn) cnBtn.classList.add('active');")
     add("        };")
     add("        window.__fixPyMarkPatched = true;")
     add("    }")
@@ -1671,7 +1594,6 @@ def main():
         html = f.read()
 
     datasets = scan_data_dir()
-    doisong_datasets = scan_doisong_dir()  # ⭐ Quét thư mục Đời sống
 
     vocab_data = []
     vocab_real_path = None
@@ -1720,10 +1642,6 @@ def main():
     for ds in datasets:
         datasets_dict[ds["id"]] = ds
 
-    # ⭐ Gộp dữ liệu Đời sống
-    for ds in doisong_datasets:
-        datasets_dict[ds["id"]] = ds
-
     for ds in all_new:
         datasets_dict[ds["id"]] = ds
 
@@ -1750,7 +1668,7 @@ def main():
                             "count": _rmeta["count"],
                             "source": _rmeta["source"],
                             "type": "main",  # hoặc "sub"
-                            "group": _rmeta.get("group") or ("doi-song" if "van-hoa" in _rid or "ngay-le" in _rid else "chuyen-nganh"),
+                            "group": "chuyen-nganh", # Quan trọng!
                             "data": _all_data.get(_rid, [])
                         }
             except Exception as e:
