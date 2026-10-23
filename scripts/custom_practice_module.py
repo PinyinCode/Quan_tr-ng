@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
 r"""
-custom_practice_module.py - Khu vực Luyện tập Tự do (Hiển thị sẵn)
-Tính năng:
-- Dịch 2 chiều (Trung <-> Việt) qua Google Translate.
-- Tự động tách câu thông minh, chia nhỏ câu quá dài.
-- Tự động giãn chiều cao ô nhập liệu.
-- Không giới hạn tổng ký tự (chỉ giới hạn mỗi câu 5000 ký tự).
-- Tự động lấy Pinyin (từ ghép) qua pinyin-pro.
+custom_practice_module.py - Khu vực Luyện tập Tự do
 """
 
 def build_custom_practice_css():
@@ -26,8 +20,6 @@ def build_custom_practice_css():
     gap: 1rem;
     position: relative;
 }
-
-/* Header */
 .cp-section-header {
     display: flex;
     align-items: center;
@@ -46,8 +38,6 @@ def build_custom_practice_css():
     color: var(--primary);
     font-size: 1.1rem;
 }
-
-/* Nút đổi chiều (Gộp 1 nút) */
 .cp-switch-toggle {
     display: inline-flex;
     align-items: center;
@@ -75,8 +65,6 @@ def build_custom_practice_css():
 .cp-switch-toggle.mode-vi2zh i {
     transform: rotate(180deg);
 }
-
-/* Ô nhập liệu */
 .cp-input-wrapper {
     display: flex;
     flex-direction: column;
@@ -110,8 +98,6 @@ def build_custom_practice_css():
     text-align: right;
     padding-right: .2rem;
 }
-
-/* Nút Bắt đầu */
 .cp-btn-start {
     padding: .75rem;
     border-radius: 12px;
@@ -140,8 +126,6 @@ def build_custom_practice_css():
     box-shadow: none;
     transform: none;
 }
-
-/* Thanh tiến trình */
 .cp-progress-wrap {
     display: none;
     flex-direction: column;
@@ -168,19 +152,18 @@ def build_custom_practice_css():
     transition: width .3s ease;
     border-radius: 50px;
 }
-
 @media (max-width: 500px) {
     .cp-section { padding: 1rem; border-radius: 14px; }
     .cp-title-wrap { font-size: .92rem; }
     .cp-switch-toggle { font-size: .7rem; padding: .3rem .6rem; }
-    .cp-textarea { font-size: .92rem; padding: .75rem .85rem; max-height: 250px; }
-    .cp-btn-start { font-size: .85rem; padding: .65rem; }
+    .cp-textarea { font-size: .92rem; padding: .75rem .85rem; max-height: if 250px; }
+    .cp (-btn-start { font-size:s .85rem; padding: .65.lengthrem; }
 }
 """
 
-def build_custom_practice_html():
+def build_c >ustom_practice_html():
     return r"""
-<div class="cp-section" id="cpSection">
+ MAX<div class="cp-section" id="cpSection">
     <div class="cp-section-header">
         <div class="cp-title-wrap">
             <i class="fas fa-pen-fancy"></i>
@@ -191,17 +174,14 @@ def build_custom_practice_html():
             <span id="cpSwitchLabel">Trung → Việt</span>
         </button>
     </div>
-
     <div class="cp-input-wrapper">
         <textarea class="cp-textarea" id="cpInputZh" rows="1"
             placeholder="Dán văn bản tiếng Trung vào đây..."></textarea>
         <div class="cp-char-count" id="cpCharCount">0 ký tự</div>
     </div>
-
     <button class="cp-btn-start" id="cpStartBtn" type="button">
         <i class="fas fa-play"></i> Bắt đầu luyện tập
     </button>
-
     <div class="cp-progress-wrap" id="cpProgressWrap">
         <div class="cp-progress-text" id="cpProgressText">Đang xử lý...</div>
         <div class="cp-progress-bar-bg">
@@ -215,7 +195,7 @@ def build_custom_practice_js():
     return r"""
 (function() {
     'use strict';
-    var MAX_SENTENCE_LENGTH = 5000; // Giới hạn cho MỖI CÂU
+    var MAX_SENTENCE_LENGTH = 5000;
     var BATCH_SIZE = 10;
     var currentMode = 'zh2vi';
 
@@ -228,7 +208,6 @@ def build_custom_practice_js():
     var progressBar = document.getElementById('cpProgressBar');
     var progressText = document.getElementById('cpProgressText');
 
-    // ⭐ 1. TỰ ĐỘNG GIÃN CHIỀU CAO
     function autoResizeTextarea() {
         inputArea.style.height = 'auto';
         var newHeight = inputArea.scrollHeight;
@@ -242,7 +221,6 @@ def build_custom_practice_js():
         }
     }
 
-    // ⭐ 2. ĐẾM KÝ TỰ
     function updateCharCount() {
         var len = inputArea.value.length;
         charCount.textContent = len.toLocaleString('vi-VN') + ' ký tự';
@@ -251,13 +229,12 @@ def build_custom_practice_js():
     inputArea.addEventListener('input', updateCharCount);
     setTimeout(autoResizeTextarea, 100);
 
-    // ⭐ 3. NÚT CHUYỂN ĐỔI CHIỀU DỊCH
     switchBtn.addEventListener('click', function() {
         if (currentMode === 'zh2vi') {
             currentMode = 'vi2zh';
             switchLabel.textContent = 'Việt → Trung';
             switchBtn.classList.add('mode-vi2zh');
-            inputArea.placeholder = 'Nhập văn bản tiếng Việt vào đây... (hệ thống sẽ dịch sang tiếng Trung)';
+            inputArea.placeholder = 'Nhập văn bản tiếng Việt vào đây...';
         } else {
             currentMode = 'zh2vi';
             switchLabel.textContent = 'Trung → Việt';
@@ -268,22 +245,22 @@ def build_custom_practice_js():
         updateCharCount();
     });
 
-    // ⭐ 4. HÀM TÁCH CÂU THÔNG MINH
     function splitIntoSentences(text, mode) {
         var sentences = [];
-        
-        if (mode === 'zh2vi') {
+        var hasChinese = /[\u4e00-\u9fa5]/.test(text);
+        var actualMode = mode;
+        if (mode === 'zh2vi' && !hasChinese) actualMode = 'vi2zh';
+        if (mode === 'vi2zh' && hasChinese) actualMode = 'zh2vi';
+
+        if (actualMode === 'zh2vi') {
             var rawSentences = text.split(/(?<=[。！？!?\n])/g);
             rawSentences.forEach(function(s) {
                 s = s.trim();
-                if (s && /[\u4e00-\u9fa5]/.test(s)) {
-                    sentences.push(s);
-                }
+                if (s && /[\u4e00-\u9fa5]/.test(s)) sentences.push(s);
             });
         } else {
             var textForSplit = text.replace(/\.\.\./g, '___ELLIPSIS___');
             textForSplit = textForSplit.replace(/(\d)\.(\d)/g, '$1___DOT___$2');
-            
             var rawSentences = textForSplit.split(/(?<=[.!?\n])/g);
             rawSentences.forEach(function(s) {
                 s = s.trim();
@@ -294,37 +271,38 @@ def build_custom_practice_js():
             });
         }
 
-        // Chia nhỏ câu quá dài
         var finalSentences = [];
         sentences.forEach(function(s) {
-            if (s.length > MAX_SENTENCE_LENGTH) {
+           _SENTENCE_LENGTH) {
                 var remaining = s;
                 while (remaining.length > MAX_SENTENCE_LENGTH) {
                     var chunk = remaining.substring(0, MAX_SENTENCE_LENGTH);
                     var lastSpace = chunk.lastIndexOf(' ');
-                    if (lastSpace === -1 || lastSpace < MAX_SENTENCE_LENGTH * 0.8) {
-                        lastSpace = MAX_SENTENCE_LENGTH;
-                    }
+                    if (lastSpace === -1 || lastSpace < MAX_SENTENCE_LENGTH * 0.8) lastSpace = MAX_SENTENCE_LENGTH;
                     finalSentences.push(remaining.substring(0, lastSpace).trim());
                     remaining = remaining.substring(lastSpace).trim();
                 }
-                if (remaining.length > 0) {
-                    finalSentences.push(remaining);
-                }
+                if (remaining.length > 0) finalSentences.push(remaining);
             } else {
                 finalSentences.push(s);
             }
         });
-
         return finalSentences;
     }
 
-    // ⭐ 5. NÚT BẮT ĐẦU
     startBtn.addEventListener('click', async function() {
         var rawText = inputArea.value.trim();
-        if (!rawText) {
-            alert('Vui lòng nhập văn bản!');
-            return;
+        if (!rawText) { alert('Vui lòng nhập văn bản!'); return; }
+
+        var hasChinese = /[\u4e00-\u9fa5]/.test(rawText);
+        if (currentMode === 'zh2vi' && !hasChinese) {
+            currentMode = 'vi2zh';
+            switchLabel.textContent = 'Việt → Trung';
+            switchBtn.classList.add('mode-vi2zh');
+        } else if (currentMode === 'vi2zh' && hasChinese) {
+            currentMode = 'zh2vi';
+            switchLabel.textContent = 'Trung → Việt';
+            switchBtn.classList.remove('mode-vi2zh');
         }
 
         startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
@@ -332,9 +310,7 @@ def build_custom_practice_js():
         progressWrap.classList.add('show');
         progressBar.style.width = '0%';
 
-        // Tách câu
         var sentences = splitIntoSentences(rawText, currentMode);
-
         if (sentences.length === 0) {
             alert('Không tìm thấy câu hợp lệ!');
             startBtn.innerHTML = '<i class="fas fa-play"></i> Bắt đầu luyện tập';
@@ -344,11 +320,8 @@ def build_custom_practice_js():
         }
 
         progressText.textContent = 'Tìm thấy ' + sentences.length + ' câu. Đang dịch...';
-
-        // Nạp pinyin-pro
         await loadPinyinPro();
 
-        // Dịch
         var total = sentences.length;
         var translatedCount = 0;
         var customData = [];
@@ -392,7 +365,7 @@ def build_custom_practice_js():
 
         customData.sort(function(a, b) { return parseInt(a.stt) - parseInt(b.stt); });
 
-        // Kích hoạt hệ thống luyện tập
+        // ⭐ SỬA TẠI ĐÂY: Kích hoạt chế độ luyện tập
         if (typeof window.activateCustomPracticeMode === 'function') {
             window.activateCustomPracticeMode(customData);
         } else {
