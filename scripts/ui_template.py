@@ -3950,6 +3950,7 @@ def build_ui_html():
 <div class="container">
 
 <!-- __QUICK_INTRO_BANNER__ -->
+<!-- __CUSTOM_PRACTICE_SECTION__ -->
 
 
 <div class="expiry-banner" id="expiryBanner" style="display:none">
