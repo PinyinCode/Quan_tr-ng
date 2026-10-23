@@ -10,6 +10,7 @@ def build_custom_practice_css():
 /* KHU VỰC LUYỆN TẬP TỰ DO - NÂNG CẤP UI CHỦ LỰC              */
 /* ═══════════════════════════════════════════════════════════ */
 /* Bao bọc toàn bộ hàng tiêu đề để đẩy nút Xóa sang phải */
+/* Bao bọc toàn bộ hàng tiêu đề */
 .cp-header-row {
     display: flex;
     align-items: center;
@@ -17,18 +18,14 @@ def build_custom_practice_css():
     width: 100%;
 }
 
-/* Gộp cây bút và chữ thành 1 khối Badge */
+/* Khối tiêu đề thanh thoát (Bỏ nền, bỏ viền) */
 .cp-section-header {
     display: inline-flex;
     align-items: center;
-    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.08));
-    padding: 4px 18px 4px 4px; /* Căn lề trái 4px để icon lọt khít */
-    border-radius: 50px;
-    border: 1px solid rgba(168,85,247,0.15);
-    box-shadow: 0 2px 10px rgba(168,85,247,0.05);
+    gap: 14px; /* Khoảng cách giữa icon và chữ */
 }
 
-/* Icon cây bút hình tròn */
+/* Icon cây bút hình tròn phát sáng */
 .cp-section-header i {
     color: #fff;
     font-size: 1rem;
@@ -37,18 +34,29 @@ def build_custom_practice_css():
     justify-content: center;
     width: 36px;
     height: 36px;
-    border-radius: 50%; /* Bo tròn hoàn toàn */
+    border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #a855f7);
-    box-shadow: 0 4px 12px rgba(168,85,247,.4);
-    margin-right: 12px; /* Khoảng cách giữa icon và chữ */
+    box-shadow: 0 6px 16px rgba(168,85,247,0.4), inset 0 2px 4px rgba(255,255,255,0.3);
 }
 
-/* Chữ tiêu đề */
+/* Chữ tiêu đề cực nét */
 .cp-section-header span {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 800;
-    color: var(--text);
-    letter-spacing: -0.3px;
+    background: linear-gradient(90deg, #1e1b4b, #4c1d95); /* Màu chữ chuyển sắc đậm */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.2px;
+    text-shadow: 0 2px 10px rgba(168,85,247,0.1);
+}
+
+/* Đảm bảo Dark Mode (nếu có) vẫn nhìn rõ chữ */
+@media (prefers-color-scheme: dark) {
+    .cp-section-header span {
+        background: linear-gradient(90deg, #e0e7ff, #f3e8ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
 }
 .cp-btn-reset {
     padding: .45rem .9rem;
