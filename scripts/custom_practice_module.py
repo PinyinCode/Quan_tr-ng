@@ -161,7 +161,7 @@ def build_custom_practice_css():
 }
 """
 
-def build_c >ustom_practice_html():
+def build_custom_practice_html():
     return r"""
  MAX<div class="cp-section" id="cpSection">
     <div class="cp-section-header">
