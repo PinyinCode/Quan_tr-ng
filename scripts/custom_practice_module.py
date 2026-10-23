@@ -199,11 +199,12 @@ def build_custom_practice_css():
     border-radius: 50px;
 }
 
+/* ĐÃ SỬA LỖI CÚ PHÁP CSS TẠI ĐÂY */
 @media (max-width: 500px) {
-    .cp-section { padding: 1rem; border-radius: 14px;: }
-    .cp-section-header { font .35rem-size: .92rem; . }
+    .cp-section { padding: 1rem; border-radius: 14px; }
+    .cp-section-header { font-size: .92rem; }
     .cp-btn-reset { font-size: .7rem; padding: .3rem .65rem; }
-    .cp-switch-btn { padding75rem; font-size: .75rem; }
+    .cp-switch-btn { padding: .35rem .75rem; font-size: .75rem; }
     .cp-textarea { font-size: .92rem; padding: .7rem; }
     .cp-btn-start { font-size: .85rem; padding: .65rem; }
 }
@@ -255,6 +256,9 @@ def build_custom_practice_js():
     var MAX_CHARS = 5000;
     var BATCH_SIZE = 10;
     var currentMode = 'zh2vi';
+
+    // ⚠️ ĐƯỜNG LINK CLOUDFLARE WORKER CỦA BẠN ĐÃ ĐƯỢC ĐIỀN VÀO ĐÂY
+    var WORKER_URL = 'https://tiny-fire-f000.hoanginvest199.workers.dev';
 
     var inputArea = document.getElementById('cpInputZh');
     var charCount = document.getElementById('cpCharCount');
@@ -348,6 +352,7 @@ def build_custom_practice_js():
 
         startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
         startBtn.disabled = true;
+        switchBtns.forEach(function(b) { b.disabled = true; }); // Khóa nút đổi chiều khi đang dịch
         progressWrap.classList.add('show');
         progressBar.style.width = '0%';
 
@@ -366,6 +371,7 @@ def build_custom_practice_js():
             alert('Không tìm thấy câu hợp lệ!');
             startBtn.innerHTML = '<i class="fas fa-play"></i> Bắt đầu luyện tập';
             startBtn.disabled = false;
+            switchBtns.forEach(function(b) { b.disabled = false; });
             progressWrap.classList.remove('show');
             return;
         }
@@ -410,6 +416,7 @@ def build_custom_practice_js():
             });
 
             await Promise.all(promises);
+            // Giãn cách 500ms giữa các batch để tránh bị Google chặn
             if (batchEnd < total) await new Promise(function(r) { setTimeout(r, 500); });
         }
 
@@ -418,8 +425,8 @@ def build_custom_practice_js():
         if (typeof window.activateCustomPracticeMode === 'function') {
             window.activateCustomPracticeMode(customData);
         } else {
-            RAW_DATA = customData;
-            filtered = customData;
+            if (typeof RAW_DATA !== 'undefined') RAW_DATA = customData;
+            if (typeof filtered !== 'undefined') filtered = customData;
             window.__customPracticeActive = true;
             window.__onboardingOverride = null;
             if (typeof state !== 'undefined' && state) {
@@ -433,6 +440,7 @@ def build_custom_practice_js():
 
         startBtn.innerHTML = '<i class="fas fa-play"></i> Bắt đầu luyện tập';
         startBtn.disabled = false;
+        switchBtns.forEach(function(b) { b.disabled = false; }); // Mở khóa nút đổi chiều
         setTimeout(function() {
             progressWrap.classList.remove('show');
         }, 1500);
@@ -444,36 +452,59 @@ def build_custom_practice_js():
             var script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.2/dist/index.min.js';
             script.onload = resolve;
-            script.onerror = reject;
+            script.onerror = function() {
+                console.warn('[CP] pinyin-pro CDN failed, continuing without pinyin');
+                resolve(); // Vẫn chạy tiếp dù CDN lỗi
+            };
             document.head.appendChild(script);
         });
     }
 
-    // ⭐ HÀM GỌI GOOGLE TRANSLATE (ĐÃ SỬA: BỎ type: 'array' ĐỂ GHÉP TỪ)
+    // ⭐ HÀM GỌI QUA CLOUDFLARE WORKER PROXY (Bảo mật & Không lo CORS)
     async function fetchTranslate(text, mode) {
         var translated = '';
         var pinyin = '';
+
         try {
-            if (mode === 'zh2vi') {
-                var gtRes = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=vi&dt=t&q=' + encodeURIComponent(text));
-                var gtJson = await gtRes.json();
-                translated = gtJson[0].map(function(item) { return item[0]; }).join('');
-                if (window.pinyinPro) {
-                    // ⭐ Bỏ type: 'array' và .join(' ') để có Pinyin ghép từ
-                    pinyin = window.pinyinPro.pinyin(text, { toneType: 'symbol' });
-                }
-            } else {
-                var gtRes2 = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=zh-CN&dt=t&q=' + encodeURIComponent(text));
-                var gtJson2 = await gtRes2.json();
-                translated = gtJson2[0].map(function(item) { return item[0]; }).join('');
-                if (window.pinyinPro) {
-                    // ⭐ Bỏ type: 'array' và .join(' ') để có Pinyin ghép từ
-                    pinyin = window.pinyinPro.pinyin(translated, { toneType: 'symbol' });
-                }
+            var source = mode === 'zh2vi' ? 'zh-CN' : 'vi';
+            var target = mode === 'zh2vi' ? 'vi' : 'zh-CN';
+            
+            // Thêm timeout 10s để tránh treo nút bấm nếu mạng lỗi
+            var controller = new AbortController();
+            var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+
+            var res = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: text,
+                    source: source,
+                    target: target
+                }),
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!res.ok) throw new Error('Lỗi kết nối Proxy');
+            
+            var json = await res.json();
+            if (json.error) throw new Error(json.error);
+            
+            translated = json.translated;
+
+            // Tạo Pinyin nếu có cài đặt thư viện
+            if (window.pinyinPro && translated) {
+                pinyin = window.pinyinPro.pinyin(translated, { toneType: 'symbol' });
             }
+            
         } catch(e) {
-            console.warn('[CP] Google Translate error:', e);
+            console.warn('[CP] Translate Proxy error:', e);
+            translated = '[Lỗi dịch - Vui lòng thử lại]';
         }
+        
         return { translated: translated, pinyin: pinyin };
     }
 })();
