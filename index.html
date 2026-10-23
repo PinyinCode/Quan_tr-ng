@@ -11373,18 +11373,29 @@ html body .tiktok-float-btn > i {
 /* CUSTOM PRACTICE */
 
 /* ═══════════════════════════════════════════════════════════ */
-/* KHU VỰC LUYỆN TẬP TỰ DO - TINH GỌN & TỐI ƯU               */
+/* KHU VỰC LUYỆN TẬP TỰ DO - MODERN GLASSMORPHIC UI           */
 /* ═══════════════════════════════════════════════════════════ */
-.cp-section {
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 0;
+.cp-card {
+    background: linear-gradient(145deg, var(--surface, #ffffff), var(--surface-2, #f8fafc));
+    border: 1px solid rgba(124, 58, 237, 0.15);
+    border-radius: 24px;
+    padding: 1.75rem;
     margin-bottom: 1.5rem;
+    box-shadow: 0 16px 40px -12px rgba(124, 58, 237, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.25rem;
     position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.cp-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #4f46e5, #7c3aed, #ec4899);
 }
 
 .cp-header-row {
@@ -11392,160 +11403,191 @@ html body .tiktok-float-btn > i {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    margin-bottom: 0.5rem;
 }
 
 .cp-section-header {
     display: flex;
     align-items: center;
-    gap: 8px; 
+    gap: 12px;
 }
-.cp-section-header i {
+
+.cp-icon-badge {
     color: #fff;
-    font-size: 0.85rem;
+    font-size: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
     background: linear-gradient(135deg, #6366f1, #a855f7);
-    box-shadow: 0 3px 8px rgba(168,85,247,0.3);
+    box-shadow: 0 6px 16px rgba(168, 85, 247, 0.35);
 }
-.cp-section-header span {
-    font-size: 1.1rem;
+
+.cp-title-group h3 {
+    font-size: 1.15rem;
     font-weight: 800;
-    background: linear-gradient(90deg, #1e1b4b, #4c1d95);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--text, #1e1b4b);
+    margin: 0;
     letter-spacing: -0.3px;
 }
 
+.cp-title-group p {
+    font-size: 0.8rem;
+    color: var(--text-3, #64748b);
+    margin: 2px 0 0 0;
+}
+
 .cp-btn-reset {
-    padding: .3rem .7rem;
+    padding: 0.45rem 0.9rem;
     border-radius: 50px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text-3);
-    font-size: .75rem;
+    border: 1px solid var(--border, #e2e8f0);
+    background: var(--surface, #ffffff);
+    color: var(--text-3, #64748b);
+    font-size: 0.75rem;
     font-weight: 700;
     font-family: inherit;
     cursor: pointer;
-    transition: all .2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: inline-flex;
     align-items: center;
-    gap: .3rem;
+    gap: 0.4rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
 }
+
 .cp-btn-reset:hover {
     background: #fee2e2;
     color: #ef4444;
     border-color: #fca5a5;
+    transform: translateY(-1px);
+}
+
+/* Hàng chọn chế độ (Switch Pill) */
+.cp-switch-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface-2, #f1f5f9);
+    padding: 6px;
+    border-radius: 16px;
+    border: 1px solid var(--border, #e2e8f0);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.3s;
+}
+
+.cp-switch-container:hover {
+    border-color: #a855f7;
+}
+
+.cp-switch-label {
+    flex: 1;
+    text-align: center;
+    padding: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text-3, #64748b);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.cp-switch-label.active {
+    background: var(--surface, #ffffff);
+    color: #7c3aed;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.cp-switch-icon-box {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    margin: 0 6px;
+}
+
+.cp-switch-container:hover .cp-switch-icon-box {
+    transform: rotate(180deg);
 }
 
 /* Ô nhập liệu */
 .cp-input-wrapper {
     display: flex;
     flex-direction: column;
-    gap: .4rem;
+    gap: 0.5rem;
 }
+
 .cp-textarea {
     width: 100%;
-    padding: 1.2rem 1rem;
-    border-radius: 14px;
-    border: 1.5px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    font-family: var(--font-zh);
+    padding: 1.25rem;
+    border-radius: 16px;
+    border: 1.5px solid var(--border, #e2e8f0);
+    background: var(--surface, #ffffff);
+    color: var(--text, #1e1b4b);
+    font-family: var(--font-zh, inherit);
     font-size: 1.05rem;
     resize: none;
     overflow-y: hidden;
     min-height: 120px;
     max-height: 400px;
-    transition: height 0.1s ease, border-color .2s, box-shadow .2s;
+    transition: all 0.25s ease;
     line-height: 1.6;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02) inset;
 }
+
 .cp-textarea:focus {
     border-color: #a855f7;
     outline: none;
-    box-shadow: 0 0 0 4px rgba(168,85,247,.15);
+    box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.15), 0 4px 20px rgba(0, 0, 0, 0.02) inset;
 }
+
 .cp-char-count {
-    font-size: .75rem;
-    color: var(--text-3);
+    font-size: 0.75rem;
+    color: var(--text-3, #64748b);
     text-align: right;
     font-weight: 600;
 }
+
 .cp-char-count.over {
-    color: var(--danger);
+    color: #ef4444;
     font-weight: 700;
 }
 
-/* Hàng chứa Nút chuyển đổi và Nút Bắt đầu */
-.cp-action-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-}
-
-/* Nút chuyển đổi thu nhỏ */
-.cp-switch-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 0 1rem;
-    height: 48px;
-    cursor: pointer;
-    user-select: none;
-    transition: all .2s;
-    color: var(--primary);
-    font-weight: 700;
-    font-size: 0.9rem;
-    gap: 8px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-    flex-shrink: 0;
-}
-.cp-switch-btn:hover {
-    background: var(--surface);
-    border-color: var(--primary);
-}
-.cp-switch-btn i {
-    transition: transform .4s ease;
-}
-.cp-switch-btn:hover i {
-    transform: rotate(180deg);
-}
-
-/* Nút Bắt đầu chiếm phần còn lại */
+/* Nút Bắt đầu */
 .cp-btn-start {
-    flex: 1;
-    height: 48px;
-    border-radius: 12px;
+    width: 100%;
+    height: 52px;
+    border-radius: 16px;
     border: none;
-    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    background: linear-gradient(135deg, #4f46e5, #7c3aed, #ec4899);
+    background-size: 200% auto;
     color: #fff;
     font-weight: 800;
-    font-size: 1rem;
+    font-size: 1.05rem;
     cursor: pointer;
-    transition: all .25s;
+    transition: all 0.4s ease;
     font-family: inherit;
-    box-shadow: 0 4px 15px rgba(124,58,237,.3);
+    box-shadow: 0 8px 25px rgba(124, 58, 237, 0.35);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: .5rem;
+    gap: 0.6rem;
 }
-.cp-btn-start:hover:not(:disabled) { 
-    transform: translateY(-2px); 
-    box-shadow: 0 6px 20px rgba(124,58,237,.5); 
+
+.cp-btn-start:hover:not(:disabled) {
+    background-position: right center;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(124, 58, 237, 0.5);
 }
-.cp-btn-start:disabled { 
-    opacity: 0.7; 
-    cursor: not-allowed; 
+
+.cp-btn-start:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
     transform: none;
 }
 
@@ -11553,39 +11595,52 @@ html body .tiktok-float-btn > i {
 .cp-progress-wrap {
     display: none;
     flex-direction: column;
-    gap: .5rem;
-    background: var(--surface-2);
-    padding: .8rem 1rem;
-    border-radius: 12px;
-    border: 1px solid var(--border);
+    gap: 0.6rem;
+    background: var(--surface-2, #f1f5f9);
+    padding: 1rem;
+    border-radius: 14px;
+    border: 1px solid var(--border, #e2e8f0);
 }
-.cp-progress-wrap.show { display: flex; }
+
+.cp-progress-wrap.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
 .cp-progress-text {
-    font-size: .8rem;
-    color: var(--text);
+    font-size: 0.8rem;
+    color: var(--text, #1e1b4b);
     text-align: center;
     font-weight: 700;
 }
+
 .cp-progress-bar-bg {
     width: 100%;
-    height: 8px;
-    background: var(--surface);
+    height: 10px;
+    background: var(--surface, #ffffff);
     border-radius: 50px;
     overflow: hidden;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border, #e2e8f0);
 }
+
 .cp-progress-bar {
     height: 100%;
     width: 0%;
     background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
-    transition: width .3s ease;
+    transition: width 0.3s ease;
     border-radius: 50px;
 }
 
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 500px) {
-    .cp-switch-btn { padding: 0 0.6rem; font-size: 0.8rem; }
-    .cp-btn-start { font-size: .9rem; }
-    .cp-textarea { min-height: 100px; }
+    .cp-card { padding: 1.25rem; border-radius: 20px; }
+    .cp-title-group h3 { font-size: 1.05rem; }
+    .cp-textarea { min-height: 100px; font-size: 0.95rem; }
+    .cp-btn-start { height: 48px; font-size: 1rem; }
 }
 
 
@@ -13633,35 +13688,44 @@ body.has-floating-group #quickSearchRoot{
 </div>
 
 
-<div class="cp-section" id="cpSection">
+<div class="cp-card" id="cpSection">
     <div class="cp-header-row">
         <div class="cp-section-header">
-            <i class="fas fa-pen-fancy"></i>
-            <span>Luyện Dịch Tự Do</span>
+            <div class="cp-icon-badge">
+                <i class="fas fa-wand-magic-sparkles"></i>
+            </div>
+            <div class="cp-title-group">
+                <h3>Luyện Dịch Tự Do</h3>
+                <p>Nhập văn bản bất kỳ để luyện tập</p>
+            </div>
         </div>
         <button class="cp-btn-reset" id="cpResetBtn" type="button" title="Làm mới">
-            <i class="fas fa-trash-alt"></i> Xóa
+            <i class="fas fa-rotate-right"></i> Làm mới
         </button>
     </div>
 
+    <!-- Hàng chuyển đổi chế độ kiểu Pill Switch (Mặc định Tiếng Việt active) -->
+    <div class="cp-switch-container" id="cpSwitchBtn" title="Đảo chiều dịch">
+        <span class="cp-switch-label active" id="cpLabelVi">Tiếng Việt</span>
+        <div class="cp-switch-icon-box">
+            <i class="fas fa-exchange-alt"></i>
+        </div>
+        <span class="cp-switch-label" id="cpLabelZh">Tiếng Trung</span>
+    </div>
+
+    <!-- Ô nhập liệu (Mặc định placeholder Tiếng Việt) -->
     <div class="cp-input-wrapper">
         <textarea class="cp-textarea" id="cpInputZh" rows="4"
-            placeholder="Dán văn bản tiếng Trung vào đây... (tối đa 5000 ký tự)"></textarea>
+            placeholder="Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)"></textarea>
         <div class="cp-char-count" id="cpCharCount">0 / 5000</div>
     </div>
 
-    <!-- Hàng chứa Nút đổi chiều và Nút Bắt đầu -->
-    <div class="cp-action-row">
-        <div class="cp-switch-btn" id="cpSwitchBtn" title="Đảo chiều dịch">
-            <span id="cpLabelZh" style="color: var(--text);">Trung</span>
-            <i class="fas fa-exchange-alt"></i>
-            <span id="cpLabelVi">Việt</span>
-        </div>
-        <button class="cp-btn-start" id="cpStartBtn" type="button">
-            <i class="fas fa-rocket"></i> Bắt đầu
-        </button>
-    </div>
+    <!-- Nút Bắt đầu -->
+    <button class="cp-btn-start" id="cpStartBtn" type="button">
+        <i class="fas fa-rocket"></i> Bắt đầu luyện tập
+    </button>
 
+    <!-- Thanh tiến trình xử lý -->
     <div class="cp-progress-wrap" id="cpProgressWrap">
         <div class="cp-progress-text" id="cpProgressText">Đang xử lý...</div>
         <div class="cp-progress-bar-bg">
@@ -38159,9 +38223,8 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     'use strict';
     var MAX_CHARS = 5000;
     var BATCH_SIZE = 10;
-    var currentMode = 'zh2vi';
+    var currentMode = 'vi2zh'; // Mặc định chế độ nhập Tiếng Việt sang Tiếng Trung
 
-    // ĐƯỜNG LINK CLOUDFLARE WORKER
     var WORKER_URL = 'https://tiny-fire-f000.hoanginvest199.workers.dev';
 
     var inputArea = document.getElementById('cpInputZh');
@@ -38208,16 +38271,16 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
     // Đổi chiều dịch
     switchBtn.addEventListener('click', function() {
-        if (currentMode === 'zh2vi') {
-            currentMode = 'vi2zh';
-            labelZh.style.color = 'var(--text-3)';
-            labelVi.style.color = 'var(--text)';
-            inputArea.placeholder = 'Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)';
-        } else {
+        if (currentMode === 'vi2zh') {
             currentMode = 'zh2vi';
-            labelVi.style.color = 'var(--text-3)';
-            labelZh.style.color = 'var(--text)';
+            labelVi.classList.remove('active');
+            labelZh.classList.add('active');
             inputArea.placeholder = 'Dán văn bản tiếng Trung vào đây... (tối đa 5000 ký tự)';
+        } else {
+            currentMode = 'vi2zh';
+            labelZh.classList.remove('active');
+            labelVi.classList.add('active');
+            inputArea.placeholder = 'Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)';
         }
         inputArea.value = '';
         updateCharCount();
@@ -38228,7 +38291,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         updateCharCount();
         progressWrap.classList.remove('show');
         startBtn.disabled = false;
-        startBtn.innerHTML = '<i class="fas fa-rocket"></i> Bắt đầu';
+        startBtn.innerHTML = '<i class="fas fa-rocket"></i> Bắt đầu luyện tập';
         setTimeout(autoResizeTextarea, 50);
         
         if (window.__customPracticeActive) {
@@ -38246,7 +38309,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         // Bảo vệ dấu chấm trong số (1.400, 162.000) để không bị ngắt nhầm câu
         var protectedText = text.replace(/(\d)\.(\d)/g, '$1__DOT__$2');
         
-        // Tách câu dựa trên dấu kết thúc câu tiêu chuẩn
         var rawParts = protectedText.split(/(?<=[.!?。！？\n])/g);
         var result = [];
         
@@ -38257,7 +38319,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             if (mode === 'zh2vi') {
                 if (!/[\u4e00-\u9fa5]/.test(s)) continue; 
             } else {
-                // Chỉ dịch câu có chứa chữ cái tiếng Việt, bỏ qua câu chỉ có số/ký tự
                 if (!/[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềếểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸửữựỳỵỷỹ]/.test(s)) continue;
             }
             result.push(s);
@@ -38282,7 +38343,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
         if (sentences.length === 0) {
             alert('Không tìm thấy câu hợp lệ!');
-            startBtn.innerHTML = '<i class="fas fa-rocket"></i> Bắt đầu';
+            startBtn.innerHTML = '<i class="fas fa-rocket"></i> Bắt đầu luyện tập';
             startBtn.disabled = false;
             switchBtn.style.pointerEvents = 'auto';
             progressWrap.classList.remove('show');
@@ -38350,7 +38411,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             if (typeof render === 'function') render(true);
         }
 
-        startBtn.innerHTML = '<i class="fas fa-rocket"></i> Bắt đầu';
+        startBtn.innerHTML = '<i class="fas fa-rocket"></i> Bắt đầu luyện tập';
         startBtn.disabled = false;
         switchBtn.style.pointerEvents = 'auto';
         setTimeout(function() {
