@@ -7,7 +7,6 @@ Tính năng:
 - Tự động giãn chiều cao ô nhập liệu.
 - Không giới hạn tổng ký tự (chỉ giới hạn mỗi câu 5000 ký tự).
 - Tự động lấy Pinyin (từ ghép) qua pinyin-pro.
-- Cơ chế retry nếu Google Translate trả về rỗng.
 """
 
 def build_custom_practice_css():
@@ -295,7 +294,7 @@ def build_custom_practice_js():
             });
         }
 
-        // Chia nhỏ câu quá dài (>5000 ký tự)
+        // Chia nhỏ câu quá dài
         var finalSentences = [];
         sentences.forEach(function(s) {
             if (s.length > MAX_SENTENCE_LENGTH) {
@@ -428,47 +427,28 @@ def build_custom_practice_js():
         });
     }
 
-    // ⭐ HÀM DỊCH VỚI CƠ CHẾ RETRY
     async function fetchTranslate(text, mode) {
         var translated = '';
         var pinyin = '';
-        
         try {
             if (mode === 'zh2vi') {
                 var gtRes = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=vi&dt=t&q=' + encodeURIComponent(text));
                 var gtJson = await gtRes.json();
-                translated = gtJson[0].map(function(item) { return item[0] || ''; }).join('').trim();
-                
+                translated = gtJson[0].map(function(item) { return item[0]; }).join('');
                 if (window.pinyinPro) {
                     pinyin = window.pinyinPro.pinyin(text, { toneType: 'symbol' });
                 }
             } else {
-                // Việt -> Trung
                 var gtRes2 = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=zh-CN&dt=t&q=' + encodeURIComponent(text));
                 var gtJson2 = await gtRes2.json();
-                translated = gtJson2[0].map(function(item) { return item[0] || ''; }).join('').trim();
-                
-                // ⭐ Nếu kết quả rỗng, thử lại 1 lần nữa
-                if (!translated) {
-                    await new Promise(function(r) { setTimeout(r, 500); });
-                    var retryRes = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=zh-CN&dt=t&q=' + encodeURIComponent(text));
-                    var retryJson = await retryRes.json();
-                    translated = retryJson[0].map(function(item) { return item[0] || ''; }).join('').trim();
-                }
-                
-                if (window.pinyinPro && translated) {
+                translated = gtJson2[0].map(function(item) { return item[0]; }).join('');
+                if (window.pinyinPro) {
                     pinyin = window.pinyinPro.pinyin(translated, { toneType: 'symbol' });
                 }
             }
         } catch(e) {
             console.warn('[CP] Google Translate error:', e);
         }
-        
-        // ⭐ Nếu vẫn rỗng, trả về thông báo rõ ràng để render không bị ẩn
-        if (!translated) {
-            translated = '[Lỗi dịch - Vui lòng thử lại]';
-        }
-        
         return { translated: translated, pinyin: pinyin };
     }
 })();
