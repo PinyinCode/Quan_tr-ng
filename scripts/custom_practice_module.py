@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 r"""
-custom_practice_module.py - Khu vực Luyện tập Tự do (Tích hợp Gợi ý chính tả trực quan)
+custom_practice_module.py - Khu vực Luyện tập Tự do (Tối ưu Batching, Pinyin từ ghép & Gợi ý chính tả)
 """
 
 def build_custom_practice_css():
@@ -150,7 +150,6 @@ def build_custom_practice_css():
     box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.15);
 }
 
-/* ⭐ GIAO DIỆN KHUNG GỢI Ý CHÍNH TẢ TRỰC QUAN */
 .cp-spell-container {
     display: none;
     flex-direction: column;
@@ -161,6 +160,7 @@ def build_custom_practice_css():
     border-radius: 12px;
     font-size: 0.85rem;
     color: #92400e;
+    margin-top: 6px;
     animation: fadeIn 0.3s ease;
 }
 .cp-spell-container.show { display: flex; }
@@ -303,10 +303,9 @@ def build_custom_practice_html():
     <div class="cp-input-wrapper">
         <textarea class="cp-textarea" id="cpInputZh" rows="4" placeholder="Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)"></textarea>
         
-        <!-- ⭐ KHUNG GỢI Ý CHÍNH TẢ TRỰC QUAN -->
         <div class="cp-spell-container" id="cpSpellContainer">
             <div class="cp-spell-header">
-                <i class="fas fa-triangle-exclamation"></i> Gợi ý chỉnh sửa chính tả/từ viết tắt:
+                <i class="fas fa-triangle-exclamation"></i> Gợi ý sửa lỗi chính tả / từ viết tắt:
             </div>
             <div class="cp-spell-chips" id="cpSpellChips"></div>
         </div>
@@ -333,9 +332,7 @@ def build_custom_practice_js():
 (function() {
     'use strict';
     var MAX_CHARS = 5000;
-    var BATCH_SIZE = 10;
     var currentMode = 'vi2zh';
-    
     var SERVER_API_URL = 'https://server-vopb.onrender.com/api/translate'; 
 
     var inputArea = document.getElementById('cpInputZh');
@@ -362,21 +359,13 @@ def build_custom_practice_js():
     var myBonusTokens = 0;
     var currentUser = null;
 
-    // ⭐ TỪ ĐIỂN TỪ VIẾT TẮT / LỖI CHÍNH TẢ PHỔ BIẾN (TIẾNG VIỆT)
     var commonTyposVi = {
-        'ko': 'không', 'hok': 'không', 'kg': 'không', 'k': 'không',
-        'dc': 'được', 'đc': 'được',
-        'nhg': 'nhưng',
-        'đg': 'đang',
-        'j': 'gì',
-        'rùi': 'rồi',
-        'ik': 'đi',
-        'bit': 'biết', 'bít': 'biết',
-        'mng': 'mọi người', 'mn': 'mọi người',
-        'tks': 'cảm ơn', 'thank': 'cảm ơn',
-        'vs': 'với',
-        'ntn': 'như thế nào',
-        'kh': 'không', 'hok': 'không'
+        'chhsga': 'châu', 'hhsg': 'hàng', 'kkhu': 'khu',
+        'ko': 'không', 'hok': 'không', 'kg': 'không', 'k': 'không', 'kh': 'không',
+        'dc': 'được', 'đc': 'được', 'nhg': 'nhưng', 'đg': 'đang',
+        'j': 'gì', 'rùi': 'rồi', 'ik': 'đi', 'bit': 'biết', 'bít': 'biết',
+        'mng': 'mọi người', 'mn': 'mọi người', 'tks': 'cảm ơn', 'vs': 'với',
+        'ntn': 'như thế nào'
     };
 
     function initTokenState() {
@@ -412,7 +401,6 @@ def build_custom_practice_js():
         myTokenQuota = user.tokenQuota || 20000;
         myBonusTokens = user.bonusTokens || 0;
         myTokensUsed = user.tokensUsed || 0;
-        
         renderTokenUI();
     }
 
@@ -424,7 +412,6 @@ def build_custom_practice_js():
         if (remain < 0) remain = 0;
 
         tokenText.textContent = remain.toLocaleString('vi-VN') + ' token';
-        
         tokenBadge.classList.remove('warn', 'danger');
         if (remain <= 2000) tokenBadge.classList.add('danger');
         else if (remain <= 5000) tokenBadge.classList.add('warn');
@@ -463,7 +450,6 @@ def build_custom_practice_js():
         }
     }
 
-    // ⭐ HÀM QUÉT VÀ HIỂN THỊ GỢI Ý CHÍNH TẢ TRỰC QUAN
     function checkSpellingSuggestions() {
         if (currentMode !== 'vi2zh') {
             spellContainer.classList.remove('show');
@@ -471,7 +457,6 @@ def build_custom_practice_js():
         }
 
         var text = inputArea.value;
-        // Tách các từ đơn lẻ theo khoảng trắng và dấu câu
         var words = text.match(/\b[A-Za-zÀ-ỹ]+\b/g) || [];
         var foundTypos = {};
 
@@ -489,14 +474,12 @@ def build_custom_practice_js():
                 var correctWord = foundTypos[wrongWord];
                 var chip = document.createElement('div');
                 chip.className = 'cp-spell-chip';
-                chip.innerHTML = '<i class="fas fa-magic"></i> "' + wrongWord + '" ➜ <b>' + correctWord + '</b>';
+                chip.innerHTML = '<i class="fas fa-magic"></i> Sửa "' + wrongWord + '" ➜ <b>' + correctWord + '</b>';
                 
-                // Khi bấm vào chip, tự động thay thế từ sai thành từ đúng trong textarea
                 chip.addEventListener('click', function() {
                     var regex = new RegExp('\\b' + wrongWord + '\\b', 'gi');
                     inputArea.value = inputArea.value.replace(regex, correctWord);
                     updateCharCount();
-                    checkSpellingSuggestions(); // Cập nhật lại danh sách gợi ý
                 });
                 spellChips.appendChild(chip);
             });
@@ -517,11 +500,11 @@ def build_custom_practice_js():
             charCount.classList.remove('over');
         }
         autoResizeTextarea();
-        checkSpellingSuggestions(); // Quét lỗi chính tả mỗi khi gõ
+        checkSpellingSuggestions();
     }
 
     inputArea.addEventListener('input', updateCharCount);
-    setTimeout(autoResizeTextarea, 100);
+    setTimeout(updateCharCount, 200);
 
     switchBtn.addEventListener('click', function() {
         if (currentMode === 'vi2zh') {
@@ -531,7 +514,7 @@ def build_custom_practice_js():
             spellContainer.classList.remove('show');
             if (!inputArea.disabled) inputArea.placeholder = 'Dán văn bản tiếng Trung vào đây... (tối đa 5000 ký tự)';
         } else {
-            currentMode = 'zh2vi';
+            currentMode = 'vi2zh';
             labelZh.classList.remove('active');
             labelVi.classList.add('active');
             if (!inputArea.disabled) inputArea.placeholder = 'Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)';
@@ -577,7 +560,7 @@ def build_custom_practice_js():
         var rawText = inputArea.value.trim();
         if (!rawText) { alert('Vui lòng nhập văn bản!'); return; }
 
-        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang dịch tối ưu...';
         startBtn.disabled = true;
         switchBtn.style.pointerEvents = 'none';
         progressWrap.classList.add('show');
@@ -586,89 +569,94 @@ def build_custom_practice_js():
         var sentences = smartSplit(rawText, currentMode);
         if (sentences.length === 0) {
             alert('Không tìm thấy câu hợp lệ!');
-            startBtn.innerHTML = '<i class="fas fa-rocket"></i> Bắt đầu luyện tập';
-            startBtn.disabled = false;
-            switchBtn.style.pointerEvents = 'auto';
-            progressWrap.classList.remove('show');
+            finishProcess();
             return;
         }
 
         await loadPinyinPro();
 
         var total = sentences.length;
-        var translatedCount = 0;
         var customData = [];
         var totalTokensThisSession = 0;
+        var CHUNK_SIZE = 10;
+        var processedCount = 0;
 
-        for (var b = 0; b < total; b += BATCH_SIZE) {
-            var batchEnd = Math.min(b + BATCH_SIZE, total);
-            var batchSentences = sentences.slice(b, batchEnd);
+        try {
+            for (var i = 0; i < total; i += CHUNK_SIZE) {
+                var chunk = sentences.slice(i, i + CHUNK_SIZE);
+                var combinedText = chunk.join('\n[---]\n');
+                
+                var data = await fetchTranslate(combinedText, currentMode);
+                totalTokensThisSession += (data.tokensUsed || 0);
 
-            var promises = batchSentences.map(function(sentence, idx) {
-                return fetchTranslate(sentence, currentMode).then(function(data) {
-                    totalTokensThisSession += (data.tokensUsed || 0);
+                var translatedChunk = data.translated.split(/\n?\[\s*---\s*\]\n?/);
+
+                for (var j = 0; j < chunk.length; j++) {
+                    var originalSentence = chunk[j];
+                    var transSentence = translatedChunk[j] ? translatedChunk[j].trim() : originalSentence;
+
+                    var zhText = currentMode === 'vi2zh' ? transSentence : originalSentence;
+                    var viText = currentMode === 'vi2zh' ? originalSentence : transSentence;
+                    var pinyinStr = getSmartPinyin(zhText);
+
                     customData.push({
-                        stt: String(b + idx + 1),
-                        zh: currentMode === 'vi2zh' ? data.translated : sentence,
-                        vi: currentMode === 'vi2zh' ? sentence : data.translated,
-                        pinyin: data.pinyin || '',
+                        stt: String(i + j + 1),
+                        zh: zhText,
+                        vi: viText,
+                        pinyin: pinyinStr,
                         hsk: 'HSK1',
                         topic: 'Văn bản tự do',
                         subject: 'Custom'
                     });
-                    translatedCount++;
-                    var pct = Math.round((translatedCount / total) * 100);
+
+                    processedCount++;
+                    var pct = Math.round((processedCount / total) * 100);
                     progressBar.style.width = pct + '%';
-                    progressText.textContent = 'Đang dịch: ' + translatedCount + ' / ' + total + ' câu (' + pct + '%)';
-                }).catch(function(err) {
-                    customData.push({
-                        stt: String(b + idx + 1),
-                        zh: currentMode === 'vi2zh' ? '[Lỗi]' : sentence,
-                        vi: currentMode === 'vi2zh' ? sentence : '[Lỗi]',
-                        pinyin: '',
-                        hsk: 'HSK1',
-                        topic: 'Văn bản tự do',
-                        subject: 'Custom'
-                    });
-                    translatedCount++;
-                });
-            });
-
-            await Promise.all(promises);
-            if (batchEnd < total) await new Promise(function(r) { setTimeout(r, 500); });
-        }
-
-        customData.sort(function(a, b) { return parseInt(a.stt) - parseInt(b.stt); });
-
-        if (totalTokensThisSession > 0) {
-            myTokensUsed += totalTokensThisSession;
-            renderTokenUI();
-            try {
-                var cacheKey = 'user_cache_' + currentUser.email;
-                var cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
-                if (cached && cached.data) { 
-                    cached.data.tokensUsed = myTokensUsed; 
-                    localStorage.setItem(cacheKey, JSON.stringify(cached)); 
+                    progressText.textContent = 'Đang xử lý: ' + processedCount + ' / ' + total + ' câu (' + pct + '%)';
                 }
-            } catch(e) {}
-        }
+            }
 
-        if (typeof window.activateCustomPracticeMode === 'function') {
-            window.activateCustomPracticeMode(customData);
-        } else {
-            if (typeof RAW_DATA !== 'undefined') RAW_DATA = customData;
-            if (typeof filtered !== 'undefined') filtered = customData;
-            if (typeof buildFilters === 'function') buildFilters();
-            if (typeof applyFilter === 'function') applyFilter();
-            if (typeof updateResultCount === 'function') updateResultCount();
-            if (typeof render === 'function') render(true);
-        }
+            customData.sort(function(a, b) { return parseInt(a.stt) - parseInt(b.stt); });
 
+            if (totalTokensThisSession > 0) {
+                myTokensUsed += totalTokensThisSession;
+                renderTokenUI();
+                try {
+                    var cacheKey = 'user_cache_' + currentUser.email;
+                    var cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+                    if (cached && cached.data) { 
+                        cached.data.tokensUsed = myTokensUsed; 
+                        localStorage.setItem(cacheKey, JSON.stringify(cached)); 
+                    }
+                } catch(e) {}
+            }
+
+            if (typeof window.activateCustomPracticeMode === 'function') {
+                window.activateCustomPracticeMode(customData);
+            } else {
+                if (typeof RAW_DATA !== 'undefined') RAW_DATA = customData;
+                if (typeof filtered !== 'undefined') filtered = customData;
+                if (typeof buildFilters === 'function') buildFilters();
+                if (typeof applyFilter === 'function') applyFilter();
+                if (typeof updateResultCount === 'function') updateResultCount();
+                if (typeof render === 'function') render(true);
+            }
+        } catch(e) {
+            console.error('[CP] Batch processing error:', e);
+            alert('Có lỗi xảy ra: ' + e.message);
+        } finally {
+            finishProcess();
+        }
+    });
+
+    function finishProcess() {
         startBtn.innerHTML = '<i class="fas fa-rocket"></i> Bắt đầu luyện tập';
         startBtn.disabled = false;
         switchBtn.style.pointerEvents = 'auto';
-        setTimeout(function() { progressWrap.classList.remove('show'); }, 1500);
-    });
+        setTimeout(function() { 
+            progressWrap.classList.remove('show'); 
+        }, 1200);
+    }
 
     function loadPinyinPro() {
         if (window.pinyinPro) return Promise.resolve();
@@ -707,7 +695,6 @@ def build_custom_practice_js():
 
     async function fetchTranslate(text, mode) {
         var translated = '';
-        var pinyin = '';
         var tokensUsed = 0;
 
         try {
@@ -726,24 +713,17 @@ def build_custom_practice_js():
             });
             
             if (!res.ok) throw new Error('HTTP ' + res.status);
-            
             var json = await res.json();
             if (json.error) throw new Error(json.error);
             
             translated = json.translated;
             tokensUsed = json.tokensUsed || 0;
-
-            var zhTextForPinyin = (mode === 'zh2vi') ? text : translated; 
-            if (window.pinyinPro && zhTextForPinyin) {
-                pinyin = getSmartPinyin(zhTextForPinyin);
-            }
-            
         } catch(e) {
             console.warn('[CP] Translate error:', e.message);
-            translated = '[Lỗi: ' + e.message + ']'; 
+            translated = text; 
         }
         
-        return { translated: translated, pinyin: pinyin, tokensUsed: tokensUsed };
+        return { translated: translated, tokensUsed: tokensUsed };
     }
 
     setTimeout(initTokenState, 100);
