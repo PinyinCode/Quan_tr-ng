@@ -6,6 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
@@ -13583,19 +13586,7 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-    <meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-    <meta name="author" content="Tuhoctiengtrung.org">
-    <link rel="canonical" href="https://tuhoctiengtrung.org/">
-    <meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-    <meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-    <meta property="og:url" content="https://tuhoctiengtrung.org/">
-    <meta property="og:type" content="website">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
-    <meta name="theme-color" content="#7c3aed">
-  </head>
+</head>
 <body>
 
 <div class="page-wrap">
@@ -13754,7 +13745,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
@@ -38820,30 +38811,26 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         });
     }
 
-        // ⭐ Hàm chuyển đổi Pinyin tự động nhận diện & gộp cụm từ ghép
-        // ⭐ Hàm getSmartPinyin chuẩn hóa riêng cho chế độ Dịch Tự Do -> Màn hình Luyện Tập
-    function getSmartPinyin(text) {
+            function getSmartPinyin(text) {
         if (!window.pinyinPro || !text) return '';
         try {
-            // 1. Tách câu Tiếng Trung thành mảng các cụm từ ghép (Chữ Hán)
+            // 1. Tách câu thành mảng các từ ghép (dùng segmentit: true)
             var words = window.pinyinPro.pinyin(text, { type: 'array', segmentit: true });
             
-            // 2. Chuyển từng cụm từ ghép sang Pinyin liền nhau (separator: '')
+            // 2. Với mỗi từ ghép tiếng Hán, ép các âm tiết dính liền nhau bằng separator: ''
             var pinyinWords = words.map(function(word) {
                 if (/[\u4e00-\u9fa5]/.test(word)) {
                     return window.pinyinPro.pinyin(word, { toneType: 'symbol', separator: '' });
                 }
-                return word;
+                return word; // Giữ nguyên các ký tự đặc biệt, dấu câu, khoảng trắng
             });
             
-            // 3. Nối các cụm từ ghép bằng 1 khoảng trắng duy nhất
+            // 3. Nối các từ ghép lại bằng khoảng trắng
             return pinyinWords.join(' ');
         } catch (e) {
             return window.pinyinPro.pinyin(text, { toneType: 'symbol' });
         }
     }
-
-
 
     async function fetchTranslate(text, mode) {
         var translated = '';
