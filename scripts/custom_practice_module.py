@@ -873,16 +873,21 @@ def build_custom_practice_js():
         return { translated: translated, tokensUsed: tokensUsed };
     }
 
-    function updateCounterUI() {
+            function updateCounterUI() {
         if (!historyCounter) return;
         if (isUserAdmin) {
-            historyCounter.innerHTML = '<span style="color:#059669; font-weight:700;"><i class="fas fa-shield-halved"></i> Tài khoản Admin: Không giới hạn (Đã lưu hôm nay: ' + currentTodayCount + ' câu)</span>';
+            historyCounter.innerHTML = '<span style="color:#059669; font-weight:700;"><i class="fas fa-shield-halved"></i> Admin: Không giới hạn Read/Save</span>';
         } else {
-            var remain = 100 - currentTodayCount;
-            if (remain < 0) remain = 0;
-            historyCounter.innerHTML = 'Đã dùng: <b>' + currentTodayCount + ' / 100</b> câu (Còn lại: <span style="color:' + (remain > 0 ? '#059669' : '#dc2626') + '; font-weight:700;">' + remain + ' lượt</span>)';
+            var saveRemain = 100 - currentTodayCount;
+            if (saveRemain < 0) saveRemain = 0;
+            
+            var readRemainText = (typeof currentReadRemain !== 'undefined') ? currentReadRemain : 100;
+            
+            historyCounter.innerHTML = '📖 Lượt xem hôm nay: <b style="color:' + (readRemainText > 0 ? '#4f46e5' : '#dc2626') + ';">' + readRemainText + '</b>/100 | ⏳ Đã lưu: <b>' + currentTodayCount + '</b>/100';
         }
     }
+
+
 
     function renderHistoryUI() {
         updateCounterUI();
@@ -961,7 +966,7 @@ def build_custom_practice_js():
         });
     }
 
-    if (historyBtn) {
+        if (historyBtn) {
         historyBtn.addEventListener('click', async function() {
             if (!currentUser || !currentUser.email) { alert('Vui lòng đăng nhập để xem lịch sử!'); return; }
             
@@ -980,12 +985,15 @@ def build_custom_practice_js():
                 });
                 
                 var json = await res.json();
-                if (!json.ok || !json.history) throw new Error('Không thể tải lịch sử');
+                if (!json.ok || !json.history) throw new Error(json.error || 'Không thể tải lịch sử');
                 
+                // ⭐ ĐOẠN ĐƯỢC CHÈN VÀO ĐÂY:
                 cachedHistoryData = json.history;
                 currentTodayCount = json.todayCount || 0;
+                currentReadRemain = (typeof json.readRemain !== 'undefined') ? json.readRemain : 100;
                 isUserAdmin = json.isAdmin || false;
 
+                // Gọi vẽ lại giao diện lịch sử & bộ đếm
                 renderHistoryUI();
                 
             } catch (e) {
