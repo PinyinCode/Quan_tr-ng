@@ -84,7 +84,7 @@ def build_custom_practice_css():
 }
 .cp-textarea {
     width: 100%;
-    padding: 1.2rem 1rem; /* Tăng padding trên dưới cho thoáng */
+    padding: 1.2rem 1rem;
     border-radius: 14px;
     border: 1.5px solid var(--border);
     background: var(--surface);
@@ -93,7 +93,7 @@ def build_custom_practice_css():
     font-size: 1.05rem;
     resize: none;
     overflow-y: hidden;
-    min-height: 120px; /* Tăng chiều cao mặc định lên 120px */
+    min-height: 120px;
     max-height: 400px;
     transition: height 0.1s ease, border-color .2s, box-shadow .2s;
     line-height: 1.6;
@@ -132,7 +132,7 @@ def build_custom_practice_css():
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 0 1rem;
-    height: 48px; /* Bằng chiều cao nút Start */
+    height: 48px;
     cursor: pointer;
     user-select: none;
     transition: all .2s;
@@ -141,7 +141,7 @@ def build_custom_practice_css():
     font-size: 0.9rem;
     gap: 8px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-    flex-shrink: 0; /* Không bị co lại */
+    flex-shrink: 0;
 }
 .cp-switch-btn:hover {
     background: var(--surface);
@@ -156,7 +156,7 @@ def build_custom_practice_css():
 
 /* Nút Bắt đầu chiếm phần còn lại */
 .cp-btn-start {
-    flex: 1; /* Tự động giãn hết phần còn lại */
+    flex: 1;
     height: 48px;
     border-radius: 12px;
     border: none;
@@ -353,10 +353,10 @@ def build_custom_practice_js():
     });
 
     function smartSplit(text, mode) {
-        // Bảo vệ dấu chấm trong số (1.400)
+        // Bảo vệ dấu chấm trong số (1.400, 162.000) để không bị ngắt nhầm câu
         var protectedText = text.replace(/(\d)\.(\d)/g, '$1__DOT__$2');
         
-        // Tách câu dựa trên dấu kết thúc
+        // Tách câu dựa trên dấu kết thúc câu tiêu chuẩn
         var rawParts = protectedText.split(/(?<=[.!?。！？\n])/g);
         var result = [];
         
@@ -452,7 +452,7 @@ def build_custom_practice_js():
             window.__customPracticeActive = true;
             window.__onboardingOverride = null;
             if (typeof state !== 'undefined' && state) {
- Promise                state.search = ''; state.hsk = ''; state.subject = '';
+                state.search = ''; state.hsk = ''; state.subject = '';
             }
             if (typeof buildFilters === 'function') buildFilters();
             if (typeof applyFilter === 'function') applyFilter();
@@ -470,7 +470,7 @@ def build_custom_practice_js():
 
     function loadPinyinPro() {
         if (window.pinyinPro) return Promise.resolve();
-        return new(function(resolve) {
+        return new Promise(function(resolve) {
             var script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.2/dist/index.min.js';
             script.onload = resolve;
