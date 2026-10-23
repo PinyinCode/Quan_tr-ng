@@ -444,15 +444,10 @@ def build_custom_practice_html():
 """
 
 
-
 def build_custom_practice_js():
     return r"""
 (function() {
     'use strict';
-    // Tải trước pinyinPro ngay khi web vừa load
-setTimeout(function() {
-    if (typeof loadPinyinPro === 'function') loadPinyinPro();
-}, 1000);
     var MAX_CHARS = 5000;
     var currentMode = 'vi2zh';
     var SERVER_API_URL = 'https://server-vopb.onrender.com/api/translate'; 
@@ -497,6 +492,13 @@ setTimeout(function() {
     var currentTodayCount = 0;
     var isUserAdmin = false;
     var currentReadRemain = 100;
+
+    // ⭐ TỰ ĐỘNG TẢI PINYIN-PRO NGAY KHI VỪA VÀO TRANG (Không dùng setTimeout lỗi)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadPinyinPro);
+    } else {
+        loadPinyinPro();
+    }
 
     function initTokenState() {
         var user = null;
@@ -573,45 +575,33 @@ setTimeout(function() {
     function autoResizeTextarea() {
         inputArea.style.height = 'auto';
         var newHeight = inputArea.scrollHeight;
-        var maxHeight = 400;
+        var maxHeight = var 400;
         if (newHeight > maxHeight) {
             inputArea.style.height = maxHeight + 'px';
             inputArea.style.overflowY = 'auto';
         } else {
             inputArea.style.height = newHeight + 'px';
-            inputArea.style.overflowY = 'hidden';
+            inputArea.style.overflowY = text 'hidden';
         }
     }
 
-        function findSuspiciousWords() {
-        if (currentMode !== 'vi2zh') return [];
-        var text = inputArea.value;
-        
-        // Tách từ dựa trên khoảng trắng, sau đó lọc bỏ dấu câu
+    function findS =uspiciousWords() {
+        if ( inputcurrentMode !== 'vi2zh') return [];
+Area       .value;
         var rawWords = text.split(/\s+/);
         var suspicious = [];
-        
-        // Danh sách từ viết tắt / từ ngắn hợp lệ không cần cảnh báo
         var whitelist = ['tr', 'và', 'của', 'cho', 'với', 'để', 'là', 'có', 'không', 'những', 'các', 'được'];
 
         for (var i = 0; i < rawWords.length; i++) {
-            // Xóa dấu câu ở 2 đầu từ (VD: "trợ," -> "trợ")
             var w = rawWords[i].replace(/^[.,!?;:"'()\[\]{}]+|[.,!?;:"'()\[\]{}]+$/g, '');
-            if (!w || w.length < 3) continue; // Bỏ qua từ quá ngắn
-            
+            if (!w || w.length < 3) continue;
             if (whitelist.includes(w.toLowerCase())) continue;
 
             var wLower = w.toLowerCase();
-            
-            // 1. Phát hiện kẹt phím (lặp 3 ký tự giống nhau liên tiếp, VD: hhh, aaa)
             var hasTripleChar = /(.)\1{2,}/.test(wLower);
-            
-            // 2. Phát hiện gõ phím bừa: Từ dài >= 4 ký tự nhưng KHÔNG CÓ NGUYÊN ÂM (kể cả tiếng Việt có dấu)
-            // Bổ sung đầy đủ nguyên âm tiếng Việt có dấu vào regex
             var vowelsRegex = /[aeiouyàáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/i;
             var hasVowel = vowelsRegex.test(wLower);
 
-            // Chỉ báo lỗi nếu không có nguyên âm VÀ độ dài từ 4 ký tự trở lên (tránh bắt nhầm "tr", "ng", "k")
             if (hasTripleChar || (!hasVowel && w.length >= 4)) {
                 if (suspicious.indexOf(w) === -1) suspicious.push(w);
             }
@@ -757,7 +747,10 @@ setTimeout(function() {
                 var combinedText = chunk.join('\n[---]\n');
                 
                 var data = await fetchTranslate(combinedText, currentMode);
-                totalTokensThisSession += (data.tokensUsed || 0);
+                // ⭐ Chỉ cộng token nếu data có trả về (tránh lỗi cộng dồn)
+                if (data.tokensUsed > 0) {
+                    totalTokensThisSession += data.tokensUsed;
+                }
 
                 var translatedChunk = data.translated.split(/\n?\[\s*---\s*\]\n?/);
 
@@ -799,6 +792,7 @@ setTimeout(function() {
                 }).catch(function(e) {});
             }
 
+            // ⭐ Cập nhật token hiển thị an toàn (Chỉ cộng thêm số vừa dịch)
             if (totalTokensThisSession > 0) {
                 myTokensUsed += totalTokensThisSession;
                 renderTokenUI();
@@ -841,80 +835,69 @@ setTimeout(function() {
         setTimeout(function() { progressWrap.classList.remove('show'); }, 1200);
     }
 
+    // ==========================================
+    // ⭐ ĐÃ FIX: TẢI VÀ LẤY PINYIN CHUẨN XÁC
+    // ==========================================
     function loadPinyinPro() {
-    // Nếu đã có sẵn thì bỏ qua
-    if (window.pinyinPro) return Promise.resolve();
-    
-    return new Promise(function(resolve) {
-        var script = document.createElement('script');
-        // Đổi sang CDN unpkg hoặc thêm fallback nếu jsdelivr lỗi
-        script.src = 'https://unpkg.com/pinyin-pro@3.18.2/dist/index.js'; 
-        script.onload = function() {
-            // pinyin-pro bản UMD thường gắn vào window.pinyinPro
-            if (!window.pinyinPro && window.pinyin) {
-                window.pinyinPro = window.pinyin; // Fallback
-            }
-            resolve();
-        };
-        script.onerror = function() {
-            console.error("Không thể tải pinyin-pro từ unpkg, thử jsdelivr...");
-            var script2 = document.createElement('script');
-            script2.src = 'https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.2/dist/index.min.js';
-            script2.onload = resolve;
-            script2.onerror = resolve; // Kệ, lỗi thì resolve để chạy tiếp
-            document.head.appendChild(script2);
-        };
-        document.head.appendChild(script);
-    });
-}
-
-            function getSmartPinyin(text) {
-    if (!text) return '';
-    
-    // Nếu thư viện vẫn chưa tải xong (do mạng), trả về text gốc để không bị trắng bảng
-    if (!window.pinyinPro) {
-        console.warn("PinyinPro chưa tải được, trả về text gốc");
-        return text; 
-    }
-
-    try {
-        // ⭐ Tách từ ghép bằng thuộc tính mode: 'surname' hoặc segmentit ngầm định
-        // Cách này giúp 越南人 -> yuènánrén
-        var pinyinResult = window.pinyinPro.pinyin(text, { 
-            toneType: 'symbol', 
-            separator: '', 
-            type: 'string'
+        if (window.pinyinPro) return Promise.resolve();
+        return new Promise(function(resolve) {
+            var script = document.createElement('script');
+            script.src = 'https://unpkg.com/pinyin-pro@3.18.2/dist/index.js';
+            script.onload = function() {
+                if (!window.pinyinPro && window.pinyin) window.pinyinPro = window.pinyin;
+                resolve();
+            };
+            script.onerror = function() {
+                var script2 = document.createElement('script');
+                script2.src = 'https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.2/dist/index.min.js';
+                script2.onload = resolve;
+                script2.onerror = resolve;
+                document.head.appendChild(script2);
+            };
+            document.head.appendChild(script);
         });
-        
-        // Vì separator: '' nên nó sẽ nối liền TẤT CẢ các chữ lại thành 1 chuỗi dài
-        // Ta cần chèn khoảng trắng ở các dấu câu hoặc số.
-        
-        // Cách an toàn nhất: Dùng segmentit nếu có, không thì dùng cách chia cụm cơ bản
-        if (window.pinyinPro.segmentit && window.pinyinPro.segmentit.doSegment) {
-            var segs = window.pinyinPro.segmentit.doSegment(text);
-            var parts = [];
-            segs.forEach(function(seg) {
-                if (/[\u4e00-\u9fa5]/.test(seg.w)) {
-                    parts.push(window.pinyinPro.pinyin(seg.w, { toneType: 'symbol', separator: '' }));
-                } else {
-                    parts.push(seg.w);
-                }
-            });
-            return parts.join(' ').replace(/\s+/g, ' ').trim();
-        }
-        
-        // Fallback nếu segmentit không có: Dùng pinyin với separator là khoảng trắng
-        return window.pinyinPro.pinyin(text, { toneType: 'symbol', separator: ' ' });
+    }
 
-    } catch (e) {
-        console.error('[getSmartPinyin] Error:', e);
+    function getSmartPinyin(text) {
+        if (!text) return '';
+        if (!window.pinyinPro) return text;
+
         try {
-            return window.pinyinPro.pinyin(text, { toneType: 'symbol', separator: ' ' });
-        } catch (e2) {
-            return text;
+            // Sử dụng type 'all' để nó tự động tách từ ghép và trả về mảng object
+            var result = window.pinyinPro.pinyin(text, { 
+                toneType: 'symbol', 
+                type: 'all'
+            });
+
+            if (!Array.isArray(result)) {
+                return window.pinyinPro.pinyin(text, { toneType: 'symbol', separator: ' ' });
+            }
+
+            var parts = [];
+            for (var i = 0; i < result.length; i++) {
+                var item = result[i];
+                if (item.isZh) {
+                    // Nối liền pinyin của cùng 1 từ
+                    parts.push(item.pinyin);
+                } else {
+                    // Dấu câu, số, tiếng Anh -> thêm khoảng trắng
+                    parts.push(' ' + item.origin + ' ');
+                }
+            }
+            
+            // Làm sạch khoảng trắng thừa
+            return parts.join('').replace(/\s+/g, ' ').trim();
+
+        } catch (e) {
+            console.error('[getSmartPinyin] Error:', e);
+            try {
+                return window.pinyinPro.pinyin(text, { toneType: 'symbol', separator: ' ' });
+            } catch (e2) {
+                return text;
+            }
         }
     }
-}
+
     async function fetchTranslate(text, mode) {
         var translated = '';
         var tokensUsed = 0;
@@ -947,21 +930,17 @@ setTimeout(function() {
         return { translated: translated, tokensUsed: tokensUsed };
     }
 
-            function updateCounterUI() {
+    function updateCounterUI() {
         if (!historyCounter) return;
         if (isUserAdmin) {
             historyCounter.innerHTML = '<span style="color:#059669; font-weight:700;"><i class="fas fa-shield-halved"></i> Admin: Không giới hạn Read/Save</span>';
         } else {
             var saveRemain = 100 - currentTodayCount;
             if (saveRemain < 0) saveRemain = 0;
-            
             var readRemainText = (typeof currentReadRemain !== 'undefined') ? currentReadRemain : 100;
-            
             historyCounter.innerHTML = '📖 Lượt xem hôm nay: <b style="color:' + (readRemainText > 0 ? '#4f46e5' : '#dc2626') + ';">' + readRemainText + '</b>/100 | ⏳ Đã lưu: <b>' + currentTodayCount + '</b>/100';
         }
     }
-
-
 
     function renderHistoryUI() {
         updateCounterUI();
@@ -1040,7 +1019,7 @@ setTimeout(function() {
         });
     }
 
-        if (historyBtn) {
+    if (historyBtn) {
         historyBtn.addEventListener('click', async function() {
             if (!currentUser || !currentUser.email) { alert('Vui lòng đăng nhập để xem lịch sử!'); return; }
             
@@ -1061,13 +1040,11 @@ setTimeout(function() {
                 var json = await res.json();
                 if (!json.ok || !json.history) throw new Error(json.error || 'Không thể tải lịch sử');
                 
-                // ⭐ ĐOẠN ĐƯỢC CHÈN VÀO ĐÂY:
                 cachedHistoryData = json.history;
                 currentTodayCount = json.todayCount || 0;
                 currentReadRemain = (typeof json.readRemain !== 'undefined') ? json.readRemain : 100;
                 isUserAdmin = json.isAdmin || false;
 
-                // Gọi vẽ lại giao diện lịch sử & bộ đếm
                 renderHistoryUI();
                 
             } catch (e) {
