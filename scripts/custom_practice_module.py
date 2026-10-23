@@ -589,8 +589,19 @@ def build_custom_practice_js():
         return { translated: translated, pinyin: pinyin, tokensUsed: tokensUsed };
     }
 
-    setTimeout(initTokenState, 1000);
-    window.addEventListener('userChanged', initTokenState);
+    // ⭐ THEO DÕI TRẠNG THÁI ĐĂNG NHẬP LIÊN TỤC
+    var checkAuthInterval = setInterval(function() {
+        if (typeof currentUser !== 'undefined' && currentUser) {
+            clearInterval(checkAuthInterval); // Đã có user -> Dừng kiểm tra
+            initTokenState(); // Cập nhật Token
+        }
+    }, 500); // Cứ 0.5 giây kiểm tra 1 lần
+
+    // Dự phòng: Nếu sau 5 giây vẫn chưa có user (thực sự chưa đăng nhập)
+    setTimeout(function() {
+        clearInterval(checkAuthInterval);
+        initTokenState(); 
+    }, 5000);
 
 })();
 """
