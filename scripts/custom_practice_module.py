@@ -9,35 +9,26 @@ def build_custom_practice_css():
 /* ═══════════════════════════════════════════════════════════ */
 /* KHU VỰC LUYỆN TẬP TỰ DO - NÂNG CẤP UI CHỦ LỰC              */
 /* ═══════════════════════════════════════════════════════════ */
-.cp-section {
-    background: var(--surface);
-    border: 1px solid rgba(139, 92, 246, 0.15);
-    border-radius: 20px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-    position: relative;
-    overflow: hidden;
-}
-.cp-section::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
-}
-
-.cp-section-header {
+/* Bao bọc toàn bộ hàng tiêu đề để đẩy nút Xóa sang phải */
+.cp-header-row {
     display: flex;
     align-items: center;
-    gap: .75rem;
-    font-size: 1.15rem;
-    font-weight: 800;
-    color: var(--text);
+    justify-content: space-between;
+    width: 100%;
 }
+
+/* Gộp cây bút và chữ thành 1 khối Badge */
+.cp-section-header {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.08));
+    padding: 4px 18px 4px 4px; /* Căn lề trái 4px để icon lọt khít */
+    border-radius: 50px;
+    border: 1px solid rgba(168,85,247,0.15);
+    box-shadow: 0 2px 10px rgba(168,85,247,0.05);
+}
+
+/* Icon cây bút hình tròn */
 .cp-section-header i {
     color: #fff;
     font-size: 1rem;
@@ -46,9 +37,18 @@ def build_custom_practice_css():
     justify-content: center;
     width: 36px;
     height: 36px;
-    border-radius: 10px;
+    border-radius: 50%; /* Bo tròn hoàn toàn */
     background: linear-gradient(135deg, #6366f1, #a855f7);
-    box-shadow: 0 4px 12px rgba(168,85,247,.3);
+    box-shadow: 0 4px 12px rgba(168,85,247,.4);
+    margin-right: 12px; /* Khoảng cách giữa icon và chữ */
+}
+
+/* Chữ tiêu đề */
+.cp-section-header span {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.3px;
 }
 .cp-btn-reset {
     padding: .45rem .9rem;
@@ -224,9 +224,11 @@ def build_custom_practice_css():
 def build_custom_practice_html():
     return r"""
 <div class="cp-section" id="cpSection">
-    <div class="cp-section-header">
-        <i class="fas fa-magic"></i>
-        <span>Luyện Dịch Tự Do</span>
+    <div class="cp-header-row">
+        <div class="cp-section-header">
+            <i class="fas fa-pen-fancy"></i>
+            <span>Luyện Dịch Tự Do</span>
+        </div>
         <button class="cp-btn-reset" id="cpResetBtn" type="button" title="Làm mới">
             <i class="fas fa-trash-alt"></i> Xóa
         </button>
