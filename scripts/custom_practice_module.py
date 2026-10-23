@@ -22,7 +22,6 @@ def build_custom_practice_css():
     position: relative;
     overflow: hidden;
 }
-/* Viền Gradient phát sáng */
 .cp-section::before {
     content: '';
     position: absolute;
@@ -74,7 +73,6 @@ def build_custom_practice_css():
     transform: scale(1.05);
 }
 
-/* Nút chuyển đổi chiều dịch (Toggle Switch) */
 .cp-switch-row {
     display: flex;
     align-items: center;
@@ -116,7 +114,6 @@ def build_custom_practice_css():
     transform: rotate(180deg);
 }
 
-/* Ô nhập liệu tự giãn */
 .cp-input-wrapper {
     display: flex;
     flex-direction: column;
@@ -155,7 +152,6 @@ def build_custom_practice_css():
     font-weight: 700;
 }
 
-/* Nút bắt đầu */
 .cp-btn-start {
     padding: .9rem;
     border-radius: 14px;
@@ -183,7 +179,6 @@ def build_custom_practice_css():
     transform: none;
 }
 
-/* Thanh tiến trình */
 .cp-progress-wrap {
     display: none;
     flex-direction: column;
@@ -237,7 +232,6 @@ def build_custom_practice_html():
         </button>
     </div>
 
-    <!-- Nút chuyển đổi gộp 1 hàng -->
     <div class="cp-switch-row" id="cpSwitchBtn">
         <span class="cp-switch-label active" id="cpLabelZh">Trung</span>
         <div class="cp-switch-icon">
@@ -271,9 +265,8 @@ def build_custom_practice_js():
     'use strict';
     var MAX_CHARS = 5000;
     var BATCH_SIZE = 10;
-    var currentMode = 'zh2vi'; // zh2vi hoặc vi2zh
+    var currentMode = 'zh2vi';
 
-    // ⚠️ ĐƯỜNG LINK CLOUDFLARE WORKER CỦA BẠN
     var WORKER_URL = 'https://tiny-fire-f000.hoanginvest199.workers.dev';
 
     var inputArea = document.getElementById('cpInputZh');
@@ -281,18 +274,17 @@ def build_custom_practice_js():
     var startBtn = document.getElementById('cpStartBtn');
     var resetBtn = document.getElementById('cpResetBtn');
     
-    // UI Elements
     var switchBtn = document.getElementById('cpSwitchBtn');
     var labelZh = document.getElementById('cpLabelZh');
     var labelVi = document.getElementById('cpLabelVi');
     
     var progressWrap = document.getElementById('cpProgressWrap');
-    var progressBar = document.getElementById('cpProgressBar');
-    var progressText = document.getElementById('cpProgressText');
+   ử var progressBar = document.getElementById('cpProgress lBar');
+    var progressTextý = document.getElementById('cp...ProgressText');
 
-    // ⭐ 1. TỰ ĐỘNG GIÃN CHIỀU CAO
-    function autoResizeTextarea() {
-        inputArea.style.height = 'auto';
+    function auto';
+ResizeTextarea() {
+               inputArea.style.height = 'auto';
         var newHeight = inputArea.scrollHeight;
         var maxHeight = 300;
         if (newHeight > maxHeight) {
@@ -304,7 +296,6 @@ def build_custom_practice_js():
         }
     }
 
-    // ⭐ 2. ĐẾM KÝ TỰ
     function updateCharCount() {
         var len = inputArea.value.length;
         charCount.textContent = len + ' / ' + MAX_CHARS;
@@ -321,7 +312,6 @@ def build_custom_practice_js():
     inputArea.addEventListener('input', updateCharCount);
     setTimeout(autoResizeTextarea, 100);
 
-    // ⭐ 3. NÚT GỘP CHUYỂN ĐỔI CHIỀU DỊCH
     switchBtn.addEventListener('click', function() {
         if (currentMode === 'zh2vi') {
             currentMode = 'vi2zh';
@@ -338,7 +328,6 @@ def build_custom_practice_js():
         updateCharCount();
     });
 
-    // ⭐ 4. NÚT "XÓA / LÀM MỚI"
     resetBtn.addEventListener('click', function() {
         inputArea.value = '';
         updateCharCount();
@@ -358,26 +347,18 @@ def build_custom_practice_js():
         }
     });
 
-    // ⭐ 5. HÀM TÁCH CÂU THÔNG MINH (Không tách số qua dấu chấm)
     function smartSplit(text, mode) {
-        // Tách dựa trên các dấu câu kết thúc, nhưng bỏ qua dấu chấm nếu nằm giữa 2 chữ số
-        // Regex: Tách khi gặp . ! ? 。 ！ ？ hoặc xuống dòng, NHƯNG KHÔNG tách nếu có chữ số ở 2 bên dấu chấm
         var rawParts = text.split(/(?<!\d)(?<=[.!?。！？\n])/g);
-        
         var result = [];
         for (var i = 0; i < rawParts.length; i++) {
             var s = rawParts[i].trim();
             if (s.length === 0) continue;
-            
-            // Nếu dịch từ Trung sang Việt, bắt buộc phải có chữ Hán
             if (mode === 'zh2vi' && !/[\u4e00-\u9fa5]/.test(s)) continue;
-            
             result.push(s);
         }
         return result;
     }
 
-    // ⭐ 6. NÚT BẮT ĐẦU
     startBtn.addEventListener('click', async function() {
         var rawText = inputArea.value.trim();
         if (!rawText) {
@@ -385,9 +366,8 @@ def build_custom_practice_js():
             return;
         }
 
-        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
-        startBtn.disabled = true;
-        switchBtn.style.pointerEvents = 'none'; // Khóa nút đổi chiều
+        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang x startBtn.disabled = true;
+        switchBtn.style.pointerEvents = 'none';
         progressWrap.classList.add('show');
         progressBar.style.width = '0%';
 
@@ -419,14 +399,13 @@ def build_custom_practice_js():
                         zh: currentMode === 'vi2zh' ? data.translated : sentence,
                         vi: currentMode === 'vi2zh' ? sentence : data.translated,
                         pinyin: data.pinyin || '',
-                        hsk: 'HS }K1',
-                        topic: ' elseVăn bản tự do',
-                        {
- subject: 'Custom'
+                        hsk: 'HSK1',
+                        topic: 'Văn bản tự do',
+                        subject: 'Custom'
                     });
                     translatedCount++;
-                               var pct = Math.round((translatedCount if / total) * 100);
-                    progress (Bar.style.width = pct + '%';
+                    var pct = Math.round((translatedCount / total) * 100);
+                    progressBar.style.width = pct + '%';
                     progressText.textContent = 'Đang dịch: ' + translatedCount + ' / ' + total + ' câu (' + pct + '%)';
                 }).catch(function(err) {
                     customData.push({
@@ -450,7 +429,8 @@ def build_custom_practice_js():
 
         if (typeof window.activateCustomPracticeMode === 'function') {
             window.activateCustomPracticeMode(customData);
-       typeof RAW_DATA !== 'undefined') RAW_DATA = customData;
+        } else {
+            if (typeof RAW_DATA !== 'undefined') RAW_DATA = customData;
             if (typeof filtered !== 'undefined') filtered = customData;
             window.__customPracticeActive = true;
             window.__onboardingOverride = null;
@@ -482,7 +462,6 @@ def build_custom_practice_js():
         });
     }
 
-    // ⭐ 7. FETCH QUA WORKER & NHẬN DIỆN TỪ GHÉP (Pinyin Array)
     async function fetchTranslate(text, mode) {
         var translated = '';
         var pinyin = '';
@@ -509,11 +488,8 @@ def build_custom_practice_js():
             
             translated = json.translated;
 
-            // ⭐ NÂNG CẤP: Nhận diện từ ghép bằng type: 'array'
             if (window.pinyinPro && translated && target === 'vi') {
-                // Lấy mảng pinyin (mỗi từ là 1 phần tử)
                 var pinyinArr = window.pinyinPro.pinyin(translated, { toneType: 'symbol', type: 'array' });
-                // Nối lại bằng khoảng trắng (Từ ghép sẽ dính liền nhau)
                 pinyin = pinyinArr.join(' ');
             }
             
