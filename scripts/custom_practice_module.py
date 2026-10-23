@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 r"""
-custom_practice_module.py - Khu vực Luyện tập Tự do (Kiểm tra chính tả trước khi tốn Quota API)
+custom_practice_module.py - Tích hợp Modal Popup cảnh báo lỗi chính tả trực quan
 """
 
 def build_custom_practice_css():
@@ -150,7 +150,6 @@ def build_custom_practice_css():
     box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.15);
 }
 
-/* ⭐ KHUNG GỢI Ý NỔI BẬT */
 .cp-spell-container {
     display: none;
     flex-direction: column;
@@ -169,7 +168,7 @@ def build_custom_practice_css():
     font-weight: 700;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 6px;
 }
 .cp-spell-chips {
     display: flex;
@@ -183,27 +182,87 @@ def build_custom_practice_css():
     padding: 4px 10px;
     border-radius: 8px;
     font-size: 0.8rem;
-    cursor: pointer;
     font-weight: 600;
-    transition: all 0.2s;
     box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
-.cp-spell-chip:hover {
-    background: #f59e0b;
-    color: #ffffff;
-    transform: translateY(-1px);
+
+/* ⭐ MODAL POPUP CẢNH BÁO TÙY CHỈNH (GLASSMORPHISM) */
+.cp-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.2s ease;
 }
-.cp-btn-fix-all {
-    background: #f59e0b;
-    color: #fff;
-    border: none;
-    padding: 3px 10px;
-    border-radius: 6px;
-    font-size: 0.75rem;
+.cp-modal-overlay.show { display: flex; }
+.cp-modal-box {
+    background: var(--surface, #ffffff);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: 20px;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+}
+.cp-modal-icon {
+    font-size: 2.5rem;
+    color: #f59e0b;
+}
+.cp-modal-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text, #1e1b4b);
+    margin: 0;
+}
+.cp-modal-desc {
+    font-size: 0.85rem;
+    color: var(--text-3, #64748b);
+    line-height: 1.5;
+    margin: 0;
+}
+.cp-modal-words {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+    padding: 8px;
+    border-radius: 8px;
     font-weight: 700;
-    cursor: pointer;
+    font-size: 0.95rem;
+    word-break: break-all;
 }
-.cp-btn-fix-all:hover { background: #d97706; }
+.cp-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 5px;
+}
+.cp-modal-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+.cp-modal-btn-cancel {
+    background: var(--surface-2, #f1f5f9);
+    color: var(--text-3, #64748b);
+}
+.cp-modal-btn-cancel:hover { background: #e2e8f0; }
+.cp-modal-btn-proceed {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+.cp-modal-btn-proceed:hover { opacity: 0.9; }
 
 .cp-btn-start {
     width: 100%;
@@ -278,11 +337,6 @@ def build_custom_practice_css():
 @media (min-width: 768px) {
     .cp-btn-start, .cp-btn-buy-token { width: auto; min-width: 280px; align-self: flex-end; }
 }
-@media (max-width: 500px) {
-    .cp-card { padding: 1.25rem; }
-    .cp-title-group h3 { font-size: 1.05rem; }
-    .cp-textarea { min-height: 100px; }
-}
 """
 
 def build_custom_practice_html():
@@ -313,12 +367,11 @@ def build_custom_practice_html():
     </div>
 
     <div class="cp-input-wrapper">
-        <textarea class="cp-textarea" id="cpInputZh" rows="4" placeholder="Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)"></textarea>
+        <textarea class="cp-textarea" id="cpInputZh" rows="4" placeholder="Nhập văn bản tiếng Việt vào đây..."></textarea>
 
         <div class="cp-spell-container" id="cpSpellContainer">
             <div class="cp-spell-header">
-                <span><i class="fas fa-triangle-exclamation"></i> Phát hiện từ viết tắt / lỗi chính tả:</span>
-                <button class="cp-btn-fix-all" id="cpFixAllBtn" type="button">Sửa tất cả</button>
+                <i class="fas fa-triangle-exclamation"></i> Phát hiện từ nghi ngờ sai chính tả / dính phím:
             </div>
             <div class="cp-spell-chips" id="cpSpellChips"></div>
         </div>
@@ -338,9 +391,22 @@ def build_custom_practice_html():
         <div class="cp-progress-bar-bg"><div class="cp-progress-bar" id="cpProgressBar"></div></div>
     </div>
 </div>
+
+<!-- ⭐ MODAL POPUP CẢNH BÁO HTML -->
+<div class="cp-modal-overlay" id="cpModalOverlay">
+    <div class="cp-modal-box">
+        <div class="cp-modal-icon"><i class="fas fa-triangle-exclamation"></i></div>
+        <h4 class="cp-modal-title">Phát hiện từ nghi ngờ sai chính tả!</h4>
+        <p class="cp-modal-desc">Hệ thống phát hiện các từ sau có dấu hiệu gõ nhầm hoặc dính phím:</p>
+        <div class="cp-modal-words" id="cpModalWordsList"></div>
+        <p class="cp-modal-desc" style="font-size:0.75rem;">Tiếp tục dịch có thể làm tốn Quota và kết quả không chuẩn xác.</p>
+        <div class="cp-modal-actions">
+            <button class="cp-modal-btn cp-modal-btn-cancel" id="cpModalFixBtn" type="button">Sửa lại văn bản</button>
+            <button class="cp-modal-btn cp-modal-btn-proceed" id="cpModalProceedBtn" type="button">Vẫn tiếp tục dịch</button>
+        </div>
+    </div>
+</div>
 """
-
-
 
 def build_custom_practice_js():
     return r"""
@@ -369,10 +435,17 @@ def build_custom_practice_js():
     var spellContainer = document.getElementById('cpSpellContainer');
     var spellChips = document.getElementById('cpSpellChips');
 
+    // Modal elements
+    var modalOverlay = document.getElementById('cpModalOverlay');
+    var modalWordsList = document.getElementById('cpModalWordsList');
+    var modalFixBtn = document.getElementById('cpModalFixBtn');
+    var modalProceedBtn = document.getElementById('cpModalProceedBtn');
+
     var myTokensUsed = 0;
     var myTokenQuota = 20000;
     var myBonusTokens = 0;
     var currentUser = null;
+    var resolveModalAction = null;
 
     function initTokenState() {
         var user = null;
@@ -390,7 +463,6 @@ def build_custom_practice_js():
         } catch(e) {}
 
         currentUser = user;
-
         if (!user) {
             tokenText.textContent = 'Chưa đăng nhập';
             tokenBadge.className = 'cp-token-badge warn';
@@ -412,7 +484,6 @@ def build_custom_practice_js():
 
     function renderTokenUI() {
         if (currentUser && (currentUser.role === 'admin' || currentUser.isPermanent)) return;
-
         var totalAvailable = myTokenQuota + myBonusTokens;
         var remain = totalAvailable - myTokensUsed;
         if (remain < 0) remain = 0;
@@ -426,12 +497,10 @@ def build_custom_practice_js():
             startBtn.style.display = 'none';
             buyTokenBtn.style.display = 'flex';
             inputArea.disabled = true;
-            inputArea.placeholder = 'Bạn đã hết lượt dịch. Vui lòng mua thêm token.';
         } else {
             startBtn.style.display = 'flex';
             buyTokenBtn.style.display = 'none';
             inputArea.disabled = false;
-            inputArea.placeholder = currentMode === 'vi2zh' ? 'Nhập văn bản tiếng Việt vào đây...' : 'Dán văn bản tiếng Trung vào đây...';
         }
     }
 
@@ -453,29 +522,28 @@ def build_custom_practice_js():
         }
     }
 
-    // ⭐ THUẬT TOÁN TỰ ĐỘNG CHỈ RA TỪ NGHI NGỜ (KHÔNG CẦN KHAI BÁO CỨNG)
+    // ⭐ THUẬT TOÁN TỰ ĐỘNG PHÁT HIỆN TỪ NGHI NGỜ (Như "tfccx", lặp ký tự vô lý, thiếu nguyên âm)
     function findSuspiciousWords() {
         if (currentMode !== 'vi2zh') return [];
         var text = inputArea.value;
         var words = text.match(/\b[A-Za-zÀ-ỹ]+\b/g) || [];
         var suspicious = [];
-        
-        // Các phụ âm kép hợp lệ trong tiếng Việt
-        var validClusters = ['ch', 'gh', 'kh', 'nh', 'ph', 'th', 'tr', 'ng', 'gi', 'qu', 'gh', 'th'];
 
         for (var i = 0; i < words.length; i++) {
             var w = words[i];
             var wLower = w.toLowerCase();
 
-            // 1. Kiểm tra lặp ký tự bất thường (ví dụ: hhgg, kk, gg, bb, dd, cc, vv, mm, pp, ss, ff)
+            // Bỏ qua các từ tiếng Anh chuẩn hoặc từ viết tắt cho phép độ dài ngắn
+            if (w.length <= 1) continue;
+
+            // 1. Kiểm tra lặp ký tự bất thường (hh, gg, kk, cc, vv...)
             var hasInvalidDouble = /(hh|gg|kk|bb|dd|cc|vv|mm|pp|ss|ff|zz|jj|ww|qq|xx)/.test(wLower);
             
-            // 2. Kiểm tra từ quá ngắn không có nguyên âm tiếng Việt (trừ các từ viết tắt hợp lệ ngắn)
+            // 2. Kiểm tra từ dài > 2 ký tự hoàn toàn không chứa nguyên âm tiếng Việt (như "tfccx")
             var vowelsRegex = /[aeiouyàáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/i;
             var hasVowel = vowelsRegex.test(wLower);
 
-            // Nếu dính lỗi lặp ký tự hoặc từ dài > 1 ký tự mà không có nguyên âm -> Đánh dấu là từ nghi ngờ
-            if (hasInvalidDouble || (!hasVowel && w.length > 1)) {
+            if (hasInvalidDouble || !hasVowel) {
                 if (suspicious.indexOf(w) === -1) {
                     suspicious.push(w);
                 }
@@ -491,7 +559,7 @@ def build_custom_practice_js():
             suspiciousWords.forEach(function(word) {
                 var chip = document.createElement('div');
                 chip.className = 'cp-spell-chip';
-                chip.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Nghi ngờ: <b>' + word + '</b>';
+                chip.innerHTML = '<i class="fas fa-triangle-exclamation"></i> ' + word;
                 spellChips.appendChild(chip);
             });
             spellContainer.classList.add('show');
@@ -544,6 +612,25 @@ def build_custom_practice_js():
         setTimeout(autoResizeTextarea, 50);
     });
 
+    // Hàm hiển thị Modal Popup tùy chỉnh
+    function showSpellModal(words) {
+        return new Promise(function(resolve) {
+            modalWordsList.textContent = words.join(', ');
+            modalOverlay.classList.add('show');
+            resolveModalAction = resolve;
+        });
+    }
+
+    modalFixBtn.addEventListener('click', function() {
+        modalOverlay.classList.remove('show');
+        if (resolveModalAction) resolveModalAction(false); // Chọn sửa lại
+    });
+
+    modalProceedBtn.addEventListener('click', function() {
+        modalOverlay.classList.remove('show');
+        if (resolveModalAction) resolveModalAction(true); // Vẫn tiếp tục dịch
+    });
+
     function smartSplit(text, mode) {
         var protectedText = text.replace(/(\d)\.(\d)/g, '$1__DOT__$2');
         var rawParts = protectedText.split(/(?<=[.!?。！？\n])/g);
@@ -568,15 +655,15 @@ def build_custom_practice_js():
             return; 
         }
 
-        // ⭐ CHẶN & CẢNH BÁO NẾU CÒN TỪ NGHI NGỜ TRƯỚC KHI DÙNG QUOTA
-        var suspiciousWords = findSuspiciousWords();
-        if (suspiciousWords.length > 0) {
-            var proceed = confirm('Hệ thống phát hiện các từ nghi ngờ gõ sai/dính phím: (' + suspiciousWords.join(', ') + ').\n\nBạn có chắc chắn muốn tiếp tục dịch không?');
-            if (!proceed) return; // Dừng lại, không gọi API, tiết kiệm 100% Quota
-        }
-
         var rawText = inputArea.value.trim();
         if (!rawText) { alert('Vui lòng nhập văn bản!'); return; }
+
+        // ⭐ KIỂM TRA VÀ HIỆN MODAL POPUP CHẶN NẾU PHÁT HIỆN TỪ SAI
+        var suspiciousWords = findSuspiciousWords();
+        if (suspiciousWords.length > 0) {
+            var proceed = await showSpellModal(suspiciousWords);
+            if (!proceed) return; // Dừng lại để người dùng sửa, bảo vệ Quota 100%
+        }
 
         startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang dịch tối ưu...';
         startBtn.disabled = true;
@@ -627,7 +714,7 @@ def build_custom_practice_js():
                         subject: 'Custom'
                     });
 
-Lu                    processedCount++;
+                    processedCount++;
                     var pct = Math.round((processedCount / total) * 100);
                     progressBar.style.width = pct + '%';
                     progressText.textContent = 'Đang xử lý: ' + processedCount + ' / ' + total + ' câu (' + pct + '%)';
