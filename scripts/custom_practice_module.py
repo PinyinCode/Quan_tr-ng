@@ -392,7 +392,7 @@ def build_custom_practice_js():
         autoResizeTextarea();
     }
     inputArea.addEventListener('input', updateCharCount);
-    setTimeout(autoResizeText, 100);
+    setTimeout(autoResizeTextarea, 100);
 
     switchBtn.addEventListener('click', function() {
         if (currentMode === 'vi2zh') {
