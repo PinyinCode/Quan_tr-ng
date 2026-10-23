@@ -340,6 +340,8 @@ def build_custom_practice_html():
 </div>
 """
 
+
+
 def build_custom_practice_js():
     return r"""
 (function() {
@@ -366,26 +368,11 @@ def build_custom_practice_js():
 
     var spellContainer = document.getElementById('cpSpellContainer');
     var spellChips = document.getElementById('cpSpellChips');
-    var fixAllBtn = document.getElementById('cpFixAllBtn');
 
     var myTokensUsed = 0;
     var myTokenQuota = 20000;
     var myBonusTokens = 0;
     var currentUser = null;
-
-    // ⭐ TỪ ĐIỂN TỪ VIẾT TẮT VÀ LỖI CHÍNH TẢ PHỔ BIẾN
-    var commonTyposVi = {
-        'ttxvn': 'Thông tấn xã Việt Nam',
-        'tp.hcm': 'Thành phố Hồ Chí Minh', 'tphcm': 'Thành phố Hồ Chí Minh',
-        'ubnd': 'Ủy ban nhân dân', 'hđnd': 'Hội đồng nhân dân',
-        'vtv': 'Đài Truyền hình Việt Nam', 'vov': 'Đài Tiếng nói Việt Nam',
-        'chhsga': 'châu', 'hhsg': 'hàng', 'kkhu': 'khu',
-        'ko': 'không', 'hok': 'không', 'kg': 'không', 'k': 'không', 'kh': 'không',
-        'dc': 'được', 'đc': 'được', 'nhg': 'nhưng', 'đg': 'đang',
-        'j': 'gì', 'rùi': 'rồi', 'ik': 'đi', 'bit': 'biết', 'bít': 'biết',
-        'mng': 'mọi người', 'mn': 'mọi người', 'tks': 'cảm ơn', 'vs': 'với',
-        'ntn': 'như thế nào'
-    };
 
     function initTokenState() {
         var user = null;
@@ -444,7 +431,7 @@ def build_custom_practice_js():
             startBtn.style.display = 'flex';
             buyTokenBtn.style.display = 'none';
             inputArea.disabled = false;
-            inputArea.placeholder = currentMode === 'vi2zh' ? 'Nhập văn bản tiếng Việt vào đây... (không nên viết tắt để tiết kiệm quota)' : 'Dán văn bản tiếng Trung vào đây...';
+            inputArea.placeholder = currentMode === 'vi2zh' ? 'Nhập văn bản tiếng Việt vào đây...' : 'Dán văn bản tiếng Trung vào đây...';
         }
     }
 
@@ -466,32 +453,45 @@ def build_custom_practice_js():
         }
     }
 
-    // ⭐ BẮT LỖI VÀ CHUYỂN ĐỔI CHÍNH TẢ TRÊN CLIENT
-    function getSpellingTypos() {
-        if (currentMode !== 'vi2zh') return {};
+    // ⭐ THUẬT TOÁN TỰ ĐỘNG CHỈ RA TỪ NGHI NGỜ (KHÔNG CẦN KHAI BÁO CỨNG)
+    function findSuspiciousWords() {
+        if (currentMode !== 'vi2zh') return [];
         var text = inputArea.value;
-        var words = text.match(/\b[A-Za-zÀ-ỹ.]+\b/g) || [];
-        var found = {};
+        var words = text.match(/\b[A-Za-zÀ-ỹ]+\b/g) || [];
+        var suspicious = [];
+        
+        // Các phụ âm kép hợp lệ trong tiếng Việt
+        var validClusters = ['ch', 'gh', 'kh', 'nh', 'ph', 'th', 'tr', 'ng', 'gi', 'qu', 'gh', 'th'];
+
         for (var i = 0; i < words.length; i++) {
-            var w = words[i].toLowerCase();
-            if (commonTyposVi[w]) found[w] = commonTyposVi[w];
+            var w = words[i];
+            var wLower = w.toLowerCase();
+
+            // 1. Kiểm tra lặp ký tự bất thường (ví dụ: hhgg, kk, gg, bb, dd, cc, vv, mm, pp, ss, ff)
+            var hasInvalidDouble = /(hh|gg|kk|bb|dd|cc|vv|mm|pp|ss|ff|zz|jj|ww|qq|xx)/.test(wLower);
+            
+            // 2. Kiểm tra từ quá ngắn không có nguyên âm tiếng Việt (trừ các từ viết tắt hợp lệ ngắn)
+            var vowelsRegex = /[aeiouyàáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/i;
+            var hasVowel = vowelsRegex.test(wLower);
+
+            // Nếu dính lỗi lặp ký tự hoặc từ dài > 1 ký tự mà không có nguyên âm -> Đánh dấu là từ nghi ngờ
+            if (hasInvalidDouble || (!hasVowel && w.length > 1)) {
+                if (suspicious.indexOf(w) === -1) {
+                    suspicious.push(w);
+                }
+            }
         }
-        return found;
+        return suspicious;
     }
 
     function checkSpellingSuggestions() {
-        var foundTypos = getSpellingTypos();
-        var keys = Object.keys(foundTypos);
-        if (keys.length > 0) {
+        var suspiciousWords = findSuspiciousWords();
+        if (suspiciousWords.length > 0) {
             spellChips.innerHTML = '';
-            keys.forEach(function(wrongWord) {
-                var correctWord = foundTypos[wrongWord];
+            suspiciousWords.forEach(function(word) {
                 var chip = document.createElement('div');
                 chip.className = 'cp-spell-chip';
-                chip.innerHTML = '"' + wrongWord + '" ➜ <b>' + correctWord + '</b>';
-                chip.addEventListener('click', function() {
-                    replaceTypo(wrongWord, correctWord);
-                });
+                chip.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Nghi ngờ: <b>' + word + '</b>';
                 spellChips.appendChild(chip);
             });
             spellContainer.classList.add('show');
@@ -499,19 +499,6 @@ def build_custom_practice_js():
             spellContainer.classList.remove('show');
         }
     }
-
-    function replaceTypo(wrongWord, correctWord) {
-        var regex = new RegExp('\\b' + wrongWord + '\\b', 'gi');
-        inputArea.value = inputArea.value.replace(regex, correctWord);
-        updateCharCount();
-    }
-
-    fixAllBtn.addEventListener('click', function() {
-        var foundTypos = getSpellingTypos();
-        Object.keys(foundTypos).forEach(function(wrongWord) {
-            replaceTypo(wrongWord, foundTypos[wrongWord]);
-        });
-    });
 
     function updateCharCount() {
         var len = inputArea.value.length;
@@ -541,7 +528,7 @@ def build_custom_practice_js():
             currentMode = 'vi2zh';
             labelZh.classList.remove('active');
             labelVi.classList.add('active');
-            if (!inputArea.disabled) inputArea.placeholder = 'Nhập văn bản tiếng Việt vào đây... (không nên viết tắt)';
+            if (!inputArea.disabled) inputArea.placeholder = 'Nhập văn bản tiếng Việt vào đây...';
         }
         inputArea.value = '';
         updateCharCount();
@@ -574,7 +561,6 @@ def build_custom_practice_js():
         return result;
     }
 
-    // ⭐ CHẶN & YÊU CẦU CHUẨN HÓA TRƯỚC KHIN DÙNG QUOTA
     startBtn.addEventListener('click', async function() {
         if (!currentUser) { alert('Vui lòng đăng nhập!'); return; }
         if (currentUser.role !== 'admin' && !currentUser.isPermanent && (myTokenQuota + myBonusTokens - myTokensUsed <= 0)) { 
@@ -582,14 +568,11 @@ def build_custom_practice_js():
             return; 
         }
 
-        // Tự động chuyển tất cả các từ viết tắt sang từ chuẩn trước khi tốn quota
-        var foundTypos = getSpellingTypos();
-        var keys = Object.keys(foundTypos);
-        if (keys.length > 0) {
-            var confirmFix = confirm('Phát hiện ' + keys.length + ' từ viết tắt/chính tả (VD: ' + keys.join(', ') + ').\n\nHệ thống sẽ TỰ ĐỘNG SỬA THÀNH TỪ CHUẨN để tiết kiệm token và dịch chính xác nhất!');
-            if (confirmFix) {
-                keys.forEach(function(k) { replaceTypo(k, foundTypos[k]); });
-            }
+        // ⭐ CHẶN & CẢNH BÁO NẾU CÒN TỪ NGHI NGỜ TRƯỚC KHI DÙNG QUOTA
+        var suspiciousWords = findSuspiciousWords();
+        if (suspiciousWords.length > 0) {
+            var proceed = confirm('Hệ thống phát hiện các từ nghi ngờ gõ sai/dính phím: (' + suspiciousWords.join(', ') + ').\n\nBạn có chắc chắn muốn tiếp tục dịch không?');
+            if (!proceed) return; // Dừng lại, không gọi API, tiết kiệm 100% Quota
         }
 
         var rawText = inputArea.value.trim();
@@ -644,7 +627,7 @@ def build_custom_practice_js():
                         subject: 'Custom'
                     });
 
-                    processedCount++;
+Lu                    processedCount++;
                     var pct = Math.round((processedCount / total) * 100);
                     progressBar.style.width = pct + '%';
                     progressText.textContent = 'Đang xử lý: ' + processedCount + ' / ' + total + ' câu (' + pct + '%)';
