@@ -38856,41 +38856,25 @@ Area       .value;
         if (!window.pinyinPro) return text;
 
         try {
-            // Sử dụng type 'all' để nó tự động tách từ ghép và trả về mảng object
-            var result = window.pinyinPro.pinyin(text, { 
+            // Lấy pinyin với separator: '' (nối liền tất cả các chữ Hán)
+            var rawPinyin = window.pinyinPro.pinyin(text, { 
                 toneType: 'symbol', 
-                type: 'all'
+                separator: '' 
             });
-
-            if (!Array.isArray(result)) {
-                return window.pinyinPro.pinyin(text, { toneType: 'symbol', separator: ' ' });
-            }
-
-            var parts = [];
-            for (var i = 0; i < result.length; i++) {
-                var item = result[i];
-                if (item.isZh) {
-                    // Nối liền pinyin của cùng 1 từ
-                    parts.push(item.pinyin);
-                } else {
-                    // Dấu câu, số, tiếng Anh -> thêm khoảng trắng
-                    parts.push(' ' + item.origin + ' ');
-                }
-            }
             
-            // Làm sạch khoảng trắng thừa
-            return parts.join('').replace(/\s+/g, ' ').trim();
+            // Vì nối liền hết nên ta cần chèn lại khoảng trắng ở các dấu câu và số
+            // Dùng Regex để chèn khoảng trắng xung quanh các ký tự không phải là pinyin
+            var formatted = rawPinyin
+                .replace(/([a-zA-Zàáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]+)/gi, ' $1 ') // Thêm khoảng trắng quanh từ pinyin
+                .replace(/\s+/g, ' ') // Gộp nhiều khoảng trắng thành 1
+                .replace(/\s([.,!?;:。，！？；：])/g, '$1') // Xóa khoảng trắng trước dấu câu
+                .trim();
 
+            return formatted;
         } catch (e) {
-            console.error('[getSmartPinyin] Error:', e);
-            try {
-                return window.pinyinPro.pinyin(text, { toneType: 'symbol', separator: ' ' });
-            } catch (e2) {
-                return text;
-            }
+            return window.pinyinPro.pinyin(text, { toneType: 'symbol', separator: ' ' });
         }
     }
-
     async function fetchTranslate(text, mode) {
         var translated = '';
         var tokensUsed = 0;
