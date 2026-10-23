@@ -38338,7 +38338,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         });
     }
 
-    // ⭐ HÀM GỌI QUA CLOUDFLARE WORKER PROXY (Bảo mật & Không lo CORS)
+    // ⭐ HÀM GỌI QUA CLOUDFLARE WORKER PROXY
     async function fetchTranslate(text, mode) {
         var translated = '';
         var pinyin = '';
@@ -38347,10 +38347,10 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             var source = mode === 'zh2vi' ? 'zh-CN' : 'vi';
             var target = mode === 'zh2vi' ? 'vi' : 'zh-CN';
             
-            // Thêm timeout 10s để tránh treo nút bấm nếu mạng lỗi
             var controller = new AbortController();
-            var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+            var timeoutId = setTimeout(function() { controller.abort(); }, 15000);
 
+            // Dùng fetch gửi POST
             var res = await fetch(WORKER_URL, {
                 method: 'POST',
                 headers: {
@@ -38366,21 +38366,25 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             
             clearTimeout(timeoutId);
             
-            if (!res.ok) throw new Error('Lỗi kết nối Proxy');
+            // Nếu Server trả về lỗi (ví dụ 500), đọc xem lỗi là gì
+            if (!res.ok) {
+                var errData = await res.text();
+                throw new Error('HTTP ' + res.status + ': ' + errData);
+            }
             
             var json = await res.json();
-            if (json.error) throw new Error(json.error);
+            if (json.error) throw new Error('Server báo: ' + json.error);
             
             translated = json.translated;
 
-            // Tạo Pinyin nếu có cài đặt thư viện
             if (window.pinyinPro && translated) {
                 pinyin = window.pinyinPro.pinyin(translated, { toneType: 'symbol' });
             }
             
         } catch(e) {
-            console.warn('[CP] Translate Proxy error:', e);
-            translated = '[Lỗi dịch - Vui lòng thử lại]';
+            console.warn('[CP] Translate Proxy error:', e.message);
+            // Hiển thị lỗi thật ra màn hình để bạn biết đường sửa
+            translated = '[Lỗi: ' + e.message + ']'; 
         }
         
         return { translated: translated, pinyin: pinyin };
