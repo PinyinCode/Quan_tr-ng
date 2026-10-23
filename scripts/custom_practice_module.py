@@ -586,22 +586,33 @@ setTimeout(function() {
         function findSuspiciousWords() {
         if (currentMode !== 'vi2zh') return [];
         var text = inputArea.value;
-        // ⭐ Chỉ kiểm tra các từ có độ dài từ 3 ký tự trở lên để tránh bắt nhầm từ ngắn, viết tắt
-        var words = text.match(/\b[A-Za-zÀ-ỹ]{3,}\b/g) || [];
+        
+        // Tách từ dựa trên khoảng trắng, sau đó lọc bỏ dấu câu
+        var rawWords = text.split(/\s+/);
         var suspicious = [];
+        
+        // Danh sách từ viết tắt / từ ngắn hợp lệ không cần cảnh báo
+        var whitelist = ['tr', 'và', 'của', 'cho', 'với', 'để', 'là', 'có', 'không', 'những', 'các', 'được'];
 
-        for (var i = 0; i < words.length; i++) {
-            var w = words[i];
+        for (var i = 0; i < rawWords.length; i++) {
+            // Xóa dấu câu ở 2 đầu từ (VD: "trợ," -> "trợ")
+            var w = rawWords[i].replace(/^[.,!?;:"'()\[\]{}]+|[.,!?;:"'()\[\]{}]+$/g, '');
+            if (!w || w.length < 3) continue; // Bỏ qua từ quá ngắn
+            
+            if (whitelist.includes(w.toLowerCase())) continue;
+
             var wLower = w.toLowerCase();
             
-            // 1. Phát hiện kẹt phím (lặp 3 ký tự giống nhau liên tiếp trở lên, VD: hhh, aaa)
+            // 1. Phát hiện kẹt phím (lặp 3 ký tự giống nhau liên tiếp, VD: hhh, aaa)
             var hasTripleChar = /(.)\1{2,}/.test(wLower);
             
-            // 2. Phát hiện chuỗi dài từ 3 ký tự nhưng hoàn toàn không có nguyên âm (gõ phím bừa)
-            var vowelsRegex = /[aeiouyàáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/i;
+            // 2. Phát hiện gõ phím bừa: Từ dài >= 4 ký tự nhưng KHÔNG CÓ NGUYÊN ÂM (kể cả tiếng Việt có dấu)
+            // Bổ sung đầy đủ nguyên âm tiếng Việt có dấu vào regex
+            var vowelsRegex = /[aeiouyàáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/i;
             var hasVowel = vowelsRegex.test(wLower);
 
-            if (hasTripleChar || !hasVowel) {
+            // Chỉ báo lỗi nếu không có nguyên âm VÀ độ dài từ 4 ký tự trở lên (tránh bắt nhầm "tr", "ng", "k")
+            if (hasTripleChar || (!hasVowel && w.length >= 4)) {
                 if (suspicious.indexOf(w) === -1) suspicious.push(w);
             }
         }
