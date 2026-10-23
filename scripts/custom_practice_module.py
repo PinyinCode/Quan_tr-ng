@@ -1,120 +1,90 @@
 # -*- coding: utf-8 -*-
 r"""
 custom_practice_module.py - Khu vực Luyện tập Tự do (Hiển thị sẵn)
-Hỗ trợ: Dịch 2 chiều, tự động giãn chiều cao, tự động chia nhỏ để dịch.
+Tính năng:
+- Dịch 2 chiều (Trung <-> Việt) qua Google Translate.
+- Tự động tách câu thông minh, chia nhỏ câu quá dài.
+- Tự động giãn chiều cao ô nhập liệu.
+- Không giới hạn tổng ký tự (chỉ giới hạn mỗi câu 5000 ký tự).
+- Tự động lấy Pinyin (từ ghép) qua pinyin-pro.
 """
 
 def build_custom_practice_css():
     return r"""
 /* ═══════════════════════════════════════════════════════════ */
-/* KHU VỰC LUYỆN TẬP TỰ DO - HIỂN THỊ SẴN TRÊN TRANG CHỦ      */
+/* KHU VỰC LUYỆN TẬP TỰ DO - GIAO DIỆN TINH TẾ                */
 /* ═══════════════════════════════════════════════════════════ */
 .cp-section {
     background: var(--surface);
     border: 1.5px solid var(--border);
     border-radius: 16px;
     padding: 1.25rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
     box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
-    gap: .85rem;
+    gap: 1rem;
     position: relative;
-    overflow: hidden;
-}
-.cp-section::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
 }
 
+/* Header */
 .cp-section-header {
     display: flex;
     align-items: center;
-    gap: .6rem;
+    justify-content: space-between;
+    gap: .5rem;
+}
+.cp-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
     font-size: 1rem;
     font-weight: 800;
     color: var(--text);
 }
-.cp-section-header i {
+.cp-title-wrap i {
     color: var(--primary);
     font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, rgba(99,102,241,.15), rgba(168,85,247,.15));
 }
-.cp-btn-reset {
+
+/* Nút đổi chiều (Gộp 1 nút) */
+.cp-switch-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
     padding: .35rem .8rem;
     border-radius: 50px;
-    border: 1.5px solid var(--border);
-    background: var(--surface);
-    color: var(--text-2);
+    border: 1.5px solid rgba(99, 102, 241, 0.2);
+    background: rgba(99, 102, 241, 0.05);
+    color: var(--primary);
     font-size: .75rem;
-    font-weight: 700;
+    font-weight: 800;
     font-family: inherit;
     cursor: pointer;
-    transition: .15s;
-    margin-left: auto;
-    display: inline-flex;
-    align-items: center;
-    gap: .3rem;
+    transition: all .25s cubic-bezier(.34,1.56,.64,1);
 }
-.cp-btn-reset:hover {
-    background: var(--surface-2);
-    color: var(--primary);
-    border-color: var(--primary);
+.cp-switch-toggle:hover {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.4);
+    transform: scale(1.03);
 }
-
-/* Nút chuyển đổi chiều dịch */
-.cp-switch-row {
-    display: flex;
-    gap: .5rem;
-    background: var(--surface-2);
-    padding: .35rem;
-    border-radius: 50px;
-    width: fit-content;
-    max-width: 100%;
+.cp-switch-toggle i {
+    font-size: .8rem;
+    transition: transform .3s;
 }
-.cp-switch-btn {
-    padding: .4rem 1rem;
-    border-radius: 50px;
-    border: none;
-    background: transparent;
-    color: var(--text-3);
-    font-weight: 700;
-    font-size: .82rem;
-    cursor: pointer;
-    transition: .2s;
-    font-family: inherit;
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-}
-.cp-switch-btn.active {
-    background: var(--primary);
-    color: #fff;
-    box-shadow: 0 2px 6px rgba(37,99,235,.3);
-}
-.cp-switch-btn:hover:not(.active) {
-    color: var(--primary);
+.cp-switch-toggle.mode-vi2zh i {
+    transform: rotate(180deg);
 }
 
-/* Ô nhập liệu tự giãn */
+/* Ô nhập liệu */
 .cp-input-wrapper {
     display: flex;
     flex-direction: column;
-    gap: .3rem;
+    gap: .4rem;
 }
 .cp-textarea {
     width: 100%;
-    padding: .85rem;
+    padding: .85rem 1rem;
     border-radius: 12px;
     border: 1.5px solid var(--border);
     background: var(--surface-2);
@@ -123,52 +93,52 @@ def build_custom_practice_css():
     font-size: 1rem;
     resize: none;
     overflow-y: hidden;
-    min-height: 46px;
-    max-height: 250px;
-    transition: height 0.1s ease, border-color .15s, box-shadow .15s;
+    min-height: 52px;
+    max-height: 350px;
+    transition: all 0.2s ease;
     line-height: 1.5;
 }
 .cp-textarea:focus {
     border-color: var(--primary);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
     background: var(--surface);
 }
 .cp-char-count {
     font-size: .72rem;
     color: var(--text-3);
     text-align: right;
-}
-.cp-char-count.over {
-    color: var(--danger);
-    font-weight: 700;
+    padding-right: .2rem;
 }
 
-/* Nút bắt đầu */
+/* Nút Bắt đầu */
 .cp-btn-start {
     padding: .75rem;
     border-radius: 12px;
     border: none;
-    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    background: var(--primary);
     color: #fff;
     font-weight: 800;
     font-size: .9rem;
     cursor: pointer;
-    transition: .2s;
+    transition: all .2s;
     font-family: inherit;
-    box-shadow: 0 4px 12px rgba(124,58,237,.35);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: .5rem;
 }
 .cp-btn-start:hover:not(:disabled) { 
-    transform: translateY(-1px); 
-    box-shadow: 0 6px 18px rgba(124,58,237,.5); 
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
 }
 .cp-btn-start:disabled { 
-    opacity: 0.7; 
+    opacity: 0.6; 
     cursor: not-allowed; 
+    box-shadow: none;
+    transform: none;
 }
 
 /* Thanh tiến trình */
@@ -176,17 +146,17 @@ def build_custom_practice_css():
     display: none;
     flex-direction: column;
     gap: .4rem;
+    margin-top: .5rem;
 }
 .cp-progress-wrap.show { display: flex; }
 .cp-progress-text {
-    font-size: .78rem;
+    font-size: .75rem;
     color: var(--text-3);
     text-align: center;
-    font-weight: 600;
 }
 .cp-progress-bar-bg {
     width: 100%;
-    height: 8px;
+    height: 6px;
     background: var(--surface-2);
     border-radius: 50px;
     overflow: hidden;
@@ -194,17 +164,16 @@ def build_custom_practice_css():
 .cp-progress-bar {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #6366f1, #a855f7);
+    background: var(--primary);
     transition: width .3s ease;
     border-radius: 50px;
 }
 
 @media (max-width: 500px) {
     .cp-section { padding: 1rem; border-radius: 14px; }
-    .cp-section-header { font-size: .92rem; }
-    .cp-btn-reset { font-size: .7rem; padding: .3rem .65rem; }
-    .cp-switch-btn { padding: .35rem .75rem; font-size: .75rem; }
-    .cp-textarea { font-size: .92rem; padding: .7rem; }
+    .cp-title-wrap { font-size: .92rem; }
+    .cp-switch-toggle { font-size: .7rem; padding: .3rem .6rem; }
+    .cp-textarea { font-size: .92rem; padding: .75rem .85rem; max-height: 250px; }
     .cp-btn-start { font-size: .85rem; padding: .65rem; }
 }
 """
@@ -213,26 +182,20 @@ def build_custom_practice_html():
     return r"""
 <div class="cp-section" id="cpSection">
     <div class="cp-section-header">
-        <i class="fas fa-pen-fancy"></i>
-        <span>Luyện tập văn bản tự do</span>
-        <button class="cp-btn-reset" id="cpResetBtn" type="button" title="Làm mới">
-            <i class="fas fa-redo"></i> Làm mới
-        </button>
-    </div>
-
-    <div class="cp-switch-row">
-        <button class="cp-switch-btn active" data-mode="zh2vi" type="button">
-            <i class="fas fa-arrow-right"></i> Trung → Việt
-        </button>
-        <button class="cp-switch-btn" data-mode="vi2zh" type="button">
-            <i class="fas fa-arrow-left"></i> Việt → Trung
+        <div class="cp-title-wrap">
+            <i class="fas fa-pen-fancy"></i>
+            <span>Luyện tập văn bản tự do</span>
+        </div>
+        <button class="cp-switch-toggle" id="cpSwitchBtn" type="button" title="Đổi chiều dịch">
+            <i class="fas fa-arrow-right"></i>
+            <span id="cpSwitchLabel">Trung → Việt</span>
         </button>
     </div>
 
     <div class="cp-input-wrapper">
         <textarea class="cp-textarea" id="cpInputZh" rows="1"
-            placeholder="Dán văn bản tiếng Trung vào đây... (tối đa 5000 ký tự)"></textarea>
-        <div class="cp-char-count" id="cpCharCount">0 / 5000</div>
+            placeholder="Dán văn bản tiếng Trung vào đây..."></textarea>
+        <div class="cp-char-count" id="cpCharCount">0 ký tự</div>
     </div>
 
     <button class="cp-btn-start" id="cpStartBtn" type="button">
@@ -252,24 +215,24 @@ def build_custom_practice_js():
     return r"""
 (function() {
     'use strict';
-    var MAX_CHARS = 5000;
+    var MAX_SENTENCE_LENGTH = 5000; // Giới hạn cho MỖI CÂU
     var BATCH_SIZE = 10;
     var currentMode = 'zh2vi';
 
     var inputArea = document.getElementById('cpInputZh');
     var charCount = document.getElementById('cpCharCount');
     var startBtn = document.getElementById('cpStartBtn');
-    var resetBtn = document.getElementById('cpResetBtn');
-    var switchBtns = document.querySelectorAll('.cp-switch-btn');
+    var switchBtn = document.getElementById('cpSwitchBtn');
+    var switchLabel = document.getElementById('cpSwitchLabel');
     var progressWrap = document.getElementById('cpProgressWrap');
     var progressBar = document.getElementById('cpProgressBar');
     var progressText = document.getElementById('cpProgressText');
 
-    // ⭐ 1. TỰ ĐỘNG GIÃN CHIỀU CAO Ô NHẬP LIỆU
+    // ⭐ 1. TỰ ĐỘNG GIÃN CHIỀU CAO
     function autoResizeTextarea() {
         inputArea.style.height = 'auto';
         var newHeight = inputArea.scrollHeight;
-        var maxHeight = 250; // Khớp với max-height trong CSS
+        var maxHeight = 350;
         if (newHeight > maxHeight) {
             inputArea.style.height = maxHeight + 'px';
             inputArea.style.overflowY = 'auto';
@@ -279,67 +242,84 @@ def build_custom_practice_js():
         }
     }
 
-    // ⭐ 2. ĐẾM KÝ TỰ + CẮT BỚT NẾU VƯỢT QUÁ
+    // ⭐ 2. ĐẾM KÝ TỰ
     function updateCharCount() {
         var len = inputArea.value.length;
-        charCount.textContent = len + ' / ' + MAX_CHARS;
-        
-        if (len > MAX_CHARS) {
-            charCount.classList.add('over');
-            inputArea.value = inputArea.value.substring(0, MAX_CHARS);
-            charCount.textContent = MAX_CHARS + ' / ' + MAX_CHARS + ' (Đã cắt bớt)';
-        } else {
-            charCount.classList.remove('over');
-        }
+        charCount.textContent = len.toLocaleString('vi-VN') + ' ký tự';
         autoResizeTextarea();
     }
     inputArea.addEventListener('input', updateCharCount);
-    setTimeout(autoResizeTextarea, 100); // Chạy lần đầu
+    setTimeout(autoResizeTextarea, 100);
 
-    // ⭐ 3. CHUYỂN ĐỔI CHIỀU DỊCH (Trung -> Việt / Việt -> Trung)
-    switchBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var mode = this.dataset.mode;
-            if (mode === currentMode) return;
-            
-            currentMode = mode;
-            switchBtns.forEach(function(b) { b.classList.remove('active'); });
-            this.classList.add('active');
-            
-            if (currentMode === 'zh2vi') {
-                inputArea.placeholder = 'Dán văn bản tiếng Trung vào đây... (tối đa 5000 ký tự)';
-            } else {
-                inputArea.placeholder = 'Nhập văn bản tiếng Việt vào đây... (hệ thống sẽ dịch sang tiếng Trung)';
-            }
-            inputArea.value = '';
-            updateCharCount();
-        });
-    });
-
-    // ⭐ 4. NÚT "LÀM MỚI"
-    resetBtn.addEventListener('click', function() {
+    // ⭐ 3. NÚT CHUYỂN ĐỔI CHIỀU DỊCH
+    switchBtn.addEventListener('click', function() {
+        if (currentMode === 'zh2vi') {
+            currentMode = 'vi2zh';
+            switchLabel.textContent = 'Việt → Trung';
+            switchBtn.classList.add('mode-vi2zh');
+            inputArea.placeholder = 'Nhập văn bản tiếng Việt vào đây... (hệ thống sẽ dịch sang tiếng Trung)';
+        } else {
+            currentMode = 'zh2vi';
+            switchLabel.textContent = 'Trung → Việt';
+            switchBtn.classList.remove('mode-vi2zh');
+            inputArea.placeholder = 'Dán văn bản tiếng Trung vào đây...';
+        }
         inputArea.value = '';
         updateCharCount();
-        progressWrap.classList.remove('show');
-        startBtn.disabled = false;
-        startBtn.innerHTML = '<i class="fas fa-play"></i> Bắt đầu luyện tập';
-        setTimeout(autoResizeTextarea, 50);
-        
-        // Reset về tab tổng hợp nếu đang ở custom
-        if (window.__customPracticeActive) {
-            window.__customPracticeActive = false;
-            if (typeof DATASET_REGISTRY !== 'undefined' && DATASET_REGISTRY['tonghop']) {
-                if (typeof window.__switchRawData === 'function') {
-                    window.__switchRawData('tonghop');
-                }
-                if (typeof buildFilters === 'function') buildFilters();
-                if (typeof applyFilter === 'function') applyFilter();
-                if (typeof updateResultCount === 'function') updateResultCount();
-            }
-        }
     });
 
-    // ⭐ 5. NÚT "BẮT ĐẦU LUYỆN TẬP"
+    // ⭐ 4. HÀM TÁCH CÂU THÔNG MINH
+    function splitIntoSentences(text, mode) {
+        var sentences = [];
+        
+        if (mode === 'zh2vi') {
+            var rawSentences = text.split(/(?<=[。！？!?\n])/g);
+            rawSentences.forEach(function(s) {
+                s = s.trim();
+                if (s && /[\u4e00-\u9fa5]/.test(s)) {
+                    sentences.push(s);
+                }
+            });
+        } else {
+            var textForSplit = text.replace(/\.\.\./g, '___ELLIPSIS___');
+            textForSplit = textForSplit.replace(/(\d)\.(\d)/g, '$1___DOT___$2');
+            
+            var rawSentences = textForSplit.split(/(?<=[.!?\n])/g);
+            rawSentences.forEach(function(s) {
+                s = s.trim();
+                if (s) {
+                    s = s.replace(/___ELLIPSIS___/g, '...').replace(/___DOT___/g, '.');
+                    sentences.push(s);
+                }
+            });
+        }
+
+        // Chia nhỏ câu quá dài
+        var finalSentences = [];
+        sentences.forEach(function(s) {
+            if (s.length > MAX_SENTENCE_LENGTH) {
+                var remaining = s;
+                while (remaining.length > MAX_SENTENCE_LENGTH) {
+                    var chunk = remaining.substring(0, MAX_SENTENCE_LENGTH);
+                    var lastSpace = chunk.lastIndexOf(' ');
+                    if (lastSpace === -1 || lastSpace < MAX_SENTENCE_LENGTH * 0.8) {
+                        lastSpace = MAX_SENTENCE_LENGTH;
+                    }
+                    finalSentences.push(remaining.substring(0, lastSpace).trim());
+                    remaining = remaining.substring(lastSpace).trim();
+                }
+                if (remaining.length > 0) {
+                    finalSentences.push(remaining);
+                }
+            } else {
+                finalSentences.push(s);
+            }
+        });
+
+        return finalSentences;
+    }
+
+    // ⭐ 5. NÚT BẮT ĐẦU
     startBtn.addEventListener('click', async function() {
         var rawText = inputArea.value.trim();
         if (!rawText) {
@@ -352,17 +332,8 @@ def build_custom_practice_js():
         progressWrap.classList.add('show');
         progressBar.style.width = '0%';
 
-        // Tách câu theo chế độ
-        var sentences = [];
-        if (currentMode === 'zh2vi') {
-            sentences = rawText.split(/(?<=[。！？!?\n])/g)
-                .map(function(s) { return s.trim(); })
-                .filter(function(s) { return s.length > 0 && /[\u4e00-\u9fa5]/.test(s); });
-        } else {
-            sentences = rawText.split(/(?<=[.!?\n])/g)
-                .map(function(s) { return s.trim(); })
-                .filter(function(s) { return s.length > 0; });
-        }
+        // Tách câu
+        var sentences = splitIntoSentences(rawText, currentMode);
 
         if (sentences.length === 0) {
             alert('Không tìm thấy câu hợp lệ!');
@@ -372,10 +343,12 @@ def build_custom_practice_js():
             return;
         }
 
+        progressText.textContent = 'Tìm thấy ' + sentences.length + ' câu. Đang dịch...';
+
         // Nạp pinyin-pro
         await loadPinyinPro();
 
-        // Dịch từng đợt
+        // Dịch
         var total = sentences.length;
         var translatedCount = 0;
         var customData = [];
@@ -417,10 +390,9 @@ def build_custom_practice_js():
             if (batchEnd < total) await new Promise(function(r) { setTimeout(r, 500); });
         }
 
-        // Sắp xếp lại
         customData.sort(function(a, b) { return parseInt(a.stt) - parseInt(b.stt); });
 
-        // Đưa vào hệ thống luyện tập
+        // Kích hoạt hệ thống luyện tập
         if (typeof window.activateCustomPracticeMode === 'function') {
             window.activateCustomPracticeMode(customData);
         } else {
@@ -444,7 +416,6 @@ def build_custom_practice_js():
         }, 1500);
     });
 
-    // ⭐ HÀM NẠP THƯ VIỆN PINYIN
     function loadPinyinPro() {
         if (window.pinyinPro) return Promise.resolve();
         return new Promise(function(resolve, reject) {
@@ -456,7 +427,6 @@ def build_custom_practice_js():
         });
     }
 
-    // ⭐ HÀM GỌI GOOGLE TRANSLATE
     async function fetchTranslate(text, mode) {
         var translated = '';
         var pinyin = '';
@@ -466,14 +436,14 @@ def build_custom_practice_js():
                 var gtJson = await gtRes.json();
                 translated = gtJson[0].map(function(item) { return item[0]; }).join('');
                 if (window.pinyinPro) {
-                    pinyin = window.pinyinPro.pinyin(text, { toneType: 'symbol', type: 'array' }).join(' ');
+                    pinyin = window.pinyinPro.pinyin(text, { toneType: 'symbol' });
                 }
             } else {
                 var gtRes2 = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=zh-CN&dt=t&q=' + encodeURIComponent(text));
                 var gtJson2 = await gtRes2.json();
                 translated = gtJson2[0].map(function(item) { return item[0]; }).join('');
                 if (window.pinyinPro) {
-                    pinyin = window.pinyinPro.pinyin(translated, { toneType: 'symbol', type: 'array' }).join(' ');
+                    pinyin = window.pinyinPro.pinyin(translated, { toneType: 'symbol' });
                 }
             }
         } catch(e) {
