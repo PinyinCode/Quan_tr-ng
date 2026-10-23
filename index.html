@@ -6,6 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
@@ -13453,19 +13456,7 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-    <meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-    <meta name="author" content="Tuhoctiengtrung.org">
-    <link rel="canonical" href="https://tuhoctiengtrung.org/">
-    <meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-    <meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-    <meta property="og:url" content="https://tuhoctiengtrung.org/">
-    <meta property="og:type" content="website">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
-    <meta name="theme-color" content="#7c3aed">
-  </head>
+</head>
 <body>
 
 <div class="page-wrap">
@@ -13624,7 +13615,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
@@ -38407,22 +38398,44 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         var pinyin = '';
         try {
             if (mode === 'zh2vi') {
-                var gtRes = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=vi&dt=t&q=' + encodeURIComponent(text));
+                // ⭐ Đã đổi endpoint sang clients5 (hỗ trợ CORS tốt hơn trên Chrome/Cốc Cốc)
+                var url = 'https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=zh-CN&tl=vi&q=' + encodeURIComponent(text);
+                var gtRes = await fetch(url);
                 var gtJson = await gtRes.json();
-                translated = gtJson[0].map(function(item) { return item[0]; }).join('');
+                
+                // Xử lý kết quả trả về
+                if (Array.isArray(gtJson) && Array.isArray(gtJson[0])) {
+                    translated = gtJson[0].map(function(item) { return item[0]; }).join('');
+                } else if (Array.isArray(gtJson) && gtJson[0]) {
+                    translated = gtJson[0];
+                } else {
+                    translated = gtJson;
+                }
+                
                 if (window.pinyinPro) {
                     pinyin = window.pinyinPro.pinyin(text, { toneType: 'symbol' });
                 }
             } else {
-                var gtRes2 = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=zh-CN&dt=t&q=' + encodeURIComponent(text));
+                // ⭐ Đã đổi endpoint cho chiều Việt -> Trung
+                var url2 = 'https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=vi&tl=zh-CN&q=' + encodeURIComponent(text);
+                var gtRes2 = await fetch(url2);
                 var gtJson2 = await gtRes2.json();
-                translated = gtJson2[0].map(function(item) { return item[0]; }).join('');
+                
+                if (Array.isArray(gtJson2) && Array.isArray(gtJson2[0])) {
+                    translated = gtJson2[0].map(function(item) { return item[0]; }).join('');
+                } else if (Array.isArray(gtJson2) && gtJson2[0]) {
+                    translated = gtJson2[0];
+                } else {
+                    translated = gtJson2;
+                }
+                
                 if (window.pinyinPro) {
                     pinyin = window.pinyinPro.pinyin(translated, { toneType: 'symbol' });
                 }
             }
         } catch(e) {
             console.warn('[CP] Google Translate error:', e);
+            translated = '[Lỗi kết nối - Vui lòng thử lại]';
         }
         return { translated: translated, pinyin: pinyin };
     }
