@@ -449,6 +449,10 @@ def build_custom_practice_js():
     return r"""
 (function() {
     'use strict';
+    // Tải trước pinyinPro ngay khi web vừa load
+setTimeout(function() {
+    if (typeof loadPinyinPro === 'function') loadPinyinPro();
+}, 1000);
     var MAX_CHARS = 5000;
     var currentMode = 'vi2zh';
     var SERVER_API_URL = 'https://server-vopb.onrender.com/api/translate'; 
@@ -827,37 +831,79 @@ def build_custom_practice_js():
     }
 
     function loadPinyinPro() {
-        if (window.pinyinPro) return Promise.resolve();
-        return new Promise(function(resolve) {
-            var script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.2/dist/index.min.js';
-            script.onload = resolve;
-            script.onerror = function() { resolve(); };
-            document.head.appendChild(script);
-        });
-    }
+    // Nếu đã có sẵn thì bỏ qua
+    if (window.pinyinPro) return Promise.resolve();
+    
+    return new Promise(function(resolve) {
+        var script = document.createElement('script');
+        // Đổi sang CDN unpkg hoặc thêm fallback nếu jsdelivr lỗi
+        script.src = 'https://unpkg.com/pinyin-pro@3.18.2/dist/index.js'; 
+        script.onload = function() {
+            // pinyin-pro bản UMD thường gắn vào window.pinyinPro
+            if (!window.pinyinPro && window.pinyin) {
+                window.pinyinPro = window.pinyin; // Fallback
+            }
+            resolve();
+        };
+        script.onerror = function() {
+            console.error("Không thể tải pinyin-pro từ unpkg, thử jsdelivr...");
+            var script2 = document.createElement('script');
+            script2.src = 'https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.2/dist/index.min.js';
+            script2.onload = resolve;
+            script2.onerror = resolve; // Kệ, lỗi thì resolve để chạy tiếp
+            document.head.appendChild(script2);
+        };
+        document.head.appendChild(script);
+    });
+}
 
             function getSmartPinyin(text) {
-        if (!window.pinyinPro || !text) return '';
-        try {
-            // 1. Tách câu thành mảng các từ ghép (dùng segmentit: true)
-            var words = window.pinyinPro.pinyin(text, { type: 'array', segmentit: true });
-            
-            // 2. Với mỗi từ ghép tiếng Hán, ép các âm tiết dính liền nhau bằng separator: ''
-            var pinyinWords = words.map(function(word) {
-                if (/[\u4e00-\u9fa5]/.test(word)) {
-                    return window.pinyinPro.pinyin(word, { toneType: 'symbol', separator: '' });
-                }
-                return word; // Giữ nguyên các ký tự đặc biệt, dấu câu, khoảng trắng
-            });
-            
-            // 3. Nối các từ ghép lại bằng khoảng trắng
-            return pinyinWords.join(' ');
-        } catch (e) {
-            return window.pinyinPro.pinyin(text, { toneType: 'symbol' });
-        }
+    if (!text) return '';
+    
+    // Nếu thư viện vẫn chưa tải xong (do mạng), trả về text gốc để không bị trắng bảng
+    if (!window.pinyinPro) {
+        console.warn("PinyinPro chưa tải được, trả về text gốc");
+        return text; 
     }
 
+    try {
+        // ⭐ Tách từ ghép bằng thuộc tính mode: 'surname' hoặc segmentit ngầm định
+        // Cách này giúp 越南人 -> yuènánrén
+        var pinyinResult = window.pinyinPro.pinyin(text, { 
+            toneType: 'symbol', 
+            separator: '', 
+            type: 'string'
+        });
+        
+        // Vì separator: '' nên nó sẽ nối liền TẤT CẢ các chữ lại thành 1 chuỗi dài
+        // Ta cần chèn khoảng trắng ở các dấu câu hoặc số.
+        
+        // Cách an toàn nhất: Dùng segmentit nếu có, không thì dùng cách chia cụm cơ bản
+        if (window.pinyinPro.segmentit && window.pinyinPro.segmentit.doSegment) {
+            var segs = window.pinyinPro.segmentit.doSegment(text);
+            var parts = [];
+            segs.forEach(function(seg) {
+                if (/[\u4e00-\u9fa5]/.test(seg.w)) {
+                    parts.push(window.pinyinPro.pinyin(seg.w, { toneType: 'symbol', separator: '' }));
+                } else {
+                    parts.push(seg.w);
+                }
+            });
+            return parts.join(' ').replace(/\s+/g, ' ').trim();
+        }
+        
+        // Fallback nếu segmentit không có: Dùng pinyin với separator là khoảng trắng
+        return window.pinyinPro.pinyin(text, { toneType: 'symbol', separator: ' ' });
+
+    } catch (e) {
+        console.error('[getSmartPinyin] Error:', e);
+        try {
+            return window.pinyinPro.pinyin(text, { toneType: 'symbol', separator: ' ' });
+        } catch (e2) {
+            return text;
+        }
+    }
+}
     async function fetchTranslate(text, mode) {
         var translated = '';
         var tokensUsed = 0;
