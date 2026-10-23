@@ -279,12 +279,11 @@ def build_custom_practice_js():
     var labelVi = document.getElementById('cpLabelVi');
     
     var progressWrap = document.getElementById('cpProgressWrap');
-   ử var progressBar = document.getElementById('cpProgress lBar');
-    var progressTextý = document.getElementById('cp...ProgressText');
+    var progressBar = document.getElementById('cpProgressBar');
+    var progressText = document.getElementById('cpProgressText');
 
-    function auto';
-ResizeTextarea() {
-               inputArea.style.height = 'auto';
+    function autoResizeTextarea() {
+        inputArea.style.height = 'auto';
         var newHeight = inputArea.scrollHeight;
         var maxHeight = 300;
         if (newHeight > maxHeight) {
@@ -366,7 +365,8 @@ ResizeTextarea() {
             return;
         }
 
-        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang x startBtn.disabled = true;
+        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+        startBtn.disabled = true;
         switchBtn.style.pointerEvents = 'none';
         progressWrap.classList.add('show');
         progressBar.style.width = '0%';
@@ -502,3 +502,4 @@ ResizeTextarea() {
     }
 })();
 """
+
