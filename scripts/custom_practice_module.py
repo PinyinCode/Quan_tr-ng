@@ -334,6 +334,22 @@ def build_custom_practice_css():
 }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
+.cp-history-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all 0.2s;
+}
+.cp-history-item:hover { border-color: #a855f7; box-shadow: 0 4px 12px rgba(168,85,247,0.1); }
+.cp-history-vi { font-size: 0.9rem; color: #1e293b; font-weight: 600; }
+.cp-history-zh { font-size: 1.05rem; color: #7c3aed; font-weight: 700; }
+.cp-history-pinyin { font-size: 0.8rem; color: #64748b; font-style: italic; }
+.cp-history-time { font-size: 0.7rem; color: #94a3b8; text-align: right; margin-top: 4px; }
+
 @media (min-width: 768px) {
     .cp-btn-start, .cp-btn-buy-token { width: auto; min-width: 280px; align-self: flex-end; }
 }
@@ -465,7 +481,7 @@ def build_custom_practice_js():
     var currentUser = null;
     var resolveModalAction = null;
 
-        function initTokenState() {
+    function initTokenState() {
         var user = null;
         try {
             for (var i = 0; i < localStorage.length; i++) {
@@ -488,14 +504,14 @@ def build_custom_practice_js():
             return;
         }
 
-        # ⭐ Chỉ duy nhất super_admin hoặc isPermanent mới không giới hạn
+        // ⭐ Chỉ duy nhất super_admin hoặc isPermanent mới không giới hạn
         if (user.role === 'super_admin' || user.isPermanent) {
             tokenText.textContent = 'Không giới hạn';
             tokenBadge.className = 'cp-token-badge';
             return;
         }
 
-        # ⭐ Nếu là admin, gán Quota mặc định là 100.000 token/ngày
+        // ⭐ Nếu là admin, gán Quota mặc định là 100.000 token/ngày
         if (user.role === 'admin') {
             myTokenQuota = user.tokenQuota || 100000;
         } else {
@@ -507,8 +523,7 @@ def build_custom_practice_js():
         renderTokenUI();
     }
 
-
-        function renderTokenUI() {
+    function renderTokenUI() {
         // ⭐ Chỉ super_admin hoặc isPermanent mới được miễn hoàn toàn (Không giới hạn)
         if (currentUser && (currentUser.role === 'super_admin' || currentUser.isPermanent)) {
             tokenText.textContent = 'Không giới hạn';
@@ -673,7 +688,7 @@ def build_custom_practice_js():
 
     startBtn.addEventListener('click', async function() {
         if (!currentUser) { alert('Vui lòng đăng nhập!'); return; }
-        if (currentUser.role !== 'admin' && !currentUser.isPermanent && (myTokenQuota + myBonusTokens - myTokensUsed <= 0)) { 
+        if (currentUser.role !== 'super_admin' && !currentUser.isPermanent && (myTokenQuota + myBonusTokens - myTokensUsed <= 0)) { 
             alert('Bạn đã hết token!'); 
             return; 
         }
@@ -917,5 +932,4 @@ def build_custom_practice_js():
     setTimeout(initTokenState, 1500);
 
 })();
-
 """
