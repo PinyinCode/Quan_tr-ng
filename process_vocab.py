@@ -21,8 +21,8 @@ client = OpenAI(api_key=api_key, base_url=base_url, timeout=60.0)
 output_dir = "scripts/data_copy"
 os.makedirs(output_dir, exist_ok=True)
 
-# Lấy nhóm ngành từ biến môi trường (Mặc định: May Mặc)
-TARGET_INDUSTRY = os.environ.get("TARGET_INDUSTRY", "May Mặc")
+# Lấy nhóm ngành từ biến môi trường (Ví dụ: Cơ Khí & Chế Tạo hoặc Điện Tử & SMT)
+TARGET_INDUSTRY = os.environ.get("TARGET_INDUSTRY", "Cơ Khí & Chế Tạo")
 
 # Xử lý tên file đẹp, chuẩn hóa
 clean_name = (
@@ -35,52 +35,109 @@ clean_name = (
 filename_prefix = f"{clean_name}_Chuyen_Sau"
 
 # ---------------------------------------------------------------------------
-# 2. BẢN ĐỒ CHỦ ĐIỂM & CHỦ ĐỀ CHUYÊN SÂU (2-4 TỪ, CÔNG XƯỞNG & ĐẦU TƯ)
+# 2. BẢN ĐỒ CHỦ ĐIỂM & CHỦ ĐỀ CHUYÊN SÂU (2-4 TỪ, KỸ THUẬT CAO)
 # ---------------------------------------------------------------------------
 INDUSTRY_TOPICS_MAP = {
+    "Cơ Khí & Chế Tạo": [
+        {
+            "chu_diem": "Trung tâm CNC",
+            "chu_de": "Tiện phay CNC",
+        },
+        {
+            "chu_diem": "Cắt dây xung",
+            "chu_de": "Gia công EDM",
+        },
+        {
+            "chu_diem": "Dao cụ cắt",
+            "chu_de": "Mũi khoan taro",
+        },
+        {
+            "chu_diem": "Dung sai kích",
+            "chu_de": "Đo kiểm bản vẽ",
+        },
+        {
+            "chu_diem": "Hàn xì kết cấu",
+            "chu_de": "Hàn TIG MIG",
+        },
+        {
+            "chu_diem": "Đúc khuôn kim",
+            "chu_de": "Khuôn ép nhựa",
+        },
+        {
+            "chu_diem": "Bảo trì máy",
+            "chu_de": "Hệ thống thủy lực",
+        },
+        {
+            "chu_diem": "Động cơ điện",
+            "chu_de": "Máy nén khí",
+        },
+    ],
+    "Điện Tử & SMT": [
+        {
+            "chu_diem": "In thiếc hàn",
+            "chu_de": "Dao gạt mỏ hàn",
+        },
+        {
+            "chu_diem": "Máy gắp linh",
+            "chu_de": "Feed chỉ định",
+        },
+        {
+            "chu_diem": "Hàn lưu lượng",
+            "chu_de": "Lò hàn đối lưu",
+        },
+        {
+            "chu_diem": "Kiểm tra AOI",
+            "chu_de": "Soi lỗi mối hàn",
+        },
+        {
+            "chu_diem": "Kiểm tra SPI",
+            "chu_de": "Đo lượng thiếc",
+        },
+        {
+            "chu_diem": "Kiểm tra XRay",
+            "chu_de": "Soi chân BGA",
+        },
+        {
+            "chu_diem": "Bảng mạch PCB",
+            "chu_de": "Lớp mạch đồng",
+        },
+        {
+            "chu_diem": "Linh kiện dán",
+            "chu_de": "Chip tụ điện",
+        },
+    ],
     "May Mặc": [
-        # --- CÁC BỘ PHẬN SẢN PHẨM & CÔNG ĐOẠN MAY ---
         {
-            "chu_diem": "May ráp thân",
-            "chu_de": "Thân trước sau",
+            "chu_diem": "Cắt rập mẫu",
+            "chu_de": "Trải sơ đồ cắt",
         },
         {
-            "chu_diem": "Ráp vai áo",
-            "chu_de": "Đường diễu vai",
+            "chu_diem": "Ép keo dựng",
+            "chu_de": "Ép keo cổ vạt",
         },
         {
-            "chu_diem": "May tra tay",
+            "chu_diem": "May mổ túi",
+            "chu_de": "Mổ túi cơi viền",
+        },
+        {
+            "chu_diem": "Ráp thân áo",
+            "chu_de": "Chắp sườn diễu",
+        },
+        {
+            "chu_diem": "Tra tay áo",
             "chu_de": "Vòng nách tay",
         },
         {
-            "chu_diem": "Cuốn gấu áo",
-            "chu_de": "Lai áo quần",
-        },
-        # --- DẬP, LÀ ỦI & HOÀN THIỆN ---
-        {
-            "chu_diem": "Dập khuy cúc",
-            "chu_de": "Đóng nút cúc",
+            "chu_diem": "May tra cổ",
+            "chu_de": "Ráp cổ bẻ trụ",
         },
         {
-            "chu_diem": "Là ủi nhiệt",
-            "chu_de": "Ép keo dập",
+            "chu_diem": "Cuốn gấu lai",
+            "chu_de": "Gấp lai cuốn gấu",
         },
         {
-            "chu_diem": "Kiểm tra KCS",
-            "chu_de": "Soi chỉ lỗi",
-        },
-        # --- MÁY MÓC & THIẾT BỊ XƯỞNG ---
-        {
-            "chu_diem": "Máy may một",
-            "chu_de": "Kim ổ chao",
-        },
-        {
-            "chu_diem": "Máy vắt sổ",
-            "chu_de": "Dao cắt chỉ",
-        },
-        {
-            "chu_diem": "Máy kansai",
-            "chu_de": "Cuốn lai áo",
+            "chu_diem": "Kiểm lỗi KCS",
+            "chu_de": "Soi chỉ lỗi đường",
         },
     ],
     "Đầu Tư & Tài Chính": [
@@ -119,62 +176,6 @@ INDUSTRY_TOPICS_MAP = {
         {
             "chu_diem": "Lãi suất FED",
             "chu_de": "Chính sách tiền",
-        },
-    ],
-    "Cơ Khí & Chế Tạo": [
-        {
-            "chu_diem": "Máy phay tiện",
-            "chu_de": "Trung tâm CNC",
-        },
-        {
-            "chu_diem": "Gia công điện",
-            "chu_de": "Cắt dây xung",
-        },
-        {
-            "chu_diem": "Dao cụ cắt",
-            "chu_de": "Bầu kẹp mũi",
-        },
-        {
-            "chu_diem": "Đo kiểm KCS",
-            "chu_de": "Dung sai kích",
-        },
-    ],
-    "Đời Sống & Du Lịch": [
-        {
-            "chu_diem": "Xe buýt tàu",
-            "chu_de": "Đi lại xe",
-        },
-        {
-            "chu_diem": "Hỏi đường đi",
-            "chu_de": "Bến xe buýt",
-        },
-        {
-            "chu_diem": "Thuê nhà trọ",
-            "chu_de": "Ký túc xá",
-        },
-        {
-            "chu_diem": "Xuất nhập cảnh",
-            "chu_de": "Hải quan visa",
-        },
-    ],
-    "Văn Hóa & Ngày Lễ": [
-        {
-            "chu_diem": "Tết Nguyên Đán",
-            "chu_de": "Lì xì tết",
-        },
-        {
-            "chu_diem": "Tết Trung Thu",
-            "chu_de": "Đèn trung thu",
-        },
-    ],
-    "Y Tế & Sức Khỏe": [
-        {
-            "chu_diem": "Khám chữa bệnh",
-            "chu_de": "Triệu chứng đau",
-        },
-        {
-            "chu_diem": "Mua thuốc tây",
-            "chu_de": "Liều dùng thuốc",
         },
     ],
 }
@@ -219,9 +220,9 @@ def clean_pinyin(zh_text, py_text):
 
 
 def generate_vocabulary_batch(chu_diem, chu_de):
-  """Sinh từ vựng chuyên sâu với ràng buộc định dạng khắt khe."""
-  prompt = f"""Bạn là quản đốc xưởng may và chuyên gia kỹ thuật công nghiệp hàng đầu trong lĩnh vực: {TARGET_INDUSTRY}.
-Hãy cung cấp danh sách từ vựng và thuật ngữ chuyên ngành thật sự cốt lõi, chuyên sâu (tập trung vào các bộ phận sản phẩm như thân, vai, tay, gấu; thao tác dập, là ủi; vận hành máy móc xưởng may) thuộc:
+  """Sinh từ vựng chuyên sâu tập trung kỹ thuật vận hành máy & xưởng."""
+  prompt = f"""Bạn là kỹ sư trưởng và chuyên gia kỹ thuật công nghiệp hàng đầu trong lĩnh vực: {TARGET_INDUSTRY}.
+Hãy cung cấp danh sách từ vựng và thuật ngữ chuyên ngành **thật sự cốt lõi, chuyên sâu và có tính thực chiến cao về quy trình vận hành, máy móc, dung sai, lỗi kỹ thuật và thao tác xưởng** thuộc:
 - Chủ điểm: {chu_diem}
 - Chủ đề: {chu_de}
 
@@ -234,7 +235,7 @@ Trả về đúng định dạng JSON mảng (array):
 [
   {{
     "hsk": "HSK 4",
-    "vi": "Nghĩa tiếng Việt chuẩn xác",
+    "vi": "Thuật ngữ chuyên ngành kỹ thuật",
     "zh": "Thuật ngữ tiếng Trung",
     "py": "Pinyin có dấu"
   }},
@@ -264,9 +265,9 @@ Trả về đúng định dạng JSON mảng (array):
 
 
 def generate_example_sentence(vi, zh, industry_name):
-  """Tạo câu ví dụ giao tiếp/chỉ đạo ngắn gọn (<= 12 ký tự chữ Hán)."""
-  prompt = f"""Bạn là chuyền trưởng thực chiến trong xưởng công nghiệp {industry_name}.
-Hãy đặt 01 câu giao tiếp hoặc chỉ đạo công việc ngắn gọn trong xưởng có chứa từ vựng '{zh}' (nghĩa là: '{vi}').
+  """Tạo câu ví dụ chỉ đạo kỹ thuật/vận hành máy ngắn gọn (<= 12 ký tự chữ Hán)."""
+  prompt = f"""Bạn là kỹ sư trưởng chuyền sản xuất thực chiến trong ngành {industry_name}.
+Hãy đặt 01 câu chỉ đạo kỹ thuật hoặc giao tiếp vận hành ngắn gọn có chứa thuật ngữ '{zh}' (nghĩa là: '{vi}').
 
 YÊU CẦU BẮT BUỘC:
 1. Trường "vi": Hoàn toàn bằng tiếng Việt, không dính chữ Hán.
@@ -288,9 +289,9 @@ Trả về đúng định dạng JSON:
         response_format={"type": "json_object"},
     )
     data = json.loads(response.choices[0].message.content)
-    ex_vi = clean_vietnamese(data.get("vi", f"Cần thao tác {vi}."))
+    ex_vi = clean_vietnamese(data.get("vi", f"Kiểm tra {vi}."))
     if not ex_vi:
-      ex_vi = f"Thao tác {vi}."
+      ex_vi = f"Kiểm tra {vi}."
 
     ex_zh = clean_chinese(data.get("zh", f"注意{zh}。"))
     if not ex_zh:
@@ -300,7 +301,7 @@ Trả về đúng định dạng JSON:
     return ex_vi, ex_zh, ex_py
   except Exception:
     fallback_zh = f"注意{zh}。"
-    return (f"Thao tác {vi}.", fallback_zh, clean_pinyin(fallback_zh, ""))
+    return (f"Kiểm tra {vi}.", fallback_zh, clean_pinyin(fallback_zh, ""))
 
 
 # ---------------------------------------------------------------------------
@@ -329,7 +330,7 @@ current_row = 2
 global_stt = 1
 seen_chinese_words = set()
 
-print(f"🚀 BẮT ĐẦU TẠO DỮ LIỆU CHUYÊN SÂU CHO NGÀNH: [{TARGET_INDUSTRY}]...")
+print(f"🚀 BẮT ĐẦU TẠO DỮ LIỆU KỸ THUẬT CHUYÊN SÂU: [{TARGET_INDUSTRY}]...")
 
 for topic in industry_topics:
   c_diem = topic["chu_diem"]
@@ -388,7 +389,7 @@ for topic in industry_topics:
     added_count += 1
     time.sleep(0.3)
 
-  print(f"   ✅ Đã lưu {added_count} từ vựng sạch chuẩn.")
+  print(f"   ✅ Đã lưu {added_count} từ vựng kỹ thuật chuẩn xác.")
 
 wb.save(file_output)
 print(f"🎉 HOÀN TẤT! File lưu tại: {file_output}")
