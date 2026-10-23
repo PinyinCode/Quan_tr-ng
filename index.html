@@ -6,6 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
@@ -13493,19 +13496,7 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-    <meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-    <meta name="author" content="Tuhoctiengtrung.org">
-    <link rel="canonical" href="https://tuhoctiengtrung.org/">
-    <meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-    <meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-    <meta property="og:url" content="https://tuhoctiengtrung.org/">
-    <meta property="og:type" content="website">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
-    <meta name="theme-color" content="#7c3aed">
-  </head>
+</head>
 <body>
 
 <div class="page-wrap">
@@ -13664,7 +13655,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
@@ -22379,24 +22370,48 @@ function renderRenewalStep1() {
     else if (tier === 'trial') currentDesc = 'Trial còn <b>' + daysLeft + ' ngày</b>. Nâng cấp để mở khóa toàn bộ!';
     else currentDesc = 'Còn <b>' + daysLeft + ' ngày</b> sử dụng.';
 
-    var packagesHtml = '';
-    var permanentPkg = null;
+    // ⭐ PHÂN LOẠI GÓI THỜI GIAN VÀ GÓI TOKEN
     var normalPackages = [];
+    var tokenPackages = [];
+    var permanentPkg = null;
+
     PACKAGES.forEach(function(p) {
-        if (p.permanent) permanentPkg = p;
-        else normalPackages.push(p);
+        if (p.permanent) {
+            permanentPkg = p;
+        } else if (p.is_token) {
+            tokenPackages.push(p);
+        } else {
+            normalPackages.push(p);
+        }
     });
+
+    // Tạo HTML cho gói thời gian
+    var timePkgHtml = '';
     normalPackages.forEach(function(p) {
         var saveHtml = p.save ? '<div class="pkg-save">' + escapeHtml(p.save) + '</div>' : '';
         var popularHtml = p.popular ? '<div class="pkg-popular">⭐ Phổ biến</div>' : '';
-        packagesHtml += '<div class="package-card" data-pkg="' + p.id + '" onclick="selectPackage(\'' + p.id + '\')">' +
+        timePkgHtml += '<div class="package-card" data-pkg="' + p.id + '" onclick="selectPackage(\'' + p.id + '\')">' +
             popularHtml + saveHtml +
             '<div class="pkg-label">' + escapeHtml(p.label) + '</div>' +
             '<div class="pkg-price">' + formatMoney(p.amount) + '</div>' +
             '<div class="pkg-unit">VNĐ</div></div>';
     });
+
+    // Tạo HTML cho gói Token
+    var tokenPkgHtml = '';
+    tokenPackages.forEach(function(p) {
+        var saveHtml = p.save ? '<div class="pkg-save" style="background:linear-gradient(135deg,#f59e0b,#d97706)">' + escapeHtml(p.save) + '</div>' : '';
+        tokenPkgHtml += '<div class="package-card" data-pkg="' + p.id + '" onclick="selectPackage(\'' + p.id + '\')" style="border-color:#fcd34d">' +
+            saveHtml +
+            '<div class="pkg-label" style="color:#b45309">' + escapeHtml(p.label) + '</div>' +
+            '<div class="pkg-price" style="color:#d97706">' + formatMoney(p.amount) + '</div>' +
+            '<div class="pkg-unit">VNĐ</div></div>';
+    });
+
+    // Tạo HTML cho gói Vĩnh viễn
+    var permanentHtml = '';
     if (permanentPkg) {
-        packagesHtml += '<div style="grid-column:1/-1;margin-top:.5rem;padding-top:.75rem;border-top:2px dashed var(--border);">' +
+        permanentHtml = '<div style="grid-column:1/-1;margin-top:.5rem;padding-top:.75rem;border-top:2px dashed var(--border);">' +
             '<div class="renewal-section-title" style="justify-content:center;color:#dc2626;font-size:.78rem;margin-bottom:.6rem">' +
                 '<i class="fas fa-crown"></i> Gói đặc biệt — sở hữu mãi mãi</div>' +
             '<div class="package-card" data-pkg="' + permanentPkg.id + '" onclick="selectPackage(\'' + permanentPkg.id + '\')" style="padding:1.2rem 1rem;">' +
@@ -22404,14 +22419,25 @@ function renderRenewalStep1() {
                 '<div class="pkg-price" style="font-size:1.6rem;margin:.5rem 0;">' + formatMoney(permanentPkg.amount) + 'đ</div>' +
                 '<div class="pkg-unit" style="font-size:.75rem;">' + escapeHtml(permanentPkg.save || 'Dùng mãi mãi — Không lo hết hạn') + '</div></div></div>';
     }
+
     $('renewalBody').innerHTML =
         emergencyBanner +
         '<div class="renewal-current ' + currentCls + '">' +
             '<div class="rc-icon"><i class="fas ' + currentIcon + '"></i></div>' +
             '<div class="rc-info"><div class="rc-title">' + currentTitle + '</div>' +
             '<div class="rc-desc">' + currentDesc + '</div></div></div>' +
-        '<div class="renewal-section-title"><i class="fas fa-box"></i> Chọn gói gia hạn</div>' +
-        '<div class="package-grid">' + packagesHtml + '</div>' +
+        
+        // ⭐ KHU VỰC 1: GÓI THỜI GIAN
+        '<div class="renewal-section-title" style="margin-top:1rem"><i class="fas fa-box"></i> Gói gia hạn thời gian</div>' +
+        '<div class="package-grid">' + timePkgHtml + '</div>' +
+        permanentHtml +
+
+        // ⭐ KHU VỰC 2: GÓI MUA TOKEN (Chỉ hiện nếu có cấu hình)
+        (tokenPackages.length > 0 ? 
+            '<div class="renewal-section-title" style="margin-top:1.5rem"><i class="fas fa-bolt" style="color:#f59e0b"></i> Mua thêm Token dịch</div>' +
+            '<div class="package-grid">' + tokenPkgHtml + '</div>' 
+        : '') +
+
         '<div class="renewal-actions">' +
             '<button class="renewal-btn" onclick="closeRenewalModal()">Hủy</button>' +
             '<button class="renewal-btn primary" id="renewalNextBtn" disabled onclick="goToPayment()"><i class="fas fa-arrow-right"></i> Tiếp tục</button>' +
@@ -22426,7 +22452,6 @@ window.selectPackage = function(pkgId) {
     var btn = $('renewalNextBtn');
     if (btn) btn.disabled = false;
 };
-
 async function goToPayment() {
     if (!renewalSelectedPkg) return;
 
@@ -24153,7 +24178,7 @@ window.approveRenewal = async function(reqId) {
         alert('Bạn không có quyền duyệt gia hạn!');
         return;
     }
-    if (!confirm('Xác nhận đã nhận tiền và gia hạn?')) return;
+    if (!confirm('Xác nhận đã nhận tiền và duyệt đơn này?')) return;
 
     /* ═══ 🚨 TRƯỜNG HỢP 1: BẬT CHẾ ĐỘ KHẨN CẤP (Duyệt qua Local Cache) ═══ */
     if (typeof isEmergencyModeActive === 'function' && isEmergencyModeActive()) {
@@ -24163,8 +24188,13 @@ window.approveRenewal = async function(reqId) {
             var req = pendingLocal.find(function(item) { return item.email && (item.transferCode === reqId || item.email === reqId); });
 
             var emailClean = req ? req.email.toLowerCase() : reqId.toLowerCase();
-            var days = req ? req.days : 30; // Mặc định 30 ngày nếu duyệt trực tiếp theo email
+            var days = req ? req.days : 30; 
             var isPermanent = req ? (req.isPermanent || req.package === 'forever') : false;
+            
+            // ⭐ KIỂM TRA XEM CÓ PHẢI MUA TOKEN KHÔNG
+            var pkgInfo = typeof PACKAGES !== 'undefined' ? PACKAGES.find(function(p) { return p.id === (req ? req.package : ''); }) : null;
+            var isTokenPurchase = (req && req.is_token === true) || (pkgInfo && pkgInfo.is_token === true);
+            var tokensToAdd = req && req.token_amount ? req.token_amount : (pkgInfo ? pkgInfo.token_amount : 0);
 
             // 1. Tính toán ngày hết hạn mới
             var now = new Date();
@@ -24181,11 +24211,17 @@ window.approveRenewal = async function(reqId) {
                 role: 'user'
             };
 
-            updatedUserData.expiresAt = isPermanent ? null : newExpiryDate.toISOString();
-            updatedUserData.isPermanent = isPermanent;
-            updatedUserData.tier = 'active';
-            updatedUserData.isTrial = false;
-            updatedUserData.isExpiredOnly = false;
+            if (isTokenPurchase) {
+                // Nếu là mua Token -> Cộng bonusTokens
+                updatedUserData.bonusTokens = (updatedUserData.bonusTokens || 0) + tokensToAdd;
+            } else {
+                // Nếu là gia hạn ngày -> Cập nhật hạn
+                updatedUserData.expiresAt = isPermanent ? null : newExpiryDate.toISOString();
+                updatedUserData.isPermanent = isPermanent;
+                updatedUserData.tier = 'active';
+                updatedUserData.isTrial = false;
+                updatedUserData.isExpiredOnly = false;
+            }
 
             localStorage.setItem(cacheKey, JSON.stringify({
                 data: updatedUserData,
@@ -24198,6 +24234,8 @@ window.approveRenewal = async function(reqId) {
                 email: emailClean,
                 isPermanent: isPermanent,
                 newExpiresAt: isPermanent ? null : newExpiryDate.toISOString(),
+                isToken: isTokenPurchase,
+                tokenAmount: tokensToAdd,
                 approvedAtMs: Date.now()
             });
             localStorage.setItem('pending_approved_renewals', JSON.stringify(approvedQueue));
@@ -24206,7 +24244,10 @@ window.approveRenewal = async function(reqId) {
             pendingLocal = pendingLocal.filter(function(item) { return item.email !== emailClean; });
             localStorage.setItem('pending_renewals_local', JSON.stringify(pendingLocal));
 
-            alert('✅ [Emergency Mode] Đã duyệt gia hạn thành công cho ' + emailClean + '!\n\n(Hạn dùng mới đã cập nhật local cho học viên và sẽ tự đồng bộ lên Firestore khi tắt Safe Mode).');
+            var msg = isTokenPurchase 
+                ? '✅ [Emergency Mode] Đã cộng ' + formatMoney(tokensToAdd) + ' Token cho ' + emailClean
+                : '✅ [Emergency Mode] Đã duyệt gia hạn thành công cho ' + emailClean + '!';
+            alert(msg + '\n\n(Sẽ tự đồng bộ lên Firestore khi tắt Safe Mode).');
             loadRenewals();
             loadUsers(true);
             return;
@@ -24229,6 +24270,11 @@ window.approveRenewal = async function(reqId) {
             return;
         }
 
+        // ⭐ KIỂM TRA XEM CÓ PHẢI MUA TOKEN KHÔNG
+        var pkgInfo = typeof PACKAGES !== 'undefined' ? PACKAGES.find(function(p) { return p.id === req.package; }) : null;
+        var isTokenPurchase = (req.is_token === true) || (pkgInfo && pkgInfo.is_token === true);
+        var tokensToAdd = req.token_amount || (pkgInfo ? pkgInfo.token_amount : 0);
+
         var isPermanent = (req.package === 'forever') || (req.days >= 36500) || req.isPermanent;
         var userDoc = await db.collection('allowed_users').doc(req.email).get();
         var currentExpiry = null;
@@ -24236,29 +24282,48 @@ window.approveRenewal = async function(reqId) {
             var ud = userDoc.data();
             if (ud.expiresAt) currentExpiry = getExpiryDate(ud.expiresAt);
         }
-        var updateData = { isTrial: false, tier: 'active', lastRenewalAt: firebase.firestore.FieldValue.serverTimestamp() };
+        
+        var updateData = { lastRenewalAt: firebase.firestore.FieldValue.serverTimestamp() };
         var reqUpdateData = { status: 'confirmed', confirmedAt: firebase.firestore.FieldValue.serverTimestamp(), confirmedBy: currentUser.email };
         var message = '';
         var _newExpiryStr = '';
 
-        if (isPermanent) {
-            updateData.expiresAt = null;
-            updateData.isPermanent = true;
-            updateData.permanentSince = firebase.firestore.FieldValue.serverTimestamp();
-            reqUpdateData.newExpiresAt = null;
-            reqUpdateData.isPermanent = true;
-            message = '💎 Đã kích hoạt VĨNH VIỄN cho:\n\n' + req.email;
+        if (isTokenPurchase) {
+            // ⭐ 2.1 XỬ LÝ MUA TOKEN
+            if (!tokensToAdd) {
+                alert('Lỗi: Không tìm thấy số lượng token trong đơn hàng!');
+                return;
+            }
+            updateData.bonusTokens = firebase.firestore.FieldValue.increment(tokensToAdd);
+            reqUpdateData.newExpiresAt = ud.expiresAt || null;
+            reqUpdateData.isPermanent = ud.isPermanent || false;
+            message = '⚡ Đã cộng ' + formatMoney(tokensToAdd) + ' Token cho:\n' + req.email;
+
         } else {
-            var now = new Date();
-            var baseDate = (currentExpiry && currentExpiry > now) ? currentExpiry : now;
-            var newExpiry = new Date(baseDate.getTime() + req.days * 24 * 60 * 60 * 1000);
-            updateData.expiresAt = firebase.firestore.Timestamp.fromDate(newExpiry);
-            updateData.isPermanent = false;
-            reqUpdateData.newExpiresAt = firebase.firestore.Timestamp.fromDate(newExpiry);
-            reqUpdateData.isPermanent = false;
-            _newExpiryStr = newExpiry.toLocaleDateString('vi-VN');
-            message = '✅ Đã gia hạn ' + req.days + ' ngày cho:\n' + req.email + '\n\nHạn mới: ' + _newExpiryStr;
+            // ⭐ 2.2 XỬ LÝ GIA HẠN THỜI GIAN
+            updateData.isTrial = false; 
+            updateData.tier = 'active';
+            
+            if (isPermanent) {
+                updateData.expiresAt = null;
+                updateData.isPermanent = true;
+                updateData.permanentSince = firebase.firestore.FieldValue.serverTimestamp();
+                reqUpdateData.newExpiresAt = null;
+                reqUpdateData.isPermanent = true;
+                message = '💎 Đã kích hoạt VĨNH VIỄN cho:\n\n' + req.email;
+            } else {
+                var now = new Date();
+                var baseDate = (currentExpiry && currentExpiry > now) ? currentExpiry : now;
+                var newExpiry = new Date(baseDate.getTime() + req.days * 24 * 60 * 60 * 1000);
+                updateData.expiresAt = firebase.firestore.Timestamp.fromDate(newExpiry);
+                updateData.isPermanent = false;
+                reqUpdateData.newExpiresAt = firebase.firestore.Timestamp.fromDate(newExpiry);
+                reqUpdateData.isPermanent = false;
+                _newExpiryStr = newExpiry.toLocaleDateString('vi-VN');
+                message = '✅ Đã gia hạn ' + req.days + ' ngày cho:\n' + req.email + '\n\nHạn mới: ' + _newExpiryStr;
+            }
         }
+
         await db.collection('allowed_users').doc(req.email).update(updateData);
         await db.collection('renewal_requests').doc(reqId).update(reqUpdateData);
 
@@ -24268,7 +24333,7 @@ window.approveRenewal = async function(reqId) {
                     email: req.email, name: req.name, amount: req.amount,
                     package: req.package, packageLabel: req.packageLabel,
                     days: req.days, isPermanent: isPermanent
-                }, _newExpiryStr);
+                }, isTokenPurchase ? 'Mua Token' : _newExpiryStr);
             } catch(_te) {}
         }
         try { localStorage.removeItem('user_cache_' + req.email); } catch(e) {}
@@ -24278,7 +24343,6 @@ window.approveRenewal = async function(reqId) {
         loadUsers(true);
     } catch(e) { alert('❌ Lỗi: ' + e.message); }
 };
-
 
 window.rejectRenewal = async function(reqId) {
     if (!isSuperAdmin() && !hasPermission('canRenew')) {
