@@ -825,27 +825,19 @@ def build_custom_practice_js():
         });
     }
 
+        // ⭐ Sử dụng wordMode: true của pinyin-pro để nhận diện chuẩn xác từ ghép trên mọi thiết bị
     function getSmartPinyin(text) {
         if (!window.pinyinPro || !text) return '';
-        if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-            try {
-                var segmenter = new Intl.Segmenter('zh', { granularity: 'word' });
-                var segs = segmenter.segment(text);
-                var resultWords = [];
-                for (var seg of segs) {
-                    var segmentStr = seg.segment;
-                    if (/[\u4e00-\u9fa5]/.test(segmentStr)) {
-                        var pinyinWord = window.pinyinPro.pinyin(segmentStr, { toneType: 'symbol', separator: '' });
-                        resultWords.push(pinyinWord);
-                    } else {
-                        resultWords.push(segmentStr);
-                    }
-                }
-                return resultWords.join(' ');
-            } catch (e) {}
+        try {
+            return window.pinyinPro.pinyin(text, { 
+                toneType: 'symbol', 
+                wordMode: true 
+            });
+        } catch (e) {
+            return window.pinyinPro.pinyin(text, { toneType: 'symbol' });
         }
-        return window.pinyinPro.pinyin(text, { toneType: 'symbol' });
     }
+
 
     async function fetchTranslate(text, mode) {
         var translated = '';
