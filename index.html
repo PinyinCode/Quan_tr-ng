@@ -13593,6 +13593,43 @@ body.has-floating-group #quickSearchRoot{
 </div>
 
 
+<div class="cp-section" id="cpSection">
+    <div class="cp-section-header">
+        <i class="fas fa-pen-fancy"></i>
+        <span>Luyện tập văn bản tự do</span>
+        <button class="cp-btn-reset" id="cpResetBtn" type="button" title="Làm mới">
+            <i class="fas fa-redo"></i> Làm mới
+        </button>
+    </div>
+
+    <div class="cp-switch-row">
+        <button class="cp-switch-btn active" data-mode="zh2vi" type="button">
+            <i class="fas fa-arrow-right"></i> Trung → Việt
+        </button>
+        <button class="cp-switch-btn" data-mode="vi2zh" type="button">
+            <i class="fas fa-arrow-left"></i> Việt → Trung
+        </button>
+    </div>
+
+    <div class="cp-input-wrapper">
+        <textarea class="cp-textarea" id="cpInputZh" rows="1"
+            placeholder="Dán văn bản tiếng Trung vào đây... (tối đa 5000 ký tự)"></textarea>
+        <div class="cp-char-count" id="cpCharCount">0 / 5000</div>
+    </div>
+
+    <button class="cp-btn-start" id="cpStartBtn" type="button">
+        <i class="fas fa-play"></i> Bắt đầu luyện tập
+    </button>
+
+    <div class="cp-progress-wrap" id="cpProgressWrap">
+        <div class="cp-progress-text" id="cpProgressText">Đang xử lý...</div>
+        <div class="cp-progress-bar-bg">
+            <div class="cp-progress-bar" id="cpProgressBar"></div>
+        </div>
+    </div>
+</div>
+
+
 
 <div class="expiry-banner" id="expiryBanner" style="display:none">
     <div class="expiry-banner-icon" id="expiryBannerIcon">
