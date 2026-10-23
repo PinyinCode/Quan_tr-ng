@@ -9,47 +9,45 @@ def build_custom_practice_css():
 /* ═══════════════════════════════════════════════════════════ */
 /* KHU VỰC LUYỆN TẬP TỰ DO - NÂNG CẤP UI CHỦ LỰC              */
 /* ═══════════════════════════════════════════════════════════ */
-/* Bao bọc toàn bộ hàng tiêu đề để đẩy nút Xóa sang phải */
-/* Bao bọc toàn bộ hàng tiêu đề */
+/* Hàng chứa tiêu đề và nút Xóa */
 .cp-header-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    margin-bottom: 1rem;
 }
 
-/* Khối tiêu đề thanh thoát (Bỏ nền, bỏ viền) */
+/* Khối chứa cây bút và chữ */
 .cp-section-header {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 14px; /* Khoảng cách giữa icon và chữ */
+    gap: 8px; /* Khoảng cách vừa phải giữa bút và chữ */
 }
 
-/* Icon cây bút hình tròn phát sáng */
+/* Icon cây bút - Thu nhỏ lại */
 .cp-section-header i {
     color: #fff;
-    font-size: 1rem;
+    font-size: 0.85rem; /* Icon nhỏ lại */
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 28px; /* Kích thước vòng tròn nhỏ lại */
+    height: 28px;
     border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #a855f7);
-    box-shadow: 0 6px 16px rgba(168,85,247,0.4), inset 0 2px 4px rgba(255,255,255,0.3);
+    box-shadow: 0 3px 8px rgba(168,85,247,0.3); /* Bóng đổ nhẹ hơn */
 }
 
-/* Chữ tiêu đề cực nét */
+/* Chữ tiêu đề - Giữ nguyên kích thước vừa phải */
 .cp-section-header span {
-    font-size: 1.05rem;
+    font-size: 1.1rem; /* Giữ nguyên cỡ chữ cũ */
     font-weight: 800;
-    background: linear-gradient(90deg, #1e1b4b, #4c1d95); /* Màu chữ chuyển sắc đậm */
+    background: linear-gradient(90deg, #1e1b4b, #4c1d95);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: -0.2px;
-    text-shadow: 0 2px 10px rgba(168,85,247,0.1);
+    letter-spacing: -0.3px;
 }
-
 /* Đảm bảo Dark Mode (nếu có) vẫn nhìn rõ chữ */
 @media (prefers-color-scheme: dark) {
     .cp-section-header span {
