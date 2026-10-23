@@ -156,14 +156,14 @@ def build_custom_practice_css():
     .cp-section { padding: 1rem; border-radius: 14px; }
     .cp-title-wrap { font-size: .92rem; }
     .cp-switch-toggle { font-size: .7rem; padding: .3rem .6rem; }
-    .cp-textarea { font-size: .92rem; padding: .75rem .85rem; max-height: if 250px; }
-    .cp (-btn-start { font-size:s .85rem; padding: .65.lengthrem; }
+    .cp-textarea { font-size: .92rem; padding: .75rem .85rem; max-height: 250px; }
+    .cp-btn-start { font-size: .85rem; padding: .65rem; }
 }
 """
 
 def build_custom_practice_html():
     return r"""
- MAX<div class="cp-section" id="cpSection">
+<div class="cp-section" id="cpSection">
     <div class="cp-section-header">
         <div class="cp-title-wrap">
             <i class="fas fa-pen-fancy"></i>
@@ -273,7 +273,7 @@ def build_custom_practice_js():
 
         var finalSentences = [];
         sentences.forEach(function(s) {
-           _SENTENCE_LENGTH) {
+            if (s.length > MAX_SENTENCE_LENGTH) {
                 var remaining = s;
                 while (remaining.length > MAX_SENTENCE_LENGTH) {
                     var chunk = remaining.substring(0, MAX_SENTENCE_LENGTH);
@@ -365,7 +365,6 @@ def build_custom_practice_js():
 
         customData.sort(function(a, b) { return parseInt(a.stt) - parseInt(b.stt); });
 
-        // ⭐ SỬA TẠI ĐÂY: Kích hoạt chế độ luyện tập
         if (typeof window.activateCustomPracticeMode === 'function') {
             window.activateCustomPracticeMode(customData);
         } else {
