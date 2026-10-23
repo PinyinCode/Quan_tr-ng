@@ -38228,17 +38228,21 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         }
     });
 
-    function smartSplit(text, mode) {
-        var rawParts = text.split(/(?<!\d)(?<=[.!?。！？\n])/g);
+        function smartSplit(text, mode) {
+        // Tạm thời thay thế dấu chấm trong các con số (vd: 1.400, 162.000) để tránh bị ngắt nhầm
+        var protectedText = text.replace(/(\d)\.(\d)/g, '$1__DOT__$2');
+        
+        var rawParts = protectedText.split(/(?<=[.!?。！？\n])/g);
         var result = [];
         for (var i = 0; i < rawParts.length; i++) {
-            var s = rawParts[i].trim();
+            var s = rawParts[i].replace(/__DOT__/g, '.').trim();
             if (s.length === 0) continue;
             if (mode === 'zh2vi' && !/[\u4e00-\u9fa5]/.test(s)) continue;
             result.push(s);
         }
         return result;
     }
+
 
     startBtn.addEventListener('click', async function() {
         var rawText = inputArea.value.trim();
