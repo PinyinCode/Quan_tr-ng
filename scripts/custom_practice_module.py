@@ -314,25 +314,58 @@ def build_custom_practice_js():
 
     // ⭐ KHỞI TẠO TOKEN TỪ FIREBASE (READ ONLY)
     function initTokenState() {
-        if (typeof currentUser !== 'undefined' && currentUser) {
-            if (currentUser.role === 'admin' || currentUser.isPermanent) {
-                tokenText.textContent = 'Không giới hạn';
-                tokenBadge.className = 'cp-token-badge';
-                return;
+        // 1. Tìm user trong LocalStorage (nơi Auth đã lưu sẵn)
+        var user = null;
+        try {
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                if (key && key.indexOf('user_cache_') === 0) {
+                    var cached = JSON.parse(localStorage.getItem(key) || 'null');
+                    if (cached && cached.data && cached.data.email) {
+                        user = cached.data;
+                        break; // Tìm thấy là lấy luôn
+                    }
+                }
             }
-            myTokenQuota = currentUser.tokenQuota || 20000;
-            myBonusTokens = currentUser.bonusTokens || 0;
-            myTokensUsed = currentUser.tokensUsed || 0;
-            renderTokenUI();
-        } else {
+        } catch(e) {}
+
+        // 2. Nếu không có user -> Chưa đăng nhập
+        if (!user) {
             tokenText.textContent = 'Chưa đăng nhập';
             tokenBadge.className = 'cp-token-badge warn';
             startBtn.disabled = true;
+            return;
         }
+
+        // 3. Nếu là Admin hoặc Vĩnh viễn -> Không giới hạn
+        if (user.role === 'admin' || user.isPermanent) {
+            tokenText.textContent = 'Không giới hạn';
+            tokenBadge.className = 'cp-token-badge';
+            return;
+        }
+
+        // 4. Lấy Token và hiển thị
+        myTokenQuota = user.tokenQuota || 20000;
+        myBonusTokens = user.bonusTokens || 0;
+        myTokensUsed = user.tokensUsed || 0;
+        
+        renderTokenUI();
     }
 
     function renderTokenUI() {
-        if (typeof currentUser !== 'undefined' && currentUser && (currentUser.role === 'admin' || currentUser.isPermanent)) return;
+        // Lấy lại user từ cache để kiểm tra
+        var user = null;
+        try {
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                if (key && key.indexOf('user_cache_') === 0) {
+                    var cached = JSON.parse(localStorage.getItem(key) || 'null');
+                    if (cached && cached.data) { user = cached.data; break; }
+                }
+            }
+        } catch(e) {}
+
+        if (user && (user.role === 'admin' || user.isPermanent)) return;
 
         var totalAvailable = myTokenQuota + myBonusTokens;
         var remain = totalAvailable - myTokensUsed;
@@ -356,7 +389,6 @@ def build_custom_practice_js():
             inputArea.placeholder = currentMode === 'vi2zh' ? 'Nhập văn bản tiếng Việt vào đây...' : 'Dán văn bản tiếng Trung vào đây...';
         }
     }
-
     buyTokenBtn.addEventListener('click', function() {
         // Mở modal gia hạn có sẵn của hệ thống
         if (typeof openRenewalModal === 'function') {
@@ -589,19 +621,11 @@ def build_custom_practice_js():
         return { translated: translated, pinyin: pinyin, tokensUsed: tokensUsed };
     }
 
-    // ⭐ THEO DÕI TRẠNG THÁI ĐĂNG NHẬP LIÊN TỤC
-    var checkAuthInterval = setInterval(function() {
-        if (typeof currentUser !== 'undefined' && currentUser) {
-            clearInterval(checkAuthInterval); // Đã có user -> Dừng kiểm tra
-            initTokenState(); // Cập nhật Token
-        }
-    }, 500); // Cứ 0.5 giây kiểm tra 1 lần
-
-    // Dự phòng: Nếu sau 5 giây vẫn chưa có user (thực sự chưa đăng nhập)
-    setTimeout(function() {
-        clearInterval(checkAuthInterval);
-        initTokenState(); 
-    }, 5000);
+    // ⭐ ĐỌC TỪ LOCALSTORAGE NGAY LẬP TỨC (0.1 giây)
+    setTimeout(initTokenState, 100);
+    
+    // ⭐ DỰ PHÒNG: Nếu Auth lưu hơi chậm, đọc lại sau 1.5 giây
+    setTimeout(initTokenState, 1500);
 
 })();
 """
