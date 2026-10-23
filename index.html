@@ -6,6 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
@@ -11449,7 +11452,7 @@ html body .tiktok-float-btn > i {
 }
 .cp-textarea {
     width: 100%;
-    padding: 1.2rem 1rem; /* Tăng padding trên dưới cho thoáng */
+    padding: 1.2rem 1rem;
     border-radius: 14px;
     border: 1.5px solid var(--border);
     background: var(--surface);
@@ -11458,7 +11461,7 @@ html body .tiktok-float-btn > i {
     font-size: 1.05rem;
     resize: none;
     overflow-y: hidden;
-    min-height: 120px; /* Tăng chiều cao mặc định lên 120px */
+    min-height: 120px;
     max-height: 400px;
     transition: height 0.1s ease, border-color .2s, box-shadow .2s;
     line-height: 1.6;
@@ -11497,7 +11500,7 @@ html body .tiktok-float-btn > i {
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 0 1rem;
-    height: 48px; /* Bằng chiều cao nút Start */
+    height: 48px;
     cursor: pointer;
     user-select: none;
     transition: all .2s;
@@ -11506,7 +11509,7 @@ html body .tiktok-float-btn > i {
     font-size: 0.9rem;
     gap: 8px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-    flex-shrink: 0; /* Không bị co lại */
+    flex-shrink: 0;
 }
 .cp-switch-btn:hover {
     background: var(--surface);
@@ -11521,7 +11524,7 @@ html body .tiktok-float-btn > i {
 
 /* Nút Bắt đầu chiếm phần còn lại */
 .cp-btn-start {
-    flex: 1; /* Tự động giãn hết phần còn lại */
+    flex: 1;
     height: 48px;
     border-radius: 12px;
     border: none;
@@ -13424,19 +13427,7 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-    <meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-    <meta name="author" content="Tuhoctiengtrung.org">
-    <link rel="canonical" href="https://tuhoctiengtrung.org/">
-    <meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-    <meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-    <meta property="og:url" content="https://tuhoctiengtrung.org/">
-    <meta property="og:type" content="website">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
-    <meta name="theme-color" content="#7c3aed">
-  </head>
+</head>
 <body>
 
 <div class="page-wrap">
@@ -13595,7 +13586,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
@@ -38242,10 +38233,10 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     });
 
     function smartSplit(text, mode) {
-        // Bảo vệ dấu chấm trong số (1.400)
+        // Bảo vệ dấu chấm trong số (1.400, 162.000) để không bị ngắt nhầm câu
         var protectedText = text.replace(/(\d)\.(\d)/g, '$1__DOT__$2');
         
-        // Tách câu dựa trên dấu kết thúc
+        // Tách câu dựa trên dấu kết thúc câu tiêu chuẩn
         var rawParts = protectedText.split(/(?<=[.!?。！？\n])/g);
         var result = [];
         
@@ -38341,7 +38332,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             window.__customPracticeActive = true;
             window.__onboardingOverride = null;
             if (typeof state !== 'undefined' && state) {
- Promise                state.search = ''; state.hsk = ''; state.subject = '';
+                state.search = ''; state.hsk = ''; state.subject = '';
             }
             if (typeof buildFilters === 'function') buildFilters();
             if (typeof applyFilter === 'function') applyFilter();
@@ -38359,7 +38350,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
     function loadPinyinPro() {
         if (window.pinyinPro) return Promise.resolve();
-        return new(function(resolve) {
+        return new Promise(function(resolve) {
             var script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.2/dist/index.min.js';
             script.onload = resolve;
