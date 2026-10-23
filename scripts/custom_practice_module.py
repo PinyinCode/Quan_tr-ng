@@ -435,11 +435,15 @@ def build_custom_practice_js():
     var spellContainer = document.getElementById('cpSpellContainer');
     var spellChips = document.getElementById('cpSpellChips');
 
-    // Modal elements
     var modalOverlay = document.getElementById('cpModalOverlay');
     var modalWordsList = document.getElementById('cpModalWordsList');
     var modalFixBtn = document.getElementById('cpModalFixBtn');
     var modalProceedBtn = document.getElementById('cpModalProceedBtn');
+
+    var historyBtn = document.getElementById('cpHistoryBtn');
+    var historyOverlay = document.getElementById('cpHistoryOverlay');
+    var historyList = document.getElementById('cpHistoryList');
+    var historyCloseBtn = document.getElementById('cpHistoryCloseBtn');
 
     var myTokensUsed = 0;
     var myTokenQuota = 20000;
@@ -522,7 +526,6 @@ def build_custom_practice_js():
         }
     }
 
-    // ⭐ THUẬT TOÁN TỰ ĐỘNG PHÁT HIỆN TỪ NGHI NGỜ (Như "tfccx", lặp ký tự vô lý, thiếu nguyên âm)
     function findSuspiciousWords() {
         if (currentMode !== 'vi2zh') return [];
         var text = inputArea.value;
@@ -532,21 +535,13 @@ def build_custom_practice_js():
         for (var i = 0; i < words.length; i++) {
             var w = words[i];
             var wLower = w.toLowerCase();
-
-            // Bỏ qua các từ tiếng Anh chuẩn hoặc từ viết tắt cho phép độ dài ngắn
             if (w.length <= 1) continue;
-
-            // 1. Kiểm tra lặp ký tự bất thường (hh, gg, kk, cc, vv...)
             var hasInvalidDouble = /(hh|gg|kk|bb|dd|cc|vv|mm|pp|ss|ff|zz|jj|ww|qq|xx)/.test(wLower);
-            
-            // 2. Kiểm tra từ dài > 2 ký tự hoàn toàn không chứa nguyên âm tiếng Việt (như "tfccx")
-            var vowelsRegex = /[aeiouyàáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/i;
+            var vowelsRegex = /[aeiouyàáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/i;
             var hasVowel = vowelsRegex.test(wLower);
 
             if (hasInvalidDouble || !hasVowel) {
-                if (suspicious.indexOf(w) === -1) {
-                    suspicious.push(w);
-                }
+                if (suspicious.indexOf(w) === -1) suspicious.push(w);
             }
         }
         return suspicious;
@@ -612,7 +607,6 @@ def build_custom_practice_js():
         setTimeout(autoResizeTextarea, 50);
     });
 
-    // Hàm hiển thị Modal Popup tùy chỉnh
     function showSpellModal(words) {
         return new Promise(function(resolve) {
             modalWordsList.textContent = words.join(', ');
@@ -623,12 +617,12 @@ def build_custom_practice_js():
 
     modalFixBtn.addEventListener('click', function() {
         modalOverlay.classList.remove('show');
-        if (resolveModalAction) resolveModalAction(false); // Chọn sửa lại
+        if (resolveModalAction) resolveModalAction(false);
     });
 
     modalProceedBtn.addEventListener('click', function() {
         modalOverlay.classList.remove('show');
-        if (resolveModalAction) resolveModalAction(true); // Vẫn tiếp tục dịch
+        if (resolveModalAction) resolveModalAction(true);
     });
 
     function smartSplit(text, mode) {
@@ -658,14 +652,13 @@ def build_custom_practice_js():
         var rawText = inputArea.value.trim();
         if (!rawText) { alert('Vui lòng nhập văn bản!'); return; }
 
-        // ⭐ KIỂM TRA VÀ HIỆN MODAL POPUP CHẶN NẾU PHÁT HIỆN TỪ SAI
         var suspiciousWords = findSuspiciousWords();
         if (suspiciousWords.length > 0) {
             var proceed = await showSpellModal(suspiciousWords);
-            if (!proceed) return; // Dừng lại để người dùng sửa, bảo vệ Quota 100%
+            if (!proceed) return;
         }
 
-        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang dịch tối ưu...';
+        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang dịch...';
         startBtn.disabled = true;
         switchBtn.style.pointerEvents = 'none';
         progressWrap.classList.add('show');
@@ -723,6 +716,18 @@ def build_custom_practice_js():
 
             customData.sort(function(a, b) { return parseInt(a.stt) - parseInt(b.stt); });
 
+            // Gửi lịch sử gộp 1 lần duy nhất lên Server sau khi dịch xong toàn bộ
+            if (currentUser && currentUser.email && customData.length > 0) {
+                fetch(SERVER_API_URL.replace('/translate', '/history'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: currentUser.email,
+                        items: customData
+                    })
+                }).catch(function(e) {});
+            }
+
             if (totalTokensThisSession > 0) {
                 myTokensUsed += totalTokensThisSession;
                 renderTokenUI();
@@ -758,9 +763,7 @@ def build_custom_practice_js():
         startBtn.innerHTML = '<i class="fas fa-rocket"></i> Bắt đầu luyện tập';
         startBtn.disabled = false;
         switchBtn.style.pointerEvents = 'auto';
-        setTimeout(function() { 
-            progressWrap.classList.remove('show'); 
-        }, 1200);
+        setTimeout(function() { progressWrap.classList.remove('show'); }, 1200);
     }
 
     function loadPinyinPro() {
@@ -791,9 +794,7 @@ def build_custom_practice_js():
                     }
                 }
                 return resultWords.join(' ');
-            } catch (e) {
-                console.warn('[Pinyin] Intl.Segmenter fallback:', e);
-            }
+            } catch (e) {}
         }
         return window.pinyinPro.pinyin(text, { toneType: 'symbol' });
     }
@@ -824,15 +825,68 @@ def build_custom_practice_js():
             translated = json.translated;
             tokensUsed = json.tokensUsed || 0;
         } catch(e) {
-            console.warn('[CP] Translate error:', e.message);
             translated = text; 
         }
         
         return { translated: translated, tokensUsed: tokensUsed };
     }
 
+    if (historyBtn) {
+        historyBtn.addEventListener('click', async function() {
+            if (!currentUser || !currentUser.email) { alert('Vui lòng đăng nhập để xem lịch sử!'); return; }
+            
+            historyOverlay.classList.add('show');
+            historyList.innerHTML = '<div style="text-align:center; color:#64748b; font-size:0.9rem;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+            
+            try {
+                var res = await fetch(SERVER_API_URL.replace('/translate', '/history'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email: currentUser.email,
+                        _method: 'GET'
+                    })
+                });
+                
+                var json = await res.json();
+                if (!json.ok || !json.history) throw new Error('Không thể tải lịch sử');
+                
+                if (json.history.length === 0) {
+                    historyList.innerHTML = '<div style="text-align:center; color:#64748b; font-size:0.9rem;">Chưa có lịch sử dịch nào.</div>';
+                    return;
+                }
+                
+                var html = '';
+                json.history.forEach(function(item) {
+                    html += '<div class="cp-history-item">' +
+                        '<div class="cp-history-vi">' + (item.text_vi || '') + '</div>' +
+                        '<div class="cp-history-zh">' + (item.text_zh || '') + '</div>' +
+                        (item.pinyin ? '<div class="cp-history-pinyin">' + item.pinyin + '</div>' : '') +
+                        '<div class="cp-history-time">' + (item.createdAt || '') + '</div>' +
+                    '</div>';
+                });
+                historyList.innerHTML = html;
+                
+            } catch (e) {
+                historyList.innerHTML = '<div style="text-align:center; color:#ef4444; font-size:0.9rem;">Lỗi tải lịch sử: ' + e.message + '</div>';
+            }
+        });
+    }
+
+    if (historyCloseBtn) {
+        historyCloseBtn.addEventListener('click', function() {
+            historyOverlay.classList.remove('show');
+        });
+    }
+    if (historyOverlay) {
+        historyOverlay.addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('show');
+        });
+    }
+
     setTimeout(initTokenState, 100);
     setTimeout(initTokenState, 1500);
 
 })();
+
 """
