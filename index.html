@@ -6,6 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
@@ -11559,9 +11562,9 @@ html body .tiktok-float-btn > i {
     font-weight: 700;
 }
 
-/* Nút Bắt đầu */
+/* Nút Bắt đầu - Responsive thông minh */
 .cp-btn-start {
-    width: 100%;
+    width: 100%; /* Mặc định trên mobile chiếm hết chiều ngang */
     height: 52px;
     border-radius: 16px;
     border: none;
@@ -11578,6 +11581,7 @@ html body .tiktok-float-btn > i {
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
+    padding: 0 2rem;
 }
 
 .cp-btn-start:hover:not(:disabled) {
@@ -11590,6 +11594,15 @@ html body .tiktok-float-btn > i {
     opacity: 0.7;
     cursor: not-allowed;
     transform: none;
+}
+
+/* Tối ưu riêng cho màn hình lớn (Desktop từ 768px trở lên) */
+@media (min-width: 768px) {
+    .cp-btn-start {
+        width: auto;           /* Không bị kéo dãn hết cỡ */
+        min-width: 280px;      /* Giữ độ rộng tối thiểu vừa mắt */
+        align-self: flex-end;  /* Căn lề sang phải cực kỳ sang trọng và cân đối */
+    }
 }
 
 /* Thanh tiến trình */
@@ -13481,19 +13494,7 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-    <meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-    <meta name="author" content="Tuhoctiengtrung.org">
-    <link rel="canonical" href="https://tuhoctiengtrung.org/">
-    <meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-    <meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-    <meta property="og:url" content="https://tuhoctiengtrung.org/">
-    <meta property="og:type" content="website">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
-    <meta name="theme-color" content="#7c3aed">
-  </head>
+</head>
 <body>
 
 <div class="page-wrap">
@@ -13652,7 +13653,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
@@ -13705,7 +13706,7 @@ body.has-floating-group #quickSearchRoot{
         </button>
     </div>
 
-    <!-- Hàng chuyển đổi chế độ kiểu Pill Switch (Mặc định Tiếng Việt active) -->
+    <!-- Hàng chuyển đổi chế độ kiểu Pill Switch -->
     <div class="cp-switch-container" id="cpSwitchBtn" title="Đảo chiều dịch">
         <span class="cp-switch-label active" id="cpLabelVi">Tiếng Việt</span>
         <div class="cp-switch-icon-box">
@@ -13714,7 +13715,7 @@ body.has-floating-group #quickSearchRoot{
         <span class="cp-switch-label" id="cpLabelZh">Tiếng Trung</span>
     </div>
 
-    <!-- Ô nhập liệu (Mặc định placeholder Tiếng Việt) -->
+    <!-- Ô nhập liệu -->
     <div class="cp-input-wrapper">
         <textarea class="cp-textarea" id="cpInputZh" rows="4"
             placeholder="Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)"></textarea>
@@ -38224,7 +38225,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     'use strict';
     var MAX_CHARS = 5000;
     var BATCH_SIZE = 10;
-    var currentMode = 'vi2zh'; // Mặc định chế độ nhập Tiếng Việt sang Tiếng Trung
+    var currentMode = 'vi2zh';
 
     var WORKER_URL = 'https://tiny-fire-f000.hoanginvest199.workers.dev';
 
@@ -38270,7 +38271,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     inputArea.addEventListener('input', updateCharCount);
     setTimeout(autoResizeTextarea, 100);
 
-    // Đổi chiều dịch
     switchBtn.addEventListener('click', function() {
         if (currentMode === 'vi2zh') {
             currentMode = 'zh2vi';
@@ -38307,9 +38307,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     });
 
     function smartSplit(text, mode) {
-        // Bảo vệ dấu chấm trong số (1.400, 162.000) để không bị ngắt nhầm câu
         var protectedText = text.replace(/(\d)\.(\d)/g, '$1__DOT__$2');
-        
         var rawParts = protectedText.split(/(?<=[.!?。！？\n])/g);
         var result = [];
         
