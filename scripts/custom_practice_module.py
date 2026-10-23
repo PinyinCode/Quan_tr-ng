@@ -534,44 +534,22 @@ def build_custom_practice_js():
         var pinyin = '';
         try {
             if (mode === 'zh2vi') {
-                // ⭐ Đã đổi endpoint sang clients5 (hỗ trợ CORS tốt hơn trên Chrome/Cốc Cốc)
-                var url = 'https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=zh-CN&tl=vi&q=' + encodeURIComponent(text);
-                var gtRes = await fetch(url);
+                var gtRes = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=vi&dt=t&q=' + encodeURIComponent(text));
                 var gtJson = await gtRes.json();
-                
-                // Xử lý kết quả trả về
-                if (Array.isArray(gtJson) && Array.isArray(gtJson[0])) {
-                    translated = gtJson[0].map(function(item) { return item[0]; }).join('');
-                } else if (Array.isArray(gtJson) && gtJson[0]) {
-                    translated = gtJson[0];
-                } else {
-                    translated = gtJson;
-                }
-                
+                translated = gtJson[0].map(function(item) { return item[0]; }).join('');
                 if (window.pinyinPro) {
                     pinyin = window.pinyinPro.pinyin(text, { toneType: 'symbol' });
                 }
             } else {
-                // ⭐ Đã đổi endpoint cho chiều Việt -> Trung
-                var url2 = 'https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=vi&tl=zh-CN&q=' + encodeURIComponent(text);
-                var gtRes2 = await fetch(url2);
+                var gtRes2 = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=zh-CN&dt=t&q=' + encodeURIComponent(text));
                 var gtJson2 = await gtRes2.json();
-                
-                if (Array.isArray(gtJson2) && Array.isArray(gtJson2[0])) {
-                    translated = gtJson2[0].map(function(item) { return item[0]; }).join('');
-                } else if (Array.isArray(gtJson2) && gtJson2[0]) {
-                    translated = gtJson2[0];
-                } else {
-                    translated = gtJson2;
-                }
-                
+                translated = gtJson2[0].map(function(item) { return item[0]; }).join('');
                 if (window.pinyinPro) {
                     pinyin = window.pinyinPro.pinyin(translated, { toneType: 'symbol' });
                 }
             }
         } catch(e) {
             console.warn('[CP] Google Translate error:', e);
-            translated = '[Lỗi kết nối - Vui lòng thử lại]';
         }
         return { translated: translated, pinyin: pinyin };
     }
