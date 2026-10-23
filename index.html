@@ -38567,21 +38567,25 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         }
     }
 
-    function findSuspiciousWords() {
+        function findSuspiciousWords() {
         if (currentMode !== 'vi2zh') return [];
         var text = inputArea.value;
-        var words = text.match(/\b[A-Za-zÀ-ỹ]+\b/g) || [];
+        // ⭐ Chỉ kiểm tra các từ có độ dài từ 3 ký tự trở lên để tránh bắt nhầm từ ngắn, viết tắt
+        var words = text.match(/\b[A-Za-zÀ-ỹ]{3,}\b/g) || [];
         var suspicious = [];
 
         for (var i = 0; i < words.length; i++) {
             var w = words[i];
             var wLower = w.toLowerCase();
-            if (w.length <= 1) continue;
-            var hasInvalidDouble = /(hh|gg|kk|bb|dd|cc|vv|mm|pp|ss|ff|zz|jj|ww|qq|xx)/.test(wLower);
+            
+            // 1. Phát hiện kẹt phím (lặp 3 ký tự giống nhau liên tiếp trở lên, VD: hhh, aaa)
+            var hasTripleChar = /(.)\1{2,}/.test(wLower);
+            
+            // 2. Phát hiện chuỗi dài từ 3 ký tự nhưng hoàn toàn không có nguyên âm (gõ phím bừa)
             var vowelsRegex = /[aeiouyàáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/i;
             var hasVowel = vowelsRegex.test(wLower);
 
-            if (hasInvalidDouble || !hasVowel) {
+            if (hasTripleChar || !hasVowel) {
                 if (suspicious.indexOf(w) === -1) suspicious.push(w);
             }
         }
