@@ -492,6 +492,7 @@ def build_custom_practice_js():
     var cachedHistoryData = [];
     var currentTodayCount = 0;
     var isUserAdmin = false;
+    var currentReadRemain = 100;
 
     function initTokenState() {
         var user = null;
