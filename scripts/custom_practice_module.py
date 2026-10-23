@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 r"""
-custom_practice_module.py - Khu vực Luyện tập Tự do (Hiển thị sẵn)
-Hỗ trợ: Dịch 2 chiều, tự động giãn chiều cao, tự động chia nhỏ để dịch.
+custom_practice_module.py - Khu vực Luyện tập Tự do (Hero Feature)
 """
 
 def build_custom_practice_css():
@@ -169,10 +168,6 @@ def build_custom_practice_css():
     padding-right: .5rem;
     font-weight: 600;
 }
-.cp-char-count.over {
-    color: var(--danger);
-    font-weight: 800;
-}
 
 /* Nút Bắt đầu */
 .cp-btn-start {
@@ -284,7 +279,7 @@ def build_custom_practice_html():
 
     <div class="cp-input-wrapper">
         <textarea class="cp-textarea" id="cpInputZh" rows="1"
-            placeholder="Dán văn bản tiếng Trung hoặc nhập tiếng Việt (mỗi câu kết thúc bằng dấu chấm)..."></textarea>
+            placeholder="Dán văn bản tiếng Trung hoặc nhập tiếng Việt (mỗi dòng là 1 câu)..."></textarea>
         <div class="cp-char-count" id="cpCharCount">0 / 5000</div>
     </div>
 
@@ -318,7 +313,6 @@ def build_custom_practice_js():
     var progressBar = document.getElementById('cpProgressBar');
     var progressText = document.getElementById('cpProgressText');
 
-    // ⭐ 1. TỰ ĐỘNG GIÃN CHIỀU CAO
     function autoResizeTextarea() {
         inputArea.style.height = 'auto';
         var newHeight = inputArea.scrollHeight;
@@ -332,7 +326,6 @@ def build_custom_practice_js():
         }
     }
 
-    // ⭐ 2. ĐẾM KÝ TỰ
     function updateCharCount() {
         var len = inputArea.value.length;
         charCount.textContent = len + ' / ' + MAX_CHARS;
@@ -349,24 +342,23 @@ def build_custom_practice_js():
     inputArea.addEventListener('input', updateCharCount);
     setTimeout(autoResizeTextarea, 100);
 
-    // ⭐ 3. CHUYỂN ĐỔI CHIỀU DỊCH
     switchBtn.addEventListener('click', function() {
         if (currentMode === 'zh2vi') {
             currentMode = 'vi2zh';
             switchLabel.textContent = 'Việt → Trung';
             switchBtn.classList.add('mode-vi2zh');
-            inputArea.placeholder = 'Nhập văn bản tiếng Việt (mỗi câu kết thúc bằng dấu chấm)...';
+            inputArea.placeholder = 'Nhập văn bản tiếng Việt (mỗi dòng là 1 câu)...';
         } else {
             currentMode = 'zh2vi';
             switchLabel.textContent = 'Trung → Việt';
             switchBtn.classList.remove('mode-vi2zh');
-            inputArea.placeholder = 'Dán văn bản tiếng Trung hoặc nhập tiếng Việt (mỗi câu kết thúc bằng dấu chấm)...';
+            inputArea.placeholder = 'Dán văn bản tiếng Trung hoặc nhập tiếng Việt (mỗi dòng là 1 câu)...';
         }
         inputArea.value = '';
         updateCharCount();
     });
 
-    // ⭐ 4. HÀM TÁCH CÂU THÔNG MINH (ĐÃ CẬP NHẬT THEO YÊU CẦU)
+    // ⭐ HÀM TÁCH CÂU THÔNG MINH (BAO GỒM CẢ DẤU XUỐNG DÒNG)
     function splitIntoSentences(text, mode) {
         var sentences = [];
         var hasChinese = /[\u4e00-\u9fa5]/.test(text);
@@ -375,31 +367,26 @@ def build_custom_practice_js():
         if (mode === 'vi2zh' && hasChinese) actualMode = 'zh2vi';
 
         if (actualMode === 'zh2vi') {
-            // Tách tiếng Trung
+            // Tách theo dấu câu tiếng Trung và xuống dòng
             var rawSentences = text.split(/(?<=[。！？!?\n])/g);
             rawSentences.forEach(function(s) {
                 s = s.trim();
                 if (s && /[\u4e00-\u9fa5]/.test(s)) sentences.push(s);
             });
         } else {
-            // Tách tiếng Việt (Bảo vệ số thập phân, dấu chấm lửng, chữ viết tắt)
-            var textForSplit = text;
-            textForSplit = textForSplit.replace(/(\d)\.(\d)/g, '$1___DOT___$2');  // 0.2
-            textForSplit = textForSplit.replace(/\.\.\./g, '___ELLIPSIS___');      // ...
-            textForSplit = textForSplit.replace(/([A-Z])\.([A-Z])/g, '$1___DOT___$2'); // TP.HCM
-            
-            // Tách SAU dấu chấm câu và dấu xuống dòng
-            var rawSentences = textForSplit.split(/(?<=[.!?\n])\s*/g);
+            // Tách theo dấu câu tiếng Việt và xuống dòng
+            var textForSplit = text.replace(/\.\.\./g, '___ELLIPSIS___');
+            textForSplit = textForSplit.replace(/(\d)\.(\d)/g, '$1___DOT___$2');
+            var rawSentences = textForSplit.split(/(?<=[.!?\n])/g); // ⭐ Đã thêm \n
             rawSentences.forEach(function(s) {
                 s = s.trim();
                 if (s) {
-                    s = s.replace(/___DOT___/g, '.').replace(/___ELLIPSIS___/g, '...');
+                    s = s.replace(/___ELLIPSIS___/g, '...').replace(/___DOT___/g, '.');
                     sentences.push(s);
                 }
             });
         }
 
-        // Chia nhỏ câu quá dài (> 5000 ký tự)
         var finalSentences = [];
         sentences.forEach(function(s) {
             if (s.length > MAX_SENTENCE_LENGTH) {
@@ -419,11 +406,11 @@ def build_custom_practice_js():
         return finalSentences;
     }
 
-    // ⭐ 5. NÚT BẮT ĐẦU
     startBtn.addEventListener('click', async function() {
         var rawText = inputArea.value.trim();
         if (!rawText) { alert('Vui lòng nhập văn bản!'); return; }
 
+        // Tự động chuyển chế độ nếu nhập sai
         var hasChinese = /[\u4e00-\u9fa5]/.test(rawText);
         if (currentMode === 'zh2vi' && !hasChinese) {
             currentMode = 'vi2zh';
