@@ -833,14 +833,28 @@ def build_custom_practice_js():
         });
     }
 
+        // ⭐ Hàm chuyển đổi Pinyin tự động nhận diện & gộp cụm từ ghép
     function getSmartPinyin(text) {
         if (!window.pinyinPro || !text) return '';
         try {
-            return window.pinyinPro.pinyin(text, { toneType: 'symbol', wordMode: true });
+            // Sử dụng segmentit: true kết hợp wordMode để phân tách cụm từ tiếng Trung chính xác
+            return window.pinyinPro.pinyin(text, { 
+                toneType: 'symbol', 
+                type: 'array',
+                segmentit: true 
+            }).join(' ');
         } catch (e) {
-            return window.pinyinPro.pinyin(text, { toneType: 'symbol' });
+            try {
+                return window.pinyinPro.pinyin(text, { 
+                    toneType: 'symbol', 
+                    wordMode: true 
+                });
+            } catch (err) {
+                return window.pinyinPro.pinyin(text, { toneType: 'symbol' });
+            }
         }
     }
+
 
     async function fetchTranslate(text, mode) {
         var translated = '';
