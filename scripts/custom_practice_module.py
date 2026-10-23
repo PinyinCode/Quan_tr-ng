@@ -347,20 +347,30 @@ def build_custom_practice_js():
     });
 
         function smartSplit(text, mode) {
-        // Tạm thời thay thế dấu chấm trong các con số (vd: 1.400, 162.000) để tránh bị ngắt nhầm
+        // Bảo vệ dấu chấm trong các con số (vd: 1.400) để không bị tách sai
         var protectedText = text.replace(/(\d)\.(\d)/g, '$1__DOT__$2');
         
+        // Tách câu dựa trên các dấu kết thúc câu
         var rawParts = protectedText.split(/(?<=[.!?。！？\n])/g);
         var result = [];
+        
         for (var i = 0; i < rawParts.length; i++) {
             var s = rawParts[i].replace(/__DOT__/g, '.').trim();
             if (s.length === 0) continue;
-            if (mode === 'zh2vi' && !/[\u4e00-\u9fa5]/.test(s)) continue;
+            
+            if (mode === 'zh2vi') {
+                // Chỉ lấy câu có chứa chữ Hán
+                if (!/[\u4e00-\u9fa5]/.test(s)) continue; 
+            } else {
+                // Chỉ lấy câu có chứa chữ cái tiếng Việt (a-z, A-Z, có dấu)
+                // Nếu câu chỉ có số hoặc ký tự đặc biệt -> Bỏ qua không dịch
+                if (!/[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềếểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸửữựỳỵỷỹ]/.test(s)) continue;
+            }
+            
             result.push(s);
         }
         return result;
     }
-
 
     startBtn.addEventListener('click', async function() {
         var rawText = inputArea.value.trim();
@@ -493,16 +503,13 @@ def build_custom_practice_js():
             
             translated = json.translated;
 
-            // ⭐ XÁC ĐỊNH CÂU TIẾNG TRUNG ĐỂ LẤY PINYIN
+            // Xác định câu tiếng Trung để tạo Pinyin
             if (mode === 'zh2vi') {
-                // Nếu nhập tiếng Trung, câu gốc chính là tiếng Trung
                 zhTextForPinyin = text; 
             } else {
-                // Nếu nhập tiếng Việt, câu dịch ra (translated) chính là tiếng Trung
                 zhTextForPinyin = translated; 
             }
 
-            // Tạo Pinyin từ câu tiếng Trung đã xác định
             if (window.pinyinPro && zhTextForPinyin) {
                 pinyin = window.pinyinPro.pinyin(zhTextForPinyin, { toneType: 'symbol' });
             }
