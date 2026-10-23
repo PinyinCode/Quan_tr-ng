@@ -366,12 +366,10 @@ def build_custom_practice_html():
                 <p>Nhập văn bản bất kỳ để luyện tập</p>
             </div>
         </div>
-        <!-- ⭐ Khối chứa Token, Nút Lịch Sử và Nút Reset -->
         <div style="display:flex; gap:8px; align-items:center;">
             <div class="cp-token-badge" id="cpTokenBadge">
                 <i class="fas fa-bolt"></i> <span id="cpTokenText">Đang tải...</span>
             </div>
-            <!-- ⭐ NÚT LỊCH SỬ ĐÃ ĐƯỢC BỔ SUNG CHÍNH XÁC VÀO ĐÂY -->
             <button class="cp-btn-reset" id="cpHistoryBtn" type="button" title="Xem lịch sử">
                 <i class="fas fa-clock-rotate-left"></i>
             </button>
@@ -429,7 +427,12 @@ def build_custom_practice_html():
     <div class="cp-modal-box" style="max-width: 600px; text-align: left;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #eee; padding-bottom: 10px;">
             <h4 class="cp-modal-title" style="font-size: 1.1rem; color: #1e1b4b; margin:0;"><i class="fas fa-history"></i> Lịch sử dịch gần đây</h4>
-            <button id="cpHistoryCloseBtn" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#64748b;"><i class="fas fa-times"></i></button>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button id="cpSelectAllHistoryBtn" style="background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; border:none; padding:5px 10px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer;" title="Chọn tất cả ra luyện tập">
+                    <i class="fas fa-check-double"></i> Chọn tất cả
+                </button>
+                <button id="cpHistoryCloseBtn" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#64748b;"><i class="fas fa-times"></i></button>
+            </div>
         </div>
         <div id="cpHistoryList" style="max-height: 400px; overflow-y: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
         </div>
@@ -474,12 +477,14 @@ def build_custom_practice_js():
     var historyOverlay = document.getElementById('cpHistoryOverlay');
     var historyList = document.getElementById('cpHistoryList');
     var historyCloseBtn = document.getElementById('cpHistoryCloseBtn');
+    var selectAllHistoryBtn = document.getElementById('cpSelectAllHistoryBtn');
 
     var myTokensUsed = 0;
     var myTokenQuota = 20000;
     var myBonusTokens = 0;
     var currentUser = null;
     var resolveModalAction = null;
+    var cachedHistoryData = [];
 
     function initTokenState() {
         var user = null;
@@ -504,14 +509,12 @@ def build_custom_practice_js():
             return;
         }
 
-        // ⭐ Chỉ duy nhất super_admin hoặc isPermanent mới không giới hạn
         if (user.role === 'super_admin' || user.isPermanent) {
             tokenText.textContent = 'Không giới hạn';
             tokenBadge.className = 'cp-token-badge';
             return;
         }
 
-        // ⭐ Nếu là admin, gán Quota mặc định là 100.000 token/ngày
         if (user.role === 'admin') {
             myTokenQuota = user.tokenQuota || 100000;
         } else {
@@ -524,14 +527,12 @@ def build_custom_practice_js():
     }
 
     function renderTokenUI() {
-        // ⭐ Chỉ super_admin hoặc isPermanent mới được miễn hoàn toàn (Không giới hạn)
         if (currentUser && (currentUser.role === 'super_admin' || currentUser.isPermanent)) {
             tokenText.textContent = 'Không giới hạn';
             tokenBadge.className = 'cp-token-badge';
             return;
         }
 
-        // Tài khoản admin (quota 100k) hoặc active (quota 20k) sẽ chạy tiếp xuống dưới này để tính toán và hiển thị số token
         var totalAvailable = myTokenQuota + myBonusTokens;
         var remain = totalAvailable - myTokensUsed;
         if (remain < 0) remain = 0;
@@ -760,7 +761,6 @@ def build_custom_practice_js():
 
             customData.sort(function(a, b) { return parseInt(a.stt) - parseInt(b.stt); });
 
-            // Gửi lịch sử gộp 1 lần duy nhất lên Server sau khi dịch xong toàn bộ
             if (currentUser && currentUser.email && customData.length > 0) {
                 fetch(SERVER_API_URL.replace('/translate', '/history'), {
                     method: 'POST',
@@ -785,16 +785,7 @@ def build_custom_practice_js():
                 } catch(e) {}
             }
 
-            if (typeof window.activateCustomPracticeMode === 'function') {
-                window.activateCustomPracticeMode(customData);
-            } else {
-                if (typeof RAW_DATA !== 'undefined') RAW_DATA = customData;
-                if (typeof filtered !== 'undefined') filtered = customData;
-                if (typeof buildFilters === 'function') buildFilters();
-                if (typeof applyFilter === 'function') applyFilter();
-                if (typeof updateResultCount === 'function') updateResultCount();
-                if (typeof render === 'function') render(true);
-            }
+            loadDataToPracticeScreen(customData);
         } catch(e) {
             console.error('[CP] Batch processing error:', e);
             alert('Có lỗi xảy ra: ' + e.message);
@@ -802,6 +793,19 @@ def build_custom_practice_js():
             finishProcess();
         }
     });
+
+    function loadDataToPracticeScreen(customData) {
+        if (typeof window.activateCustomPracticeMode === 'function') {
+            window.activateCustomPracticeMode(customData);
+        } else {
+            if (typeof RAW_DATA !== 'undefined') RAW_DATA = customData;
+            if (typeof filtered !== 'undefined') filtered = customData;
+            if (typeof buildFilters === 'function') buildFilters();
+            if (typeof applyFilter === 'function') applyFilter();
+            if (typeof updateResultCount === 'function') updateResultCount();
+            if (typeof render === 'function') render(true);
+        }
+    }
 
     function finishProcess() {
         startBtn.innerHTML = '<i class="fas fa-rocket"></i> Bắt đầu luyện tập';
@@ -895,25 +899,81 @@ def build_custom_practice_js():
                 var json = await res.json();
                 if (!json.ok || !json.history) throw new Error('Không thể tải lịch sử');
                 
-                if (json.history.length === 0) {
+                cachedHistoryData = json.history;
+                
+                if (cachedHistoryData.length === 0) {
                     historyList.innerHTML = '<div style="text-align:center; color:#64748b; font-size:0.9rem;">Chưa có lịch sử dịch nào.</div>';
                     return;
                 }
                 
                 var html = '';
-                json.history.forEach(function(item) {
-                    html += '<div class="cp-history-item">' +
+                cachedHistoryData.forEach(function(item, idx) {
+                    html += '<div class="cp-history-item" style="position:relative;">' +
                         '<div class="cp-history-vi">' + (item.text_vi || '') + '</div>' +
                         '<div class="cp-history-zh">' + (item.text_zh || '') + '</div>' +
                         (item.pinyin ? '<div class="cp-history-pinyin">' + item.pinyin + '</div>' : '') +
-                        '<div class="cp-history-time">' + (item.createdAt || '') + '</div>' +
+                        '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">' +
+                            '<div class="cp-history-time">' + (item.createdAt || '') + '</div>' +
+                            '<button class="cp-load-single-history" data-index="' + idx + '" style="background:linear-gradient(135deg,#6366f1,#a855f7); color:#fff; border:none; padding:5px 12px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer;" type="button">' +
+                                '<i class="fas fa-play"></i> Luyện tập câu này' +
+                            '</button>' +
+                        '</div>' +
                     '</div>';
                 });
                 historyList.innerHTML = html;
                 
+                // Gắn sự kiện click cho từng nút "Luyện tập câu này"
+                var singleBtns = historyList.querySelectorAll('.cp-load-single-history');
+                singleBtns.forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var idx = parseInt(this.getAttribute('data-index'));
+                        var targetItem = cachedHistoryData[idx];
+                        if (!targetItem) return;
+
+                        var singleData = [{
+                            stt: '1',
+                            zh: targetItem.text_zh || '',
+                            vi: targetItem.text_vi || '',
+                            pinyin: targetItem.pinyin || '',
+                            hsk: 'HSK1',
+                            topic: 'Lịch sử dịch',
+                            subject: 'History'
+                        }];
+
+                        historyOverlay.classList.remove('show');
+                        loadDataToPracticeScreen(singleData);
+                    });
+                });
+                
             } catch (e) {
                 historyList.innerHTML = '<div style="text-align:center; color:#ef4444; font-size:0.9rem;">Lỗi tải lịch sử: ' + e.message + '</div>';
             }
+        });
+    }
+
+    // Sự kiện nút "Chọn tất cả" lịch sử ra màn hình chính
+    if (selectAllHistoryBtn) {
+        selectAllHistoryBtn.addEventListener('click', function() {
+            if (!cachedHistoryData || cachedHistoryData.length === 0) {
+                alert('Không có lịch sử nào để chọn!');
+                return;
+            }
+
+            var allPracticeData = [];
+            cachedHistoryData.forEach(function(item, idx) {
+                allPracticeData.push({
+                    stt: String(idx + 1),
+                    zh: item.text_zh || '',
+                    vi: item.text_vi || '',
+                    pinyin: item.pinyin || '',
+                    hsk: 'HSK1',
+                    topic: 'Lịch sử dịch',
+                    subject: 'History'
+                });
+            });
+
+            historyOverlay.classList.remove('show');
+            loadDataToPracticeScreen(allPracticeData);
         });
     }
 
