@@ -6,6 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
@@ -11370,35 +11373,26 @@ html body .tiktok-float-btn > i {
 /* ═══════════════════════════════════════════════════════════ */
 /* KHU VỰC LUYỆN TẬP TỰ DO - NÂNG CẤP UI CHỦ LỰC              */
 /* ═══════════════════════════════════════════════════════════ */
-.cp-section {
-    background: var(--surface);
-    border: 1px solid rgba(139, 92, 246, 0.15);
-    border-radius: 20px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-    position: relative;
-    overflow: hidden;
-}
-.cp-section::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
-}
-
-.cp-section-header {
+/* Bao bọc toàn bộ hàng tiêu đề để đẩy nút Xóa sang phải */
+.cp-header-row {
     display: flex;
     align-items: center;
-    gap: .75rem;
-    font-size: 1.15rem;
-    font-weight: 800;
-    color: var(--text);
+    justify-content: space-between;
+    width: 100%;
 }
+
+/* Gộp cây bút và chữ thành 1 khối Badge */
+.cp-section-header {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.08));
+    padding: 4px 18px 4px 4px; /* Căn lề trái 4px để icon lọt khít */
+    border-radius: 50px;
+    border: 1px solid rgba(168,85,247,0.15);
+    box-shadow: 0 2px 10px rgba(168,85,247,0.05);
+}
+
+/* Icon cây bút hình tròn */
 .cp-section-header i {
     color: #fff;
     font-size: 1rem;
@@ -11407,9 +11401,18 @@ html body .tiktok-float-btn > i {
     justify-content: center;
     width: 36px;
     height: 36px;
-    border-radius: 10px;
+    border-radius: 50%; /* Bo tròn hoàn toàn */
     background: linear-gradient(135deg, #6366f1, #a855f7);
-    box-shadow: 0 4px 12px rgba(168,85,247,.3);
+    box-shadow: 0 4px 12px rgba(168,85,247,.4);
+    margin-right: 12px; /* Khoảng cách giữa icon và chữ */
+}
+
+/* Chữ tiêu đề */
+.cp-section-header span {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.3px;
 }
 .cp-btn-reset {
     padding: .45rem .9rem;
@@ -13418,19 +13421,7 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-    <meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-    <meta name="author" content="Tuhoctiengtrung.org">
-    <link rel="canonical" href="https://tuhoctiengtrung.org/">
-    <meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-    <meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-    <meta property="og:url" content="https://tuhoctiengtrung.org/">
-    <meta property="og:type" content="website">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
-    <meta name="theme-color" content="#7c3aed">
-  </head>
+</head>
 <body>
 
 <div class="page-wrap">
@@ -13589,7 +13580,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
@@ -13627,9 +13618,11 @@ body.has-floating-group #quickSearchRoot{
 
 
 <div class="cp-section" id="cpSection">
-    <div class="cp-section-header">
-        <i class="fas fa-magic"></i>
-        <span>Luyện Dịch Tự Do</span>
+    <div class="cp-header-row">
+        <div class="cp-section-header">
+            <i class="fas fa-pen-fancy"></i>
+            <span>Luyện Dịch Tự Do</span>
+        </div>
         <button class="cp-btn-reset" id="cpResetBtn" type="button" title="Làm mới">
             <i class="fas fa-trash-alt"></i> Xóa
         </button>
