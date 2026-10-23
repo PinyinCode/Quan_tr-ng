@@ -426,7 +426,10 @@ def build_custom_practice_html():
 <div class="cp-modal-overlay" id="cpHistoryOverlay">
     <div class="cp-modal-box" style="max-width: 600px; text-align: left;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-            <h4 class="cp-modal-title" style="font-size: 1.1rem; color: #1e1b4b; margin:0;"><i class="fas fa-history"></i> Lịch sử dịch gần đây</h4>
+            <div>
+                <h4 class="cp-modal-title" style="font-size: 1.1rem; color: #1e1b4b; margin:0;"><i class="fas fa-history"></i> Lịch sử dịch gần đây</h4>
+                <div id="cpHistoryCounter" style="font-size: 0.75rem; color: #64748b; margin-top: 2px; font-weight: 600;">Đang tải bộ đếm...</div>
+            </div>
             <div style="display:flex; gap:8px; align-items:center;">
                 <button id="cpSelectAllHistoryBtn" style="background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; border:none; padding:5px 10px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer;" title="Chọn tất cả ra luyện tập">
                     <i class="fas fa-check-double"></i> Chọn tất cả
@@ -439,6 +442,7 @@ def build_custom_practice_html():
     </div>
 </div>
 """
+
 
 
 def build_custom_practice_js():
@@ -478,6 +482,7 @@ def build_custom_practice_js():
     var historyList = document.getElementById('cpHistoryList');
     var historyCloseBtn = document.getElementById('cpHistoryCloseBtn');
     var selectAllHistoryBtn = document.getElementById('cpSelectAllHistoryBtn');
+    var historyCounter = document.getElementById('cpHistoryCounter');
 
     var myTokensUsed = 0;
     var myTokenQuota = 20000;
@@ -509,14 +514,14 @@ def build_custom_practice_js():
             return;
         }
 
-        if (user.role === 'super_admin' || user.isPermanent) {
-            tokenText.textContent = 'Không giới hạn';
-            tokenBadge.className = 'cp-token-badge';
-            return;
-        }
-
-        if (user.role === 'admin') {
-            myTokenQuota = user.tokenQuota || 100000;
+        if (user.role === 'super_admin' || user.role === 'admin' || user.isPermanent) {
+            if (user.role === 'admin' || user.role === 'super_admin') {
+                myTokenQuota = 100000;
+            } else {
+                tokenText.textContent = 'Không giới hạn';
+                tokenBadge.className = 'cp-token-badge';
+                return;
+            }
         } else {
             myTokenQuota = user.tokenQuota || 20000;
         }
@@ -542,7 +547,7 @@ def build_custom_practice_js():
         if (remain <= 2000) tokenBadge.classList.add('danger');
         else if (remain <= 5000) tokenBadge.classList.add('warn');
 
-        if (remain <= 0) {
+        if (remain <= 0 && currentUser.role !== 'admin') {
             startBtn.style.display = 'none';
             buyTokenBtn.style.display = 'flex';
             inputArea.disabled = true;
@@ -689,7 +694,7 @@ def build_custom_practice_js():
 
     startBtn.addEventListener('click', async function() {
         if (!currentUser) { alert('Vui lòng đăng nhập!'); return; }
-        if (currentUser.role !== 'super_admin' && !currentUser.isPermanent && (myTokenQuota + myBonusTokens - myTokensUsed <= 0)) { 
+        if (currentUser.role !== 'admin' && currentUser.role !== 'super_admin' && !currentUser.isPermanent && (myTokenQuota + myBonusTokens - myTokensUsed <= 0)) { 
             alert('Bạn đã hết token!'); 
             return; 
         }
@@ -825,19 +830,14 @@ def build_custom_practice_js():
         });
     }
 
-        // ⭐ Sử dụng wordMode: true của pinyin-pro để nhận diện chuẩn xác từ ghép trên mọi thiết bị
     function getSmartPinyin(text) {
         if (!window.pinyinPro || !text) return '';
         try {
-            return window.pinyinPro.pinyin(text, { 
-                toneType: 'symbol', 
-                wordMode: true 
-            });
+            return window.pinyinPro.pinyin(text, { toneType: 'symbol', wordMode: true });
         } catch (e) {
             return window.pinyinPro.pinyin(text, { toneType: 'symbol' });
         }
     }
-
 
     async function fetchTranslate(text, mode) {
         var translated = '';
@@ -871,12 +871,87 @@ def build_custom_practice_js():
         return { translated: translated, tokensUsed: tokensUsed };
     }
 
+    function renderHistoryUI() {
+        if (cachedHistoryData.length === 0) {
+            historyList.innerHTML = '<div style="text-align:center; color:#64748b; font-size:0.9rem;">Chưa có lịch sử dịch nào.</div>';
+            return;
+        }
+        
+        var html = '';
+        cachedHistoryData.forEach(function(item, idx) {
+            html += '<div class="cp-history-item" style="position:relative;" id="cp-hist-' + (item.id || idx) + '">' +
+                '<div class="cp-history-vi">' + (item.text_vi || '') + '</div>' +
+                '<div class="cp-history-zh">' + (item.text_zh || '') + '</div>' +
+                (item.pinyin ? '<div class="cp-history-pinyin">' + item.pinyin + '</div>' : '') +
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">' +
+                    '<div class="cp-history-time">' + (item.createdAt || '') + '</div>' +
+                    '<div style="display:flex; gap:6px;">' +
+                        '<button class="cp-delete-single-history" data-id="' + (item.id || '') + '" data-index="' + idx + '" style="background:#fee2e2; color:#ef4444; border:none; padding:5px 10px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer;" title="Xóa câu này">' +
+                            '<i class="fas fa-trash-alt"></i> Xóa' +
+                        '</button>' +
+                        '<button class="cp-load-single-history" data-index="' + idx + '" style="background:linear-gradient(135deg,#6366f1,#a855f7); color:#fff; border:none; padding:5px 12px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer;" type="button">' +
+                            '<i class="fas fa-play"></i> Luyện tập' +
+                        '</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+        });
+        historyList.innerHTML = html;
+        
+        // Gắn sự kiện nút Luyện tập từng câu
+        var singleBtns = historyList.querySelectorAll('.cp-load-single-history');
+        singleBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var idx = parseInt(this.getAttribute('data-index'));
+                var targetItem = cachedHistoryData[idx];
+                if (!targetItem) return;
+
+                var singleData = [{
+                    stt: '1',
+                    zh: targetItem.text_zh || '',
+                    vi: targetItem.text_vi || '',
+                    pinyin: targetItem.pinyin || '',
+                    hsk: 'HSK1',
+                    topic: 'Lịch sử dịch',
+                    subject: 'History'
+                }];
+
+                historyOverlay.classList.remove('show');
+                loadDataToPracticeScreen(singleData);
+            });
+        });
+
+        // Gắn sự kiện nút Xóa từng câu thủ công
+        var deleteBtns = historyList.querySelectorAll('.cp-delete-single-history');
+        deleteBtns.forEach(function(btn) {
+            btn.addEventListener('click', async function() {
+                var docId = this.getAttribute('data-id');
+                var idx = parseInt(this.getAttribute('data-index'));
+                if (!confirm('Bạn có chắc chắn muốn xóa câu này khỏi lịch sử?')) return;
+
+                if (docId) {
+                    try {
+                        await fetch(SERVER_API_URL.replace('/translate', '/history/delete'), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: currentUser.email, id: docId })
+                        });
+                    } catch(e) {}
+                }
+
+                cachedHistoryData.splice(idx, 1);
+                renderHistoryUI();
+            });
+        });
+    }
+
     if (historyBtn) {
         historyBtn.addEventListener('click', async function() {
             if (!currentUser || !currentUser.email) { alert('Vui lòng đăng nhập để xem lịch sử!'); return; }
             
             historyOverlay.classList.add('show');
             historyList.innerHTML = '<div style="text-align:center; color:#64748b; font-size:0.9rem;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+            historyCounter.textContent = 'Đang tải bộ đếm...';
             
             try {
                 var res = await fetch(SERVER_API_URL.replace('/translate', '/history'), {
@@ -893,57 +968,22 @@ def build_custom_practice_js():
                 
                 cachedHistoryData = json.history;
                 
-                if (cachedHistoryData.length === 0) {
-                    historyList.innerHTML = '<div style="text-align:center; color:#64748b; font-size:0.9rem;">Chưa có lịch sử dịch nào.</div>';
-                    return;
+                // Hiển thị bộ đếm số lượng câu đã dùng trong ngày
+                if (json.isAdmin) {
+                    historyCounter.innerHTML = '<span style="color:#059669; font-weight:700;"><i class="fas fa-shield-halved"></i> Tài khoản Admin: Không giới hạn (Đã lưu hôm nay: ' + (json.todayCount || 0) + ' câu)</span>';
+                } else {
+                    historyCounter.innerHTML = 'Đã dùng hôm nay: <b>' + (json.todayCount || 0) + ' / 100</b> câu';
                 }
-                
-                var html = '';
-                cachedHistoryData.forEach(function(item, idx) {
-                    html += '<div class="cp-history-item" style="position:relative;">' +
-                        '<div class="cp-history-vi">' + (item.text_vi || '') + '</div>' +
-                        '<div class="cp-history-zh">' + (item.text_zh || '') + '</div>' +
-                        (item.pinyin ? '<div class="cp-history-pinyin">' + item.pinyin + '</div>' : '') +
-                        '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">' +
-                            '<div class="cp-history-time">' + (item.createdAt || '') + '</div>' +
-                            '<button class="cp-load-single-history" data-index="' + idx + '" style="background:linear-gradient(135deg,#6366f1,#a855f7); color:#fff; border:none; padding:5px 12px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer;" type="button">' +
-                                '<i class="fas fa-play"></i> Luyện tập câu này' +
-                            '</button>' +
-                        '</div>' +
-                    '</div>';
-                });
-                historyList.innerHTML = html;
-                
-                // Gắn sự kiện click cho từng nút "Luyện tập câu này"
-                var singleBtns = historyList.querySelectorAll('.cp-load-single-history');
-                singleBtns.forEach(function(btn) {
-                    btn.addEventListener('click', function() {
-                        var idx = parseInt(this.getAttribute('data-index'));
-                        var targetItem = cachedHistoryData[idx];
-                        if (!targetItem) return;
 
-                        var singleData = [{
-                            stt: '1',
-                            zh: targetItem.text_zh || '',
-                            vi: targetItem.text_vi || '',
-                            pinyin: targetItem.pinyin || '',
-                            hsk: 'HSK1',
-                            topic: 'Lịch sử dịch',
-                            subject: 'History'
-                        }];
-
-                        historyOverlay.classList.remove('show');
-                        loadDataToPracticeScreen(singleData);
-                    });
-                });
+                renderHistoryUI();
                 
             } catch (e) {
                 historyList.innerHTML = '<div style="text-align:center; color:#ef4444; font-size:0.9rem;">Lỗi tải lịch sử: ' + e.message + '</div>';
+                historyCounter.textContent = 'Không tải được bộ đếm';
             }
         });
     }
 
-    // Sự kiện nút "Chọn tất cả" lịch sử ra màn hình chính
     if (selectAllHistoryBtn) {
         selectAllHistoryBtn.addEventListener('click', function() {
             if (!cachedHistoryData || cachedHistoryData.length === 0) {
