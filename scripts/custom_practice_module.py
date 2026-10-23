@@ -469,6 +469,7 @@ def build_custom_practice_js():
     async function fetchTranslate(text, mode) {
         var translated = '';
         var pinyin = '';
+        var zhTextForPinyin = '';
 
         try {
             var source = mode === 'zh2vi' ? 'zh-CN' : 'vi';
@@ -492,9 +493,18 @@ def build_custom_practice_js():
             
             translated = json.translated;
 
-            if (window.pinyinPro && translated && target === 'vi') {
-                var pinyinArr = window.pinyinPro.pinyin(translated, { toneType: 'symbol', type: 'array' });
-                pinyin = pinyinArr.join(' ');
+            // ⭐ XÁC ĐỊNH CÂU TIẾNG TRUNG ĐỂ LẤY PINYIN
+            if (mode === 'zh2vi') {
+                // Nếu nhập tiếng Trung, câu gốc chính là tiếng Trung
+                zhTextForPinyin = text; 
+            } else {
+                // Nếu nhập tiếng Việt, câu dịch ra (translated) chính là tiếng Trung
+                zhTextForPinyin = translated; 
+            }
+
+            // Tạo Pinyin từ câu tiếng Trung đã xác định
+            if (window.pinyinPro && zhTextForPinyin) {
+                pinyin = window.pinyinPro.pinyin(zhTextForPinyin, { toneType: 'symbol' });
             }
             
         } catch(e) {
