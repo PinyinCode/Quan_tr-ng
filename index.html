@@ -38820,26 +38820,28 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     }
 
         // ⭐ Hàm chuyển đổi Pinyin tự động nhận diện & gộp cụm từ ghép
+        // ⭐ Hàm getSmartPinyin chuẩn hóa riêng cho chế độ Dịch Tự Do -> Màn hình Luyện Tập
     function getSmartPinyin(text) {
         if (!window.pinyinPro || !text) return '';
         try {
-            // Sử dụng segmentit: true kết hợp wordMode để phân tách cụm từ tiếng Trung chính xác
-            return window.pinyinPro.pinyin(text, { 
-                toneType: 'symbol', 
-                type: 'array',
-                segmentit: true 
-            }).join(' ');
+            // 1. Tách câu Tiếng Trung thành mảng các cụm từ ghép (Chữ Hán)
+            var words = window.pinyinPro.pinyin(text, { type: 'array', segmentit: true });
+            
+            // 2. Chuyển từng cụm từ ghép sang Pinyin liền nhau (separator: '')
+            var pinyinWords = words.map(function(word) {
+                if (/[\u4e00-\u9fa5]/.test(word)) {
+                    return window.pinyinPro.pinyin(word, { toneType: 'symbol', separator: '' });
+                }
+                return word;
+            });
+            
+            // 3. Nối các cụm từ ghép bằng 1 khoảng trắng duy nhất
+            return pinyinWords.join(' ');
         } catch (e) {
-            try {
-                return window.pinyinPro.pinyin(text, { 
-                    toneType: 'symbol', 
-                    wordMode: true 
-                });
-            } catch (err) {
-                return window.pinyinPro.pinyin(text, { toneType: 'symbol' });
-            }
+            return window.pinyinPro.pinyin(text, { toneType: 'symbol' });
         }
     }
+
 
 
     async function fetchTranslate(text, mode) {
