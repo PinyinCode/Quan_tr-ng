@@ -490,6 +490,8 @@ def build_custom_practice_js():
     var currentUser = null;
     var resolveModalAction = null;
     var cachedHistoryData = [];
+    var currentTodayCount = 0;
+    var isUserAdmin = false;
 
     function initTokenState() {
         var user = null;
@@ -871,7 +873,19 @@ def build_custom_practice_js():
         return { translated: translated, tokensUsed: tokensUsed };
     }
 
+    function updateCounterUI() {
+        if (!historyCounter) return;
+        if (isUserAdmin) {
+            historyCounter.innerHTML = '<span style="color:#059669; font-weight:700;"><i class="fas fa-shield-halved"></i> Tài khoản Admin: Không giới hạn (Đã lưu hôm nay: ' + currentTodayCount + ' câu)</span>';
+        } else {
+            var remain = 100 - currentTodayCount;
+            if (remain < 0) remain = 0;
+            historyCounter.innerHTML = 'Đã dùng: <b>' + currentTodayCount + ' / 100</b> câu (Còn lại: <span style="color:' + (remain > 0 ? '#059669' : '#dc2626') + '; font-weight:700;">' + remain + ' lượt</span>)';
+        }
+    }
+
     function renderHistoryUI() {
+        updateCounterUI();
         if (cachedHistoryData.length === 0) {
             historyList.innerHTML = '<div style="text-align:center; color:#64748b; font-size:0.9rem;">Chưa có lịch sử dịch nào.</div>';
             return;
@@ -898,7 +912,6 @@ def build_custom_practice_js():
         });
         historyList.innerHTML = html;
         
-        // Gắn sự kiện nút Luyện tập từng câu
         var singleBtns = historyList.querySelectorAll('.cp-load-single-history');
         singleBtns.forEach(function(btn) {
             btn.addEventListener('click', function() {
@@ -921,7 +934,6 @@ def build_custom_practice_js():
             });
         });
 
-        // Gắn sự kiện nút Xóa từng câu thủ công
         var deleteBtns = historyList.querySelectorAll('.cp-delete-single-history');
         deleteBtns.forEach(function(btn) {
             btn.addEventListener('click', async function() {
@@ -931,11 +943,15 @@ def build_custom_practice_js():
 
                 if (docId) {
                     try {
-                        await fetch(SERVER_API_URL.replace('/translate', '/history/delete'), {
+                        var res = await fetch(SERVER_API_URL.replace('/translate', '/history/delete'), {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email: currentUser.email, id: docId })
                         });
+                        var json = await res.json();
+                        if (json.ok && typeof json.todayCount !== 'undefined') {
+                            currentTodayCount = json.todayCount;
+                        }
                     } catch(e) {}
                 }
 
@@ -967,13 +983,8 @@ def build_custom_practice_js():
                 if (!json.ok || !json.history) throw new Error('Không thể tải lịch sử');
                 
                 cachedHistoryData = json.history;
-                
-                // Hiển thị bộ đếm số lượng câu đã dùng trong ngày
-                if (json.isAdmin) {
-                    historyCounter.innerHTML = '<span style="color:#059669; font-weight:700;"><i class="fas fa-shield-halved"></i> Tài khoản Admin: Không giới hạn (Đã lưu hôm nay: ' + (json.todayCount || 0) + ' câu)</span>';
-                } else {
-                    historyCounter.innerHTML = 'Đã dùng hôm nay: <b>' + (json.todayCount || 0) + ' / 100</b> câu';
-                }
+                currentTodayCount = json.todayCount || 0;
+                isUserAdmin = json.isAdmin || false;
 
                 renderHistoryUI();
                 
