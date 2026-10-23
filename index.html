@@ -11438,7 +11438,6 @@ html body .tiktok-float-btn > i {
     margin: 2px 0 0 0;
 }
 
-/* ⭐ BADGE TOKEN MỚI */
 .cp-token-badge {
     display: flex; align-items: center; gap: 6px;
     background: rgba(16, 185, 129, 0.1); color: #059669;
@@ -11475,11 +11474,11 @@ html body .tiktok-float-btn > i {
     user-select: none;
 }
 .cp-switch-label {
-    flex:p 1;
+    flex: 1;
     text-align: center;
     padding: 8px;
--sw    font-weight: 700;
-   itch font-size:-container 0.85rem;
+    font-weight: 700;
+    font-size: 0.85rem;
     color: var(--text-3, #64748b);
     border-radius: 12px;
     transition: all 0.3s ease;
@@ -11501,7 +11500,7 @@ html body .tiktok-float-btn > i {
     margin: 0 6px;
     transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
-.c:hover .cp-switch-icon-box {
+.cp-switch-container:hover .cp-switch-icon-box {
     transform: rotate(180deg);
 }
 
@@ -11524,6 +11523,49 @@ html body .tiktok-float-btn > i {
     border-color: #a855f7;
     outline: none;
     box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.15);
+}
+
+/* ⭐ GIAO DIỆN KHUNG GỢI Ý CHÍNH TẢ TRỰC QUAN */
+.cp-spell-container {
+    display: none;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    color: #92400e;
+    animation: fadeIn 0.3s ease;
+}
+.cp-spell-container.show { display: flex; }
+.cp-spell-header {
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.cp-spell-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.cp-spell-chip {
+    background: #ffffff;
+    border: 1px solid #f59e0b;
+    color: #b45309;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.cp-spell-chip:hover {
+    background: #f59e0b;
+    color: #ffffff;
+    transform: translateY(-1px);
 }
 
 .cp-btn-start {
@@ -11553,7 +11595,6 @@ html body .tiktok-float-btn > i {
     box-shadow: none;
 }
 
-/* ⭐ NÚT MUA TOKEN MỚI */
 .cp-btn-buy-token {
     width: 100%;
     height: 52px;
@@ -11564,15 +11605,13 @@ html body .tiktok-float-btn > i {
     font-weight: 800;
     font-size: 1rem;
     cursor: pointer;
-    display: none; /* Ẩn mặc định */
+    display: none;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
     transition: all 0.2s;
 }
-.cp-btn-buy-token:hover {
-    background: rgba(245, 158, 11, 0.2);
-}
+.cp-btn-buy-token:hover { background: rgba(245, 158, 11, 0.2); }
 
 .cp-progress-wrap {
     display: none;
@@ -13663,7 +13702,6 @@ body.has-floating-group #quickSearchRoot{
             </div>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
-            <!-- ⭐ BADGE TOKEN -->
             <div class="cp-token-badge" id="cpTokenBadge">
                 <i class="fas fa-bolt"></i> <span id="cpTokenText">Đang tải...</span>
             </div>
@@ -13681,7 +13719,16 @@ body.has-floating-group #quickSearchRoot{
 
     <div class="cp-input-wrapper">
         <textarea class="cp-textarea" id="cpInputZh" rows="4" placeholder="Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)"></textarea>
-        <div class="cp-char-count" id="cpCharCount" style="text-align:right;font-size:.75rem;font-weight:600;color:#64748b;">0 / 5000</div>
+        
+        <!-- ⭐ KHUNG GỢI Ý CHÍNH TẢ TRỰC QUAN -->
+        <div class="cp-spell-container" id="cpSpellContainer">
+            <div class="cp-spell-header">
+                <i class="fas fa-triangle-exclamation"></i> Gợi ý chỉnh sửa chính tả/từ viết tắt:
+            </div>
+            <div class="cp-spell-chips" id="cpSpellChips"></div>
+        </div>
+
+        <div class="cp-char-count" id="cpCharCount" style="text-align:right;font-size:.75rem;font-weight:600;color:#64748b;margin-top:4px;">0 / 5000</div>
     </div>
 
     <button class="cp-btn-start" id="cpStartBtn" type="button">
@@ -38261,7 +38308,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     var BATCH_SIZE = 10;
     var currentMode = 'vi2zh';
     
-    // ⚠️ THAY ĐỔI ĐƯỜNG DẪN NÀY THÀNH SERVER PYTHON CỦA BẠN
     var SERVER_API_URL = 'https://server-vopb.onrender.com/api/translate'; 
 
     var inputArea = document.getElementById('cpInputZh');
@@ -38280,13 +38326,32 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     var progressBar = document.getElementById('cpProgressBar');
     var progressText = document.getElementById('cpProgressText');
 
+    var spellContainer = document.getElementById('cpSpellContainer');
+    var spellChips = document.getElementById('cpSpellChips');
+
     var myTokensUsed = 0;
     var myTokenQuota = 20000;
     var myBonusTokens = 0;
+    var currentUser = null;
 
-    // ⭐ KHỞI TẠO TOKEN TỪ FIREBASE (READ ONLY)
+    // ⭐ TỪ ĐIỂN TỪ VIẾT TẮT / LỖI CHÍNH TẢ PHỔ BIẾN (TIẾNG VIỆT)
+    var commonTyposVi = {
+        'ko': 'không', 'hok': 'không', 'kg': 'không', 'k': 'không',
+        'dc': 'được', 'đc': 'được',
+        'nhg': 'nhưng',
+        'đg': 'đang',
+        'j': 'gì',
+        'rùi': 'rồi',
+        'ik': 'đi',
+        'bit': 'biết', 'bít': 'biết',
+        'mng': 'mọi người', 'mn': 'mọi người',
+        'tks': 'cảm ơn', 'thank': 'cảm ơn',
+        'vs': 'với',
+        'ntn': 'như thế nào',
+        'kh': 'không', 'hok': 'không'
+    };
+
     function initTokenState() {
-        // 1. Tìm user trong LocalStorage (nơi Auth đã lưu sẵn)
         var user = null;
         try {
             for (var i = 0; i < localStorage.length; i++) {
@@ -38295,13 +38360,14 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                     var cached = JSON.parse(localStorage.getItem(key) || 'null');
                     if (cached && cached.data && cached.data.email) {
                         user = cached.data;
-                        break; // Tìm thấy là lấy luôn
+                        break;
                     }
                 }
             }
         } catch(e) {}
 
-        // 2. Nếu không có user -> Chưa đăng nhập
+        currentUser = user;
+
         if (!user) {
             tokenText.textContent = 'Chưa đăng nhập';
             tokenBadge.className = 'cp-token-badge warn';
@@ -38309,14 +38375,12 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             return;
         }
 
-        // 3. Nếu là Admin hoặc Vĩnh viễn -> Không giới hạn
         if (user.role === 'admin' || user.isPermanent) {
             tokenText.textContent = 'Không giới hạn';
             tokenBadge.className = 'cp-token-badge';
             return;
         }
 
-        // 4. Lấy Token và hiển thị
         myTokenQuota = user.tokenQuota || 20000;
         myBonusTokens = user.bonusTokens || 0;
         myTokensUsed = user.tokensUsed || 0;
@@ -38325,19 +38389,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     }
 
     function renderTokenUI() {
-        // Lấy lại user từ cache để kiểm tra
-        var user = null;
-        try {
-            for (var i = 0; i < localStorage.length; i++) {
-                var key = localStorage.key(i);
-                if (key && key.indexOf('user_cache_') === 0) {
-                    var cached = JSON.parse(localStorage.getItem(key) || 'null');
-                    if (cached && cached.data) { user = cached.data; break; }
-                }
-            }
-        } catch(e) {}
-
-        if (user && (user.role === 'admin' || user.isPermanent)) return;
+        if (currentUser && (currentUser.role === 'admin' || currentUser.isPermanent)) return;
 
         var totalAvailable = myTokenQuota + myBonusTokens;
         var remain = totalAvailable - myTokensUsed;
@@ -38358,11 +38410,11 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             startBtn.style.display = 'flex';
             buyTokenBtn.style.display = 'none';
             inputArea.disabled = false;
-            inputArea.placeholder = currentMode === 'vi2zh' ? 'Nhập văn bản tiếng Việt vào đây...' : 'Dán văn bản tiếng Trung vào đây...';
+            inputArea.placeholder = currentMode === 'vi2zh' ? 'Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)' : 'Dán văn bản tiếng Trung vào đây... (tối đa 5000 ký tự)';
         }
     }
+
     buyTokenBtn.addEventListener('click', function() {
-        // Mở modal gia hạn có sẵn của hệ thống
         if (typeof openRenewalModal === 'function') {
             openRenewalModal();
         } else {
@@ -38371,7 +38423,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     });
 
     function autoResizeTextarea() {
-        inputArea.style.heightarea = 'auto';
+        inputArea.style.height = 'auto';
         var newHeight = inputArea.scrollHeight;
         var maxHeight = 400;
         if (newHeight > maxHeight) {
@@ -38380,6 +38432,49 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         } else {
             inputArea.style.height = newHeight + 'px';
             inputArea.style.overflowY = 'hidden';
+        }
+    }
+
+    // ⭐ HÀM QUÉT VÀ HIỂN THỊ GỢI Ý CHÍNH TẢ TRỰC QUAN
+    function checkSpellingSuggestions() {
+        if (currentMode !== 'vi2zh') {
+            spellContainer.classList.remove('show');
+            return;
+        }
+
+        var text = inputArea.value;
+        // Tách các từ đơn lẻ theo khoảng trắng và dấu câu
+        var words = text.match(/\b[A-Za-zÀ-ỹ]+\b/g) || [];
+        var foundTypos = {};
+
+        for (var i = 0; i < words.length; i++) {
+            var w = words[i].toLowerCase();
+            if (commonTyposVi[w]) {
+                foundTypos[w] = commonTyposVi[w];
+            }
+        }
+
+        var keys = Object.keys(foundTypos);
+        if (keys.length > 0) {
+            spellChips.innerHTML = '';
+            keys.forEach(function(wrongWord) {
+                var correctWord = foundTypos[wrongWord];
+                var chip = document.createElement('div');
+                chip.className = 'cp-spell-chip';
+                chip.innerHTML = '<i class="fas fa-magic"></i> "' + wrongWord + '" ➜ <b>' + correctWord + '</b>';
+                
+                // Khi bấm vào chip, tự động thay thế từ sai thành từ đúng trong textarea
+                chip.addEventListener('click', function() {
+                    var regex = new RegExp('\\b' + wrongWord + '\\b', 'gi');
+                    inputArea.value = inputArea.value.replace(regex, correctWord);
+                    updateCharCount();
+                    checkSpellingSuggestions(); // Cập nhật lại danh sách gợi ý
+                });
+                spellChips.appendChild(chip);
+            });
+            spellContainer.classList.add('show');
+        } else {
+            spellContainer.classList.remove('show');
         }
     }
 
@@ -38394,7 +38489,9 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             charCount.classList.remove('over');
         }
         autoResizeTextarea();
+        checkSpellingSuggestions(); // Quét lỗi chính tả mỗi khi gõ
     }
+
     inputArea.addEventListener('input', updateCharCount);
     setTimeout(autoResizeTextarea, 100);
 
@@ -38403,9 +38500,10 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             currentMode = 'zh2vi';
             labelVi.classList.remove('active');
             labelZh.classList.add('active');
+            spellContainer.classList.remove('show');
             if (!inputArea.disabled) inputArea.placeholder = 'Dán văn bản tiếng Trung vào đây... (tối đa 5000 ký tự)';
         } else {
-            currentMode = 'vi2zh';
+            currentMode = 'zh2vi';
             labelZh.classList.remove('active');
             labelVi.classList.add('active');
             if (!inputArea.disabled) inputArea.placeholder = 'Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)';
@@ -38416,6 +38514,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
     resetBtn.addEventListener('click', function() {
         inputArea.value = '';
+        spellContainer.classList.remove('show');
         updateCharCount();
         progressWrap.classList.remove('show');
         startBtn.disabled = false;
@@ -38442,7 +38541,10 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
     startBtn.addEventListener('click', async function() {
         if (!currentUser) { alert('Vui lòng đăng nhập!'); return; }
-        if (myTokenQuota + myBonusTokens - myTokensUsed <= 0) { alert('Bạn đã hết token!'); return; }
+        if (currentUser.role !== 'admin' && !currentUser.isPermanent && (myTokenQuota + myBonusTokens - myTokensUsed <= 0)) { 
+            alert('Bạn đã hết token!'); 
+            return; 
+        }
 
         var rawText = inputArea.value.trim();
         if (!rawText) { alert('Vui lòng nhập văn bản!'); return; }
@@ -38510,7 +38612,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
         customData.sort(function(a, b) { return parseInt(a.stt) - parseInt(b.stt); });
 
-        // ⭐ Cập nhật UI Token (Server đã trừ rồi)
         if (totalTokensThisSession > 0) {
             myTokensUsed += totalTokensThisSession;
             renderTokenUI();
@@ -38531,6 +38632,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             if (typeof filtered !== 'undefined') filtered = customData;
             if (typeof buildFilters === 'function') buildFilters();
             if (typeof applyFilter === 'function') applyFilter();
+            if (typeof updateResultCount === 'function') updateResultCount();
             if (typeof render === 'function') render(true);
         }
 
@@ -38551,7 +38653,30 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         });
     }
 
-    // ⭐ HÀM GỌI SERVER PYTHON
+    function getSmartPinyin(text) {
+        if (!window.pinyinPro || !text) return '';
+        if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+            try {
+                var segmenter = new Intl.Segmenter('zh', { granularity: 'word' });
+                var segs = segmenter.segment(text);
+                var resultWords = [];
+                for (var seg of segs) {
+                    var segmentStr = seg.segment;
+                    if (/[\u4e00-\u9fa5]/.test(segmentStr)) {
+                        var pinyinWord = window.pinyinPro.pinyin(segmentStr, { toneType: 'symbol', separator: '' });
+                        resultWords.push(pinyinWord);
+                    } else {
+                        resultWords.push(segmentStr);
+                    }
+                }
+                return resultWords.join(' ');
+            } catch (e) {
+                console.warn('[Pinyin] Intl.Segmenter fallback:', e);
+            }
+        }
+        return window.pinyinPro.pinyin(text, { toneType: 'symbol' });
+    }
+
     async function fetchTranslate(text, mode) {
         var translated = '';
         var pinyin = '';
@@ -38582,7 +38707,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
             var zhTextForPinyin = (mode === 'zh2vi') ? text : translated; 
             if (window.pinyinPro && zhTextForPinyin) {
-                pinyin = window.pinyinPro.pinyin(zhTextForPinyin, { toneType: 'symbol' });
+                pinyin = getSmartPinyin(zhTextForPinyin);
             }
             
         } catch(e) {
@@ -38593,10 +38718,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         return { translated: translated, pinyin: pinyin, tokensUsed: tokensUsed };
     }
 
-    // ⭐ ĐỌC TỪ LOCALSTORAGE NGAY LẬP TỨC (0.1 giây)
     setTimeout(initTokenState, 100);
-    
-    // ⭐ DỰ PHÒNG: Nếu Auth lưu hơi chậm, đọc lại sau 1.5 giây
     setTimeout(initTokenState, 1500);
 
 })();
