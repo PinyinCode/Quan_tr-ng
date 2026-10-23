@@ -13773,10 +13773,15 @@ body.has-floating-group #quickSearchRoot{
                 <p>Nhập văn bản bất kỳ để luyện tập</p>
             </div>
         </div>
+        <!-- ⭐ Khối chứa Token, Nút Lịch Sử và Nút Reset -->
         <div style="display:flex; gap:8px; align-items:center;">
             <div class="cp-token-badge" id="cpTokenBadge">
                 <i class="fas fa-bolt"></i> <span id="cpTokenText">Đang tải...</span>
             </div>
+            <!-- ⭐ NÚT LỊCH SỬ ĐÃ ĐƯỢC BỔ SUNG CHÍNH XÁC VÀO ĐÂY -->
+            <button class="cp-btn-reset" id="cpHistoryBtn" type="button" title="Xem lịch sử">
+                <i class="fas fa-clock-rotate-left"></i>
+            </button>
             <button class="cp-btn-reset" id="cpResetBtn" type="button" title="Làm mới">
                 <i class="fas fa-rotate-right"></i>
             </button>
@@ -13791,14 +13796,12 @@ body.has-floating-group #quickSearchRoot{
 
     <div class="cp-input-wrapper">
         <textarea class="cp-textarea" id="cpInputZh" rows="4" placeholder="Nhập văn bản tiếng Việt vào đây..."></textarea>
-
         <div class="cp-spell-container" id="cpSpellContainer">
             <div class="cp-spell-header">
                 <i class="fas fa-triangle-exclamation"></i> Phát hiện từ nghi ngờ sai chính tả / dính phím:
             </div>
             <div class="cp-spell-chips" id="cpSpellChips"></div>
         </div>
-
         <div class="cp-char-count" id="cpCharCount" style="text-align:right;font-size:.75rem;font-weight:600;color:#64748b;margin-top:4px;">0 / 5000</div>
     </div>
 
@@ -13815,7 +13818,6 @@ body.has-floating-group #quickSearchRoot{
     </div>
 </div>
 
-<!-- ⭐ MODAL POPUP CẢNH BÁO HTML -->
 <div class="cp-modal-overlay" id="cpModalOverlay">
     <div class="cp-modal-box">
         <div class="cp-modal-icon"><i class="fas fa-triangle-exclamation"></i></div>
@@ -13826,6 +13828,17 @@ body.has-floating-group #quickSearchRoot{
         <div class="cp-modal-actions">
             <button class="cp-modal-btn cp-modal-btn-cancel" id="cpModalFixBtn" type="button">Sửa lại văn bản</button>
             <button class="cp-modal-btn cp-modal-btn-proceed" id="cpModalProceedBtn" type="button">Vẫn tiếp tục dịch</button>
+        </div>
+    </div>
+</div>
+
+<div class="cp-modal-overlay" id="cpHistoryOverlay">
+    <div class="cp-modal-box" style="max-width: 600px; text-align: left;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+            <h4 class="cp-modal-title" style="font-size: 1.1rem; color: #1e1b4b; margin:0;"><i class="fas fa-history"></i> Lịch sử dịch gần đây</h4>
+            <button id="cpHistoryCloseBtn" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#64748b;"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="cpHistoryList" style="max-height: 400px; overflow-y: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
         </div>
     </div>
 </div>
