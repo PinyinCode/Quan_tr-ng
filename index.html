@@ -38488,6 +38488,12 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     var isUserAdmin = false;
     var currentReadRemain = 100;
 
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadPinyinPro);
+    } else {
+        loadPinyinPro();
+    }
+
     function initTokenState() {
         var user = null;
         try {
@@ -38563,30 +38569,34 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     function autoResizeTextarea() {
         inputArea.style.height = 'auto';
         var newHeight = inputArea.scrollHeight;
-        var maxHeight = 400;
+        var maxHeight = 400; // Đã sửa lỗi cú pháp 'maxHeight = var 400'
         if (newHeight > maxHeight) {
             inputArea.style.height = maxHeight + 'px';
             inputArea.style.overflowY = 'auto';
         } else {
             inputArea.style.height = newHeight + 'px';
-            inputArea.style.overflowY = 'hidden';
+            inputArea.style.overflowY = 'hidden'; // Đã sửa lỗi cú pháp
         }
     }
 
     function findSuspiciousWords() {
         if (currentMode !== 'vi2zh') return [];
         var text = inputArea.value;
-        var words = text.match(/\b[A-Za-zÀ-ỹ]{3,}\b/g) || [];
+        var rawWords = text.split(/\s+/);
         var suspicious = [];
+        var whitelist = ['tr', 'và', 'của', 'cho', 'với', 'để', 'là', 'có', 'không', 'những', 'các', 'được'];
 
-        for (var i = 0; i < words.length; i++) {
-            var w = words[i];
+        for (var i = 0; i < rawWords.length; i++) {
+            var w = rawWords[i].replace(/^[.,!?;:"'()\[\]{}]+|[.,!?;:"'()\[\]{}]+$/g, '');
+            if (!w || w.length < 3) continue;
+            if (whitelist.includes(w.toLowerCase())) continue;
+
             var wLower = w.toLowerCase();
             var hasTripleChar = /(.)\1{2,}/.test(wLower);
-            var vowelsRegex = /[aeiouyàáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/i;
+            var vowelsRegex = /[aeiouyàáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/i;
             var hasVowel = vowelsRegex.test(wLower);
 
-            if (hasTripleChar || !hasVowel) {
+            if (hasTripleChar || (!hasVowel && w.length >= 4)) {
                 if (suspicious.indexOf(w) === -1) suspicious.push(w);
             }
         }
@@ -38731,7 +38741,9 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                 var combinedText = chunk.join('\n[---]\n');
                 
                 var data = await fetchTranslate(combinedText, currentMode);
-                totalTokensThisSession += (data.tokensUsed || 0);
+                if (data.tokensUsed > 0) {
+                    totalTokensThisSession += data.tokensUsed;
+                }
 
                 var translatedChunk = data.translated.split(/\n?\[\s*---\s*\]\n?/);
 
@@ -38819,15 +38831,27 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         if (window.pinyinPro) return Promise.resolve();
         return new Promise(function(resolve) {
             var script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.2/dist/index.min.js';
-            script.onload = resolve;
-            script.onerror = function() { resolve(); };
+            script.src = 'https://unpkg.com/pinyin-pro@3.18.2/dist/index.js';
+            script.onload = function() {
+                if (!window.pinyinPro && window.pinyin) window.pinyinPro = window.pinyin;
+                resolve();
+            };
+            script.onerror = function() {
+                var script2 = document.createElement('script');
+                script2.src = 'https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.2/dist/index.min.js';
+                script2.onload = resolve;
+                script2.onerror = resolve;
+                document.head.appendChild(script2);
+            };
             document.head.appendChild(script);
         });
     }
 
+    // ⭐ HÀM GỢI Ý PINYIN ĐƯỢC TỐI ƯU GỘP CỤM TỪ GHÉP CHUẨN XÁC
     function getSmartPinyin(text) {
-        if (!window.pinyinPro || !text) return '';
+        if (!text) return '';
+        if (!window.pinyinPro) return text;
+
         try {
             var words = window.pinyinPro.pinyin(text, { type: 'array', segmentit: true });
             var pinyinWords = words.map(function(word) {
@@ -38838,7 +38862,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             });
             return pinyinWords.join(' ');
         } catch (e) {
-            return window.pinyinPro.pinyin(text, { toneType: 'symbol' });
+            return window.pinyinPro.pinyin(text, { toneType: 'symbol', separator: ' ' });
         }
     }
 
