@@ -6,6 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
@@ -11372,47 +11375,45 @@ html body .tiktok-float-btn > i {
 /* ═══════════════════════════════════════════════════════════ */
 /* KHU VỰC LUYỆN TẬP TỰ DO - NÂNG CẤP UI CHỦ LỰC              */
 /* ═══════════════════════════════════════════════════════════ */
-/* Bao bọc toàn bộ hàng tiêu đề để đẩy nút Xóa sang phải */
-/* Bao bọc toàn bộ hàng tiêu đề */
+/* Hàng chứa tiêu đề và nút Xóa */
 .cp-header-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    margin-bottom: 1rem;
 }
 
-/* Khối tiêu đề thanh thoát (Bỏ nền, bỏ viền) */
+/* Khối chứa cây bút và chữ */
 .cp-section-header {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 14px; /* Khoảng cách giữa icon và chữ */
+    gap: 8px; /* Khoảng cách vừa phải giữa bút và chữ */
 }
 
-/* Icon cây bút hình tròn phát sáng */
+/* Icon cây bút - Thu nhỏ lại */
 .cp-section-header i {
     color: #fff;
-    font-size: 1rem;
+    font-size: 0.85rem; /* Icon nhỏ lại */
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 28px; /* Kích thước vòng tròn nhỏ lại */
+    height: 28px;
     border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #a855f7);
-    box-shadow: 0 6px 16px rgba(168,85,247,0.4), inset 0 2px 4px rgba(255,255,255,0.3);
+    box-shadow: 0 3px 8px rgba(168,85,247,0.3); /* Bóng đổ nhẹ hơn */
 }
 
-/* Chữ tiêu đề cực nét */
+/* Chữ tiêu đề - Giữ nguyên kích thước vừa phải */
 .cp-section-header span {
-    font-size: 1.05rem;
+    font-size: 1.1rem; /* Giữ nguyên cỡ chữ cũ */
     font-weight: 800;
-    background: linear-gradient(90deg, #1e1b4b, #4c1d95); /* Màu chữ chuyển sắc đậm */
+    background: linear-gradient(90deg, #1e1b4b, #4c1d95);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: -0.2px;
-    text-shadow: 0 2px 10px rgba(168,85,247,0.1);
+    letter-spacing: -0.3px;
 }
-
 /* Đảm bảo Dark Mode (nếu có) vẫn nhìn rõ chữ */
 @media (prefers-color-scheme: dark) {
     .cp-section-header span {
@@ -13428,19 +13429,7 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-    <meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-    <meta name="author" content="Tuhoctiengtrung.org">
-    <link rel="canonical" href="https://tuhoctiengtrung.org/">
-    <meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-    <meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-    <meta property="og:url" content="https://tuhoctiengtrung.org/">
-    <meta property="og:type" content="website">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
-    <meta name="theme-color" content="#7c3aed">
-  </head>
+</head>
 <body>
 
 <div class="page-wrap">
@@ -13599,7 +13588,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
