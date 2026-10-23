@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 r"""
-custom_practice_module.py - Khu vực Luyện tập Tự do (Mặc định Tiếng Việt -> Tiếng Trung)
+custom_practice_module.py - Khu vực Luyện tập Tự do (Responsive tối ưu màn hình lớn/nhỏ)
 Hỗ trợ: Dịch 2 chiều, nhận diện số chuẩn, từ ghép Pinyin, UI Glassmorphism hiện đại.
 """
 
@@ -192,9 +192,9 @@ def build_custom_practice_css():
     font-weight: 700;
 }
 
-/* Nút Bắt đầu */
+/* Nút Bắt đầu - Responsive thông minh */
 .cp-btn-start {
-    width: 100%;
+    width: 100%; /* Mặc định trên mobile chiếm hết chiều ngang */
     height: 52px;
     border-radius: 16px;
     border: none;
@@ -211,6 +211,7 @@ def build_custom_practice_css():
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
+    padding: 0 2rem;
 }
 
 .cp-btn-start:hover:not(:disabled) {
@@ -223,6 +224,15 @@ def build_custom_practice_css():
     opacity: 0.7;
     cursor: not-allowed;
     transform: none;
+}
+
+/* Tối ưu riêng cho màn hình lớn (Desktop từ 768px trở lên) */
+@media (min-width: 768px) {
+    .cp-btn-start {
+        width: auto;           /* Không bị kéo dãn hết cỡ */
+        min-width: 280px;      /* Giữ độ rộng tối thiểu vừa mắt */
+        align-self: flex-end;  /* Căn lề sang phải cực kỳ sang trọng và cân đối */
+    }
 }
 
 /* Thanh tiến trình */
@@ -296,7 +306,7 @@ def build_custom_practice_html():
         </button>
     </div>
 
-    <!-- Hàng chuyển đổi chế độ kiểu Pill Switch (Mặc định Tiếng Việt active) -->
+    <!-- Hàng chuyển đổi chế độ kiểu Pill Switch -->
     <div class="cp-switch-container" id="cpSwitchBtn" title="Đảo chiều dịch">
         <span class="cp-switch-label active" id="cpLabelVi">Tiếng Việt</span>
         <div class="cp-switch-icon-box">
@@ -305,7 +315,7 @@ def build_custom_practice_html():
         <span class="cp-switch-label" id="cpLabelZh">Tiếng Trung</span>
     </div>
 
-    <!-- Ô nhập liệu (Mặc định placeholder Tiếng Việt) -->
+    <!-- Ô nhập liệu -->
     <div class="cp-input-wrapper">
         <textarea class="cp-textarea" id="cpInputZh" rows="4"
             placeholder="Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)"></textarea>
@@ -333,7 +343,7 @@ def build_custom_practice_js():
     'use strict';
     var MAX_CHARS = 5000;
     var BATCH_SIZE = 10;
-    var currentMode = 'vi2zh'; // Mặc định chế độ nhập Tiếng Việt sang Tiếng Trung
+    var currentMode = 'vi2zh';
 
     var WORKER_URL = 'https://tiny-fire-f000.hoanginvest199.workers.dev';
 
@@ -379,7 +389,6 @@ def build_custom_practice_js():
     inputArea.addEventListener('input', updateCharCount);
     setTimeout(autoResizeTextarea, 100);
 
-    // Đổi chiều dịch
     switchBtn.addEventListener('click', function() {
         if (currentMode === 'vi2zh') {
             currentMode = 'zh2vi';
@@ -416,9 +425,7 @@ def build_custom_practice_js():
     });
 
     function smartSplit(text, mode) {
-        // Bảo vệ dấu chấm trong số (1.400, 162.000) để không bị ngắt nhầm câu
         var protectedText = text.replace(/(\d)\.(\d)/g, '$1__DOT__$2');
-        
         var rawParts = protectedText.split(/(?<=[.!?。！？\n])/g);
         var result = [];
         
