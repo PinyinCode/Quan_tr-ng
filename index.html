@@ -11527,6 +11527,7 @@ html body .tiktok-float-btn > i {
     box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.15);
 }
 
+/* ⭐ KHUNG GỢI Ý NỔI BẬT */
 .cp-spell-container {
     display: none;
     flex-direction: column;
@@ -11545,7 +11546,7 @@ html body .tiktok-float-btn > i {
     font-weight: 700;
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
 }
 .cp-spell-chips {
     display: flex;
@@ -11569,6 +11570,17 @@ html body .tiktok-float-btn > i {
     color: #ffffff;
     transform: translateY(-1px);
 }
+.cp-btn-fix-all {
+    background: #f59e0b;
+    color: #fff;
+    border: none;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.cp-btn-fix-all:hover { background: #d97706; }
 
 .cp-btn-start {
     width: 100%;
@@ -13721,10 +13733,11 @@ body.has-floating-group #quickSearchRoot{
 
     <div class="cp-input-wrapper">
         <textarea class="cp-textarea" id="cpInputZh" rows="4" placeholder="Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)"></textarea>
-        
+
         <div class="cp-spell-container" id="cpSpellContainer">
             <div class="cp-spell-header">
-                <i class="fas fa-triangle-exclamation"></i> Gợi ý sửa lỗi chính tả / từ viết tắt:
+                <span><i class="fas fa-triangle-exclamation"></i> Phát hiện từ viết tắt / lỗi chính tả:</span>
+                <button class="cp-btn-fix-all" id="cpFixAllBtn" type="button">Sửa tất cả</button>
             </div>
             <div class="cp-spell-chips" id="cpSpellChips"></div>
         </div>
@@ -38327,13 +38340,19 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
     var spellContainer = document.getElementById('cpSpellContainer');
     var spellChips = document.getElementById('cpSpellChips');
+    var fixAllBtn = document.getElementById('cpFixAllBtn');
 
     var myTokensUsed = 0;
     var myTokenQuota = 20000;
     var myBonusTokens = 0;
     var currentUser = null;
 
+    // ⭐ TỪ ĐIỂN TỪ VIẾT TẮT VÀ LỖI CHÍNH TẢ PHỔ BIẾN
     var commonTyposVi = {
+        'ttxvn': 'Thông tấn xã Việt Nam',
+        'tp.hcm': 'Thành phố Hồ Chí Minh', 'tphcm': 'Thành phố Hồ Chí Minh',
+        'ubnd': 'Ủy ban nhân dân', 'hđnd': 'Hội đồng nhân dân',
+        'vtv': 'Đài Truyền hình Việt Nam', 'vov': 'Đài Tiếng nói Việt Nam',
         'chhsga': 'châu', 'hhsg': 'hàng', 'kkhu': 'khu',
         'ko': 'không', 'hok': 'không', 'kg': 'không', 'k': 'không', 'kh': 'không',
         'dc': 'được', 'đc': 'được', 'nhg': 'nhưng', 'đg': 'đang',
@@ -38399,16 +38418,13 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             startBtn.style.display = 'flex';
             buyTokenBtn.style.display = 'none';
             inputArea.disabled = false;
-            inputArea.placeholder = currentMode === 'vi2zh' ? 'Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)' : 'Dán văn bản tiếng Trung vào đây... (tối đa 5000 ký tự)';
+            inputArea.placeholder = currentMode === 'vi2zh' ? 'Nhập văn bản tiếng Việt vào đây... (không nên viết tắt để tiết kiệm quota)' : 'Dán văn bản tiếng Trung vào đây...';
         }
     }
 
     buyTokenBtn.addEventListener('click', function() {
-        if (typeof openRenewalModal === 'function') {
-            openRenewalModal();
-        } else {
-            alert('Vui lòng liên hệ Admin để mua thêm Token!');
-        }
+        if (typeof openRenewalModal === 'function') openRenewalModal();
+        else alert('Vui lòng liên hệ Admin để mua thêm Token!');
     });
 
     function autoResizeTextarea() {
@@ -38424,23 +38440,21 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         }
     }
 
-    function checkSpellingSuggestions() {
-        if (currentMode !== 'vi2zh') {
-            spellContainer.classList.remove('show');
-            return;
-        }
-
+    // ⭐ BẮT LỖI VÀ CHUYỂN ĐỔI CHÍNH TẢ TRÊN CLIENT
+    function getSpellingTypos() {
+        if (currentMode !== 'vi2zh') return {};
         var text = inputArea.value;
-        var words = text.match(/\b[A-Za-zÀ-ỹ]+\b/g) || [];
-        var foundTypos = {};
-
+        var words = text.match(/\b[A-Za-zÀ-ỹ.]+\b/g) || [];
+        var found = {};
         for (var i = 0; i < words.length; i++) {
             var w = words[i].toLowerCase();
-            if (commonTyposVi[w]) {
-                foundTypos[w] = commonTyposVi[w];
-            }
+            if (commonTyposVi[w]) found[w] = commonTyposVi[w];
         }
+        return found;
+    }
 
+    function checkSpellingSuggestions() {
+        var foundTypos = getSpellingTypos();
         var keys = Object.keys(foundTypos);
         if (keys.length > 0) {
             spellChips.innerHTML = '';
@@ -38448,12 +38462,9 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                 var correctWord = foundTypos[wrongWord];
                 var chip = document.createElement('div');
                 chip.className = 'cp-spell-chip';
-                chip.innerHTML = '<i class="fas fa-magic"></i> Sửa "' + wrongWord + '" ➜ <b>' + correctWord + '</b>';
-                
+                chip.innerHTML = '"' + wrongWord + '" ➜ <b>' + correctWord + '</b>';
                 chip.addEventListener('click', function() {
-                    var regex = new RegExp('\\b' + wrongWord + '\\b', 'gi');
-                    inputArea.value = inputArea.value.replace(regex, correctWord);
-                    updateCharCount();
+                    replaceTypo(wrongWord, correctWord);
                 });
                 spellChips.appendChild(chip);
             });
@@ -38462,6 +38473,19 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             spellContainer.classList.remove('show');
         }
     }
+
+    function replaceTypo(wrongWord, correctWord) {
+        var regex = new RegExp('\\b' + wrongWord + '\\b', 'gi');
+        inputArea.value = inputArea.value.replace(regex, correctWord);
+        updateCharCount();
+    }
+
+    fixAllBtn.addEventListener('click', function() {
+        var foundTypos = getSpellingTypos();
+        Object.keys(foundTypos).forEach(function(wrongWord) {
+            replaceTypo(wrongWord, foundTypos[wrongWord]);
+        });
+    });
 
     function updateCharCount() {
         var len = inputArea.value.length;
@@ -38486,12 +38510,12 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             labelVi.classList.remove('active');
             labelZh.classList.add('active');
             spellContainer.classList.remove('show');
-            if (!inputArea.disabled) inputArea.placeholder = 'Dán văn bản tiếng Trung vào đây... (tối đa 5000 ký tự)';
+            if (!inputArea.disabled) inputArea.placeholder = 'Dán văn bản tiếng Trung vào đây...';
         } else {
             currentMode = 'vi2zh';
             labelZh.classList.remove('active');
             labelVi.classList.add('active');
-            if (!inputArea.disabled) inputArea.placeholder = 'Nhập văn bản tiếng Việt vào đây... (tối đa 5000 ký tự)';
+            if (!inputArea.disabled) inputArea.placeholder = 'Nhập văn bản tiếng Việt vào đây... (không nên viết tắt)';
         }
         inputArea.value = '';
         updateCharCount();
@@ -38524,11 +38548,22 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         return result;
     }
 
+    // ⭐ CHẶN & YÊU CẦU CHUẨN HÓA TRƯỚC KHIN DÙNG QUOTA
     startBtn.addEventListener('click', async function() {
         if (!currentUser) { alert('Vui lòng đăng nhập!'); return; }
         if (currentUser.role !== 'admin' && !currentUser.isPermanent && (myTokenQuota + myBonusTokens - myTokensUsed <= 0)) { 
             alert('Bạn đã hết token!'); 
             return; 
+        }
+
+        // Tự động chuyển tất cả các từ viết tắt sang từ chuẩn trước khi tốn quota
+        var foundTypos = getSpellingTypos();
+        var keys = Object.keys(foundTypos);
+        if (keys.length > 0) {
+            var confirmFix = confirm('Phát hiện ' + keys.length + ' từ viết tắt/chính tả (VD: ' + keys.join(', ') + ').\n\nHệ thống sẽ TỰ ĐỘNG SỬA THÀNH TỪ CHUẨN để tiết kiệm token và dịch chính xác nhất!');
+            if (confirmFix) {
+                keys.forEach(function(k) { replaceTypo(k, foundTypos[k]); });
+            }
         }
 
         var rawText = inputArea.value.trim();
