@@ -465,7 +465,7 @@ def build_custom_practice_js():
     var currentUser = null;
     var resolveModalAction = null;
 
-    function initTokenState() {
+        function initTokenState() {
         var user = null;
         try {
             for (var i = 0; i < localStorage.length; i++) {
@@ -488,20 +488,35 @@ def build_custom_practice_js():
             return;
         }
 
-        if (user.role === 'admin' || user.isPermanent) {
+        # ⭐ Chỉ duy nhất super_admin hoặc isPermanent mới không giới hạn
+        if (user.role === 'super_admin' || user.isPermanent) {
             tokenText.textContent = 'Không giới hạn';
             tokenBadge.className = 'cp-token-badge';
             return;
         }
 
-        myTokenQuota = user.tokenQuota || 20000;
+        # ⭐ Nếu là admin, gán Quota mặc định là 100.000 token/ngày
+        if (user.role === 'admin') {
+            myTokenQuota = user.tokenQuota || 100000;
+        } else {
+            myTokenQuota = user.tokenQuota || 20000;
+        }
+
         myBonusTokens = user.bonusTokens || 0;
         myTokensUsed = user.tokensUsed || 0;
         renderTokenUI();
     }
 
-    function renderTokenUI() {
-        if (currentUser && (currentUser.role === 'admin' || currentUser.isPermanent)) return;
+
+        function renderTokenUI() {
+        // ⭐ Chỉ super_admin hoặc isPermanent mới được miễn hoàn toàn (Không giới hạn)
+        if (currentUser && (currentUser.role === 'super_admin' || currentUser.isPermanent)) {
+            tokenText.textContent = 'Không giới hạn';
+            tokenBadge.className = 'cp-token-badge';
+            return;
+        }
+
+        // Tài khoản admin (quota 100k) hoặc active (quota 20k) sẽ chạy tiếp xuống dưới này để tính toán và hiển thị số token
         var totalAvailable = myTokenQuota + myBonusTokens;
         var remain = totalAvailable - myTokensUsed;
         if (remain < 0) remain = 0;
