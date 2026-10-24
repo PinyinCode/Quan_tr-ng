@@ -853,23 +853,35 @@ def build_custom_practice_js():
     }
 
     // ⭐ HÀM GỢI Ý PINYIN ĐƯỢC TỐI ƯU GỘP CỤM TỪ GHÉP CHUẨN XÁC
-    function getSmartPinyin(text) {
+        function getSmartPinyin(text) {
         if (!text) return '';
         if (!window.pinyinPro) return text;
 
         try {
-            var words = window.pinyinPro.pinyin(text, { type: 'array', segmentit: true });
-            var pinyinWords = words.map(function(word) {
-                if (/[\u4e00-\u9fa5]/.test(word)) {
-                    return window.pinyinPro.pinyin(word, { toneType: 'symbol', separator: '' });
+            // 1. Sử dụng Intl.Segmenter chuẩn hóa tách từ ghép tiếng Trung
+            if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+                var segmenter = new Intl.Segmenter('zh', { granularity: 'word' });
+                var result = [];
+                for (var seg of segmenter.segment(text)) {
+                    var word = seg.segment;
+                    if (/[\u4e00-\u9fa5]/.test(word)) {
+                        // 2. Ép các âm tiết trong cùng một từ ghép viết liền nhau (separator: '')
+                        result.push(window.pinyinPro.pinyin(word, { toneType: 'symbol', separator: '' }));
+                    } else {
+                        // Giữ nguyên dấu câu, khoảng trắng hoặc ký tự khác
+                        result.push(word);
+                    }
                 }
-                return word;
-            });
-            return pinyinWords.join(' ');
+                return result.join(' ');
+            }
+            
+            // Fallback an toàn nếu môi trường cũ không hỗ trợ Intl.Segmenter
+            return window.pinyinPro.pinyin(text, { toneType: 'symbol', separator: ' ' });
         } catch (e) {
             return window.pinyinPro.pinyin(text, { toneType: 'symbol', separator: ' ' });
         }
     }
+
 
     async function fetchTranslate(text, mode) {
         var translated = '';
