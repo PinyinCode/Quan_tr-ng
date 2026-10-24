@@ -97,6 +97,9 @@ def build_custom_practice_css():
     border: 1px solid var(--border, #e2e8f0);
     cursor: pointer;
     user-select: none;
+    width: 100%;
+    max-width: 320px; /* ⭐ Thêm dòng này để giới hạn chiều rộng */
+    margin: 0 auto;   /* ⭐ Thêm dòng này để căn giữa */
 }
 .cp-switch-label {
     flex: 1;
@@ -403,7 +406,7 @@ def build_custom_practice_html():
     </div>
 
     <div class="cp-input-wrapper">
-        <textarea class="cp-textarea" id="cpInputZh" rows="4" placeholder="Nhập văn bản tiếng Việt vào đây..."></textarea>
+        <textarea class="cp-textarea" id="cpInputZh" rows="4" placeholder="Nhập hoặc dán văn bản để Trợ lý dịch giúp bạn..."></textarea>
         <div class="cp-spell-container" id="cpSpellContainer">
             <div class="cp-spell-header">
                 <i class="fas fa-triangle-exclamation"></i> Phát hiện từ nghi ngờ sai chính tả / dính phím:
@@ -867,12 +870,12 @@ def build_custom_practice_js():
             labelVi.classList.remove('active');
             labelZh.classList.add('active');
             spellContainer.classList.remove('show');
-            if (!inputArea.disabled) inputArea.placeholder = 'Dán văn bản tiếng Trung vào đây...';
+            if (!inputArea.disabled) inputArea.placeholder = '输入或粘贴中文文本，让翻译助手帮您搞定...';
         } else {
             currentMode = 'vi2zh';
             labelZh.classList.remove('active');
             labelVi.classList.add('active');
-            if (!inputArea.disabled) inputArea.placeholder = 'Nhập văn bản tiếng Việt vào đây...';
+            if (!inputArea.disabled) inputArea.placeholder = 'Nhập hoặc dán văn bản để Trợ lý dịch giúp bạn...';
         }
         inputArea.value = '';
         updateCharCount();
