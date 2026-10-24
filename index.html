@@ -11785,6 +11785,10 @@ html body .tiktok-float-btn > i {
 .cp-token-badge.cooldown .refresh-hint {
     display: none;
 }
+/* Thêm class này để ẩn nút một cách tuyệt đối */
+.cp-hidden {
+    display: none !important;
+}
 
 
 /* FIX.PY: AUTO-FIT LAYOUT */
@@ -38791,8 +38795,10 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             tokenBadge.style.opacity = '0.6';
             tokenBadge.title = 'Tài khoản đã hết hạn - Không thể làm mới Token';
             
-            startBtn.style.display = 'none';
-            buyTokenBtn.style.display = 'flex';
+            // Dùng class cp-hidden thay vì style.display
+            startBtn.classList.add('cp-hidden');
+            buyTokenBtn.classList.remove('cp-hidden');
+            
             buyTokenBtn.innerHTML = '<i class="fas fa-crown"></i> Gia hạn ngay (Giữ nguyên Token)';
             inputArea.disabled = true;
             inputArea.placeholder = 'Tài khoản đã hết hạn. Vui lòng gia hạn để tiếp tục sử dụng Luyện tập tự do.';
@@ -38809,14 +38815,16 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         else if (remain <= 5000) tokenBadge.classList.add('warn');
 
         if (remain <= 0 && currentUser.role !== 'admin') {
-            startBtn.style.display = 'none';
-            buyTokenBtn.style.display = 'flex';
+            startBtn.classList.add('cp-hidden');
+            buyTokenBtn.classList.remove('cp-hidden');
+            
             buyTokenBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Mua thêm Token';
             inputArea.disabled = true;
             inputArea.placeholder = 'Bạn đã hết Token. Vui lòng mua thêm để tiếp tục.';
         } else {
-            startBtn.style.display = 'flex';
-            buyTokenBtn.style.display = 'none';
+            startBtn.classList.remove('cp-hidden');
+            buyTokenBtn.classList.add('cp-hidden');
+            
             inputArea.disabled = false;
             inputArea.placeholder = currentMode === 'vi2zh' ? 'Nhập văn bản tiếng Việt vào đây...' : 'Dán văn bản tiếng Trung vào đây...';
         }
@@ -39099,6 +39107,16 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         startBtn.disabled = false;
         switchBtn.style.pointerEvents = 'auto';
         setTimeout(function() { progressWrap.classList.remove('show'); }, 1200);
+        
+        // ⭐ Cập nhật lại giao diện sau khi chạy xong để đảm bảo nút đúng trạng thái
+        if (currentUser) {
+            var isExp = (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.appTier === 'expired');
+            if (currentUser.expiryDate) {
+                var expT = new Date(currentUser.expiryDate).getTime();
+                if (!isNaN(expT) && expT < Date.now()) isExp = true;
+            }
+            renderTokenUI(isExp);
+        }
     }
 
     function loadPinyinPro() {
