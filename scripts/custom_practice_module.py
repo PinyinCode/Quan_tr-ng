@@ -531,12 +531,15 @@ def build_custom_practice_js():
         loadPinyinPro();
     }
 
-    // ⭐ HÀM KIỂM TRA TRẠNG THÁI HẾT HẠN CHUẨN XÁC
+    // ⭐ HÀM KIỂM TRA TRẠNG THÁI HẾT HẠN (Ưu tiên kiểm tra biến toàn cục & banner DOM đầu tiên)
     function checkIsExpired() {
         if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') return true;
         if (window.isUserExpired === true) return true;
         if (typeof window.isExpired === 'boolean' && window.isExpired) return true;
         
+        var expiryBanner = document.getElementById('vocabWarningBanner') || document.querySelector('.vocab-warning-banner.tier-expired');
+        if (expiryBanner) return true;
+
         if (currentUser) {
             if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.appTier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expire') return true;
             if (currentUser.expiryDate) {
@@ -629,7 +632,6 @@ def build_custom_practice_js():
         var isExpired = checkIsExpired();
         renderTokenUI(isExpired);
 
-        // ⭐ TỰ ĐỘNG GỌI NGẨM LÀM MỚI TỪ FIRESTORE NGAY KHI VỪA TẢI TRANG ĐỂ ĐẢM BẢO CHÍNH XÁC 100%
         refreshTokenFromFirestore().catch(function() {});
 
         try {
@@ -660,7 +662,7 @@ def build_custom_practice_js():
             var freshData = doc.data();
             currentUser.bonusTokens = freshData.bonusTokens || 0;
             currentUser.tokensUsed = freshData.tokensUsed || 0;
-            currentUser.tokenQuota = freshData.tokenQuota || 20000;
+            currentUser.tokenQuota = freshData.tokenQuota || 10000;
             currentUser.isPermanent = freshData.isPermanent || false;
             currentUser.role = freshData.role || currentUser.role;
             
@@ -910,7 +912,6 @@ def build_custom_practice_js():
     startBtn.addEventListener('click', async function() {
         if (!currentUser) { alert('Vui lòng đăng nhập!'); return; }
 
-        // ⭐ KIỂM TRA CHẶN NGAY TRƯỚC KHI BẮT ĐẦU DỊCH
         var isExpired = checkIsExpired();
         if (isExpired) {
             alert('Tài khoản của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục sử dụng tính năng Luyện tập tự do.\n(Số dư Token của bạn vẫn được bảo lưu an toàn).');
