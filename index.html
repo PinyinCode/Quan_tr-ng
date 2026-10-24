@@ -6,6 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
@@ -13630,19 +13633,7 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-    <meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-    <meta name="author" content="Tuhoctiengtrung.org">
-    <link rel="canonical" href="https://tuhoctiengtrung.org/">
-    <meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-    <meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-    <meta property="og:url" content="https://tuhoctiengtrung.org/">
-    <meta property="og:type" content="website">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
-    <meta name="theme-color" content="#7c3aed">
-  </head>
+</head>
 <body>
 
 <div class="page-wrap">
@@ -13801,7 +13792,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
@@ -39447,17 +39438,18 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             }
         });
     }
-    // ⭐ CƠ CHẾ BẢO VỆ ĐỘC LẬP (QUÉT DOM LIÊN TỤC)
-    setInterval(function() {
-        // 1. Tìm xem có Banner báo hết hạn không (Dựa vào id hoặc class từ hệ thống của bạn)
+    // ⭐ CƠ CHẾ BẢO VỆ TỐI ƯU BẰNG MUTATION OBSERVER
+    // Chỉ chạy khi Banner hết hạn xuất hiện/biến mất, không quét liên tục gây tốn pin.
+    var domObserver = new MutationObserver(function() {
         var isExpiredOnUI = false;
         var banner = document.getElementById('vocabWarningBanner') || document.querySelector('.vocab-warning-banner.tier-expired');
         
+        // Kiểm tra xem banner có chứa chữ "hết hạn" không
         if (banner && (banner.innerText.includes('hết hạn') || banner.innerText.includes('Hết hạn'))) {
             isExpiredOnUI = true;
         }
         
-        // Dự phòng: Nếu body có thuộc tính data-theme hoặc class báo hết hạn
+        // Dự phòng: Nếu cơ thể trang có class báo hết hạn
         if (document.body.classList.contains('is-expired') || document.querySelector('.user-expired')) {
             isExpiredOnUI = true;
         }
@@ -39468,7 +39460,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         var historyBtnNode = document.getElementById('cpHistoryBtn');
 
         if (isExpiredOnUI) {
-            // NẾU HẾT HẠN: Ẩn nút Bắt đầu, Khóa ô nhập, Khóa nút Lịch sử
+            // NẾU HẾT HẠN: Khóa toàn bộ
             if (startBtnNode) startBtnNode.classList.add('cp-hidden');
             if (buyBtnNode) buyBtnNode.classList.remove('cp-hidden');
             if (inputNode && !inputNode.disabled) {
@@ -39479,12 +39471,11 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                 historyBtnNode.disabled = true;
                 historyBtnNode.style.opacity = '0.4';
                 historyBtnNode.style.cursor = 'not-allowed';
+                historyBtnNode.innerHTML = '<i class="fas fa-lock"></i>';
             }
         } else {
             // NẾU BÌNH THƯỜNG (Hoặc user vừa gia hạn xong): Mở khóa
-            // Chỉ mở khóa nếu không phải đang trong quá trình dịch (startBtn bị disabled)
             if (startBtnNode && startBtnNode.innerHTML.indexOf('Đang dịch') === -1) {
-                // Kiểm tra xem có phải hết token không để tránh mở nhầm nút
                 var isOutOfToken = (typeof currentUser !== 'undefined' && currentUser && currentUser.role !== 'admin' && currentUser.role !== 'super_admin' && (myTokenQuota + myBonusTokens - myTokensUsed <= 0));
                 
                 if (!isOutOfToken) {
@@ -39498,12 +39489,15 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                         historyBtnNode.disabled = false;
                         historyBtnNode.style.opacity = '1';
                         historyBtnNode.style.cursor = 'pointer';
+                        historyBtnNode.innerHTML = '<i class="fas fa-clock-rotate-left"></i>';
                     }
                 }
             }
         }
-    }, 1000); // Quét 1 giây 1 lần
+    });
 
+    // Bắt đầu theo dõi sự thay đổi cấu trúc DOM (khi banner được thêm vào hoặc xóa đi)
+    domObserver.observe(document.body, { childList: true, subtree: true });
     setTimeout(initTokenState, 100);
     setTimeout(initTokenState, 1500);
 
