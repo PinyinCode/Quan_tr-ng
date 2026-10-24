@@ -383,7 +383,7 @@ def build_custom_practice_html():
         <div style="display:flex; gap:8px; align-items:center;">
             <div class="cp-token-badge" id="cpTokenBadge" title="Bấm để cập nhật số Token mới nhất">
               <i class="fas fa-bolt"></i> <span id="cpTokenText">Đang tải...</span>
-              <span class="refresh-hint">🔄 Bấm để làm mới</span>
+              <span class="refresh-hint">🔄</span>
             </div>
             <button class="cp-btn-reset" id="cpHistoryBtn" type="button" title="Xem lịch sử">
                 <i class="fas fa-clock-rotate-left"></i>
