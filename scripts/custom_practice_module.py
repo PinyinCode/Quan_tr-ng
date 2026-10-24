@@ -1273,6 +1273,28 @@ def build_custom_practice_js():
         historyBtn.addEventListener('click', async function() {
             if (!currentUser || !currentUser.email) { alert('Vui lòng đăng nhập để xem lịch sử!'); return; }
             
+            // ⭐ BƯỚC 1: KIỂM TRA HẾT HẠN QUA GIAO DIỆN (Banner đỏ) HOẶC DỮ LIỆU
+            var isExpired = false;
+            var banner = document.getElementById('vocabWarningBanner') || document.querySelector('.vocab-warning-banner.tier-expired');
+            if (banner && (banner.innerText.includes('hết hạn') || banner.innerText.includes('Hết hạn'))) {
+                isExpired = true;
+            } else if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
+                isExpired = true;
+            } else if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expired' || currentUser.appTier === 'expire') {
+                isExpired = true;
+            } else if (currentUser.expiryDate) {
+                var expTime = new Date(currentUser.expiryDate).getTime();
+                if (!isNaN(expTime) && expTime < Date.now()) isExpired = true;
+            }
+
+            // ⭐ BƯỚC 2: CHẶN CLICK NẾU HẾT HẠN
+            if (isExpired) {
+                alert('Tài khoản của bạn đã hết hạn. Vui lòng gia hạn để xem lịch sử dịch.\n(Số dư Token và lịch sử của bạn vẫn được bảo lưu an toàn).');
+                if (typeof openRenewalModal === 'function') openRenewalModal();
+                return;
+            }
+
+            // ⭐ BƯỚC 3: TIẾN HÀNH TẢI LỊCH SỬ (Giữ nguyên code cũ)
             historyOverlay.classList.add('show');
             historyList.innerHTML = '<div style="text-align:center; color:#64748b; font-size:0.9rem;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
             historyCounter.textContent = 'Đang tải bộ đếm...';
@@ -1389,6 +1411,62 @@ def build_custom_practice_js():
             }
         });
     }
+    // ⭐ CƠ CHẾ BẢO VỆ ĐỘC LẬP (QUÉT DOM LIÊN TỤC)
+    setInterval(function() {
+        // 1. Tìm xem có Banner báo hết hạn không (Dựa vào id hoặc class từ hệ thống của bạn)
+        var isExpiredOnUI = false;
+        var banner = document.getElementById('vocabWarningBanner') || document.querySelector('.vocab-warning-banner.tier-expired');
+        
+        if (banner && (banner.innerText.includes('hết hạn') || banner.innerText.includes('Hết hạn'))) {
+            isExpiredOnUI = true;
+        }
+        
+        // Dự phòng: Nếu body có thuộc tính data-theme hoặc class báo hết hạn
+        if (document.body.classList.contains('is-expired') || document.querySelector('.user-expired')) {
+            isExpiredOnUI = true;
+        }
+
+        var startBtnNode = document.getElementById('cpStartBtn');
+        var buyBtnNode = document.getElementById('cpBuyTokenBtn');
+        var inputNode = document.getElementById('cpInputZh');
+        var historyBtnNode = document.getElementById('cpHistoryBtn');
+
+        if (isExpiredOnUI) {
+            // NẾU HẾT HẠN: Ẩn nút Bắt đầu, Khóa ô nhập, Khóa nút Lịch sử
+            if (startBtnNode) startBtnNode.classList.add('cp-hidden');
+            if (buyBtnNode) buyBtnNode.classList.remove('cp-hidden');
+            if (inputNode && !inputNode.disabled) {
+                inputNode.disabled = true;
+                inputNode.placeholder = 'Tài khoản đã hết hạn. Vui lòng gia hạn để tiếp tục.';
+            }
+            if (historyBtnNode && !historyBtnNode.disabled) {
+                historyBtnNode.disabled = true;
+                historyBtnNode.style.opacity = '0.4';
+                historyBtnNode.style.cursor = 'not-allowed';
+            }
+        } else {
+            // NẾU BÌNH THƯỜNG (Hoặc user vừa gia hạn xong): Mở khóa
+            // Chỉ mở khóa nếu không phải đang trong quá trình dịch (startBtn bị disabled)
+            if (startBtnNode && startBtnNode.innerHTML.indexOf('Đang dịch') === -1) {
+                // Kiểm tra xem có phải hết token không để tránh mở nhầm nút
+                var isOutOfToken = (typeof currentUser !== 'undefined' && currentUser && currentUser.role !== 'admin' && currentUser.role !== 'super_admin' && (myTokenQuota + myBonusTokens - myTokensUsed <= 0));
+                
+                if (!isOutOfToken) {
+                    startBtnNode.classList.remove('cp-hidden');
+                    if (buyBtnNode) buyBtnNode.classList.add('cp-hidden');
+                    if (inputNode && inputNode.disabled && !inputNode.placeholder.includes('hết Token')) {
+                         inputNode.disabled = false;
+                         inputNode.placeholder = currentMode === 'vi2zh' ? 'Nhập văn bản tiếng Việt vào đây...' : 'Dán văn bản tiếng Trung vào đây...';
+                    }
+                    if (historyBtnNode) {
+                        historyBtnNode.disabled = false;
+                        historyBtnNode.style.opacity = '1';
+                        historyBtnNode.style.cursor = 'pointer';
+                    }
+                }
+            }
+        }
+    }, 1000); // Quét 1 giây 1 lần
 
     setTimeout(initTokenState, 100);
     setTimeout(initTokenState, 1500);
