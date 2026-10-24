@@ -7136,13 +7136,9 @@ function countSyllables(pinyinWord) {
 function splitByPinyin(zh, pinyin) {
     if (!zh) return [];
     
-    // Lấy tất cả các ký tự có nghĩa (bao gồm cả chữ Hán, số, chữ cái), chỉ bỏ khoảng trắng thừa
     var chars = [];
     for (var i = 0; i < zh.length; i++) {
-        var c = zh[i];
-        if (!/\s/.test(c)) {
-            chars.push(c);
-        }
+        if (!/\s/.test(zh[i])) chars.push(zh[i]);
     }
     if (chars.length === 0) return [];
 
@@ -7150,33 +7146,45 @@ function splitByPinyin(zh, pinyin) {
         return chars.map(function(c) { return { text: c, type: 'single', pinyin: '' }; });
     }
 
-    // Tách các từ pinyin theo khoảng trắng
-    var pinyinWords = pinyin.trim().split(/\s+/).filter(function(w) { return w.length > 0; });
+    // Tách các từ pinyin theo khoảng trắng ban đầu
+    var rawPinyinWords = pinyin.trim().split(/\s+/).filter(function(w) { return w.length > 0; });
     
+    // --- THUẬT TOÁN TỰ ĐỘNG GỘP TỪ GHÉP THÔNG MINH ---
+    // Tự động gom các từ 1 âm tiết đứng cạnh nhau thành từ ghép 2 âm tiết (trừ các trợ từ đơn độc lập)
+    var pinyinWords = [];
+    var skipParticles = ['de', 'le', 'ne', 'ma', 'ba', 'a', 'shì', 'yǒu']; // Các trợ từ/đại từ có thể đứng riêng
+    
+    for (var i = 0; i < rawPinyinWords.length; i++) {
+        var curr = rawPinyinWords[i];
+        var cleanCurr = curr.replace(/[^a-zA-Züāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/g, '').toLowerCase();
+        var currSyllables = countSyllables(cleanCurr);
+        
+        // Nếu từ hiện tại là 1 âm tiết và từ kế tiếp cũng là 1 âm tiết -> Gộp lại thành 1 từ ghép
+        if (currSyllables === 1 && i + 1 < rawPinyinWords.length) {
+            var next = rawPinyinWords[i + 1];
+            var cleanNext = next.replace(/[^a-zA-Züāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/g, '').toLowerCase();
+            var nextSyllables = countSyllables(cleanNext);
+            
+            if (nextSyllables === 1 && skipParticles.indexOf(cleanCurr) === -1 && skipParticles.indexOf(cleanNext) === -1) {
+                // Gộp thành một cặp từ Pinyin liền mạch
+                pinyinWords.push(curr + ' ' + next);
+                i++; // Bỏ qua từ tiếp theo vì đã được gộp vào cặp
+                continue;
+            }
+        }
+        pinyinWords.push(curr);
+    }
+
+    var syllableCounts = pinyinWords.map(function(w) { return countSyllables(w); });
     var result = [];
     var charIdx = 0;
 
     for (var j = 0; j < pinyinWords.length; j++) {
         var py = pinyinWords[j];
-        
-        if (charIdx >= chars.length) break;
-
-        // Nếu ký tự hiện tại là Số hoặc Chữ cái tiếng Anh (ví dụ: số '8', chữ 'SJC'...)
-        if (/[0-9a-zA-Z]/.test(chars[charIdx])) {
-            result.push({
-                text: chars[charIdx],
-                type: 'single',
-                pinyin: py
-            });
-            charIdx++;
-            continue;
-        }
-
-        // Đếm số âm tiết của pinyin thông thường để cắt đúng số lượng chữ Hán tương ứng
-        var cleanPy = py.replace(/[^a-zA-Züāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/g, '');
-        var matches = cleanPy.match(/[aeiouüāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]+/gi);
-        var cnt = matches ? matches.length : 1;
+        var cnt = syllableCounts[j];
         if (cnt <= 0) cnt = 1;
+
+        if (charIdx >= chars.length) break;
 
         var phrase = chars.slice(charIdx, charIdx + cnt).join('');
         if (phrase) {
@@ -7189,7 +7197,7 @@ function splitByPinyin(zh, pinyin) {
         charIdx += cnt;
     }
 
-    // Nếu vẫn còn thừa ký tự ở cuối câu, gom gộp vào phần tử cuối cùng
+    // Xử lý phần ký tự thừa nếu có ở cuối câu
     if (charIdx < chars.length) {
         var remaining = chars.slice(charIdx).join('');
         if (result.length > 0) {
