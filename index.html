@@ -18243,57 +18243,71 @@ function countSyllables(pinyinWord) {
 
 function splitByPinyin(zh, pinyin) {
     if (!zh) return [];
-    var hanziChars = [];
+    
+    // Lấy tất cả các ký tự có nghĩa (bao gồm cả chữ Hán, số, chữ cái), chỉ bỏ khoảng trắng thừa
+    var chars = [];
     for (var i = 0; i < zh.length; i++) {
         var c = zh[i];
-        if (/[\u4e00-\u9fa5]/.test(c)) hanziChars.push(c);
+        if (!/\s/.test(c)) {
+            chars.push(c);
+        }
     }
-    if (hanziChars.length === 0) return [];
+    if (chars.length === 0) return [];
 
     if (!pinyin || !pinyin.trim()) {
-        return hanziChars.map(function(c) { return { text: c, type: 'single', pinyin: '' }; });
+        return chars.map(function(c) { return { text: c, type: 'single', pinyin: '' }; });
     }
 
-    var normalizedPinyin = pinyin
-        .replace(/[.,!?;:'"()\[\]{}\-~`@#$%^&*+=|\\/<>。，！？、；：""'']/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+    // Tách các từ pinyin theo khoảng trắng
+    var pinyinWords = pinyin.trim().split(/\s+/).filter(function(w) { return w.length > 0; });
+    
+    var result = [];
+    var charIdx = 0;
 
-    var pinyinWords = normalizedPinyin.split(/\s+/).filter(function(w) { return w.length > 0; });
-    var syllableCounts = pinyinWords.map(function(w) { return countSyllables(w); });
-    var totalSyllables = syllableCounts.reduce(function(a, b) { return a + b; }, 0);
+    for (var j = 0; j < pinyinWords.length; j++) {
+        var py = pinyinWords[j];
+        
+        if (charIdx >= chars.length) break;
 
-    if (totalSyllables === hanziChars.length) {
-        var result = [];
-        var charIdx = 0;
-        for (var j = 0; j < syllableCounts.length; j++) {
-            var cnt = syllableCounts[j];
-            if (cnt <= 0) continue;
-            var phrase = hanziChars.slice(charIdx, charIdx + cnt).join('');
-            if (phrase) {
-                result.push({
-                    text: phrase,
-                    type: 'phrase',
-                    pinyin: pinyinWords[j] || ''
-                });
-            }
-            charIdx += cnt;
+        // Nếu ký tự hiện tại là Số hoặc Chữ cái tiếng Anh (ví dụ: số '8', chữ 'SJC'...)
+        if (/[0-9a-zA-Z]/.test(chars[charIdx])) {
+            result.push({
+                text: chars[charIdx],
+                type: 'single',
+                pinyin: py
+            });
+            charIdx++;
+            continue;
         }
-        if (charIdx < hanziChars.length) {
-            var remaining = hanziChars.slice(charIdx).join('');
-            if (result.length > 0) {
-                result[result.length - 1].text += remaining;
-                if (charIdx < pinyinWords.length) {
-                    result[result.length - 1].pinyin += ' ' + pinyinWords.slice(charIdx).join(' ');
-                }
-            } else {
-                result.push({ text: remaining, type: 'single', pinyin: '' });
-            }
+
+        // Đếm số âm tiết của pinyin thông thường để cắt đúng số lượng chữ Hán tương ứng
+        var cleanPy = py.replace(/[^a-zA-Züāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/g, '');
+        var matches = cleanPy.match(/[aeiouüāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]+/gi);
+        var cnt = matches ? matches.length : 1;
+        if (cnt <= 0) cnt = 1;
+
+        var phrase = chars.slice(charIdx, charIdx + cnt).join('');
+        if (phrase) {
+            result.push({
+                text: phrase,
+                type: 'phrase',
+                pinyin: py
+            });
         }
-        return result;
+        charIdx += cnt;
     }
 
-    return hanziChars.map(function(c) { return { text: c, type: 'single', pinyin: '' }; });
+    // Nếu vẫn còn thừa ký tự ở cuối câu, gom gộp vào phần tử cuối cùng
+    if (charIdx < chars.length) {
+        var remaining = chars.slice(charIdx).join('');
+        if (result.length > 0) {
+            result[result.length - 1].text += remaining;
+        } else {
+            result.push({ text: remaining, type: 'single', pinyin: '' });
+        }
+    }
+
+    return result;
 }
 
 function updateInlinePreview(input, answer) {
