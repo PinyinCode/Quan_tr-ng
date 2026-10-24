@@ -39675,22 +39675,33 @@ window.__switchRawData = function(datasetId) {
     /* FIX TRIỆT ĐỂ LỖI MOBILEWRAP UNDEFINED BẰNG PROXY AN TOÀN */
     (function() {
         try {
-            var dummyEl = document.createElement('div');
-            window.mobileWrap = new Proxy(dummyEl, {
+            var realEl = document.getElementById('mobileWrap') || document.querySelector('.mobile-wrap');
+            if (!realEl) {
+                realEl = document.createElement('div');
+                realEl.id = 'mobileWrap';
+                realEl.className = 'mobile-wrap';
+                realEl.style.display = 'none';
+                document.body.appendChild(realEl);
+            }
+            window.mobileWrap = new Proxy(realEl, {
                 get: function(target, prop) {
-                    var realEl = document.getElementById('mobileWrap') || document.querySelector('.mobile-wrap') || target;
-                    if (typeof realEl[prop] === 'function') {
-                        return realEl[prop].bind(realEl);
+                    var val = target[prop];
+                    if (typeof val === 'function') {
+                        return val.bind(target);
                     }
-                    return realEl[prop];
+                    if (val === undefined) {
+                        return function() {};
+                    }
+                    return val;
                 },
                 set: function(target, prop, value) {
-                    var realEl = document.getElementById('mobileWrap') || document.querySelector('.mobile-wrap') || target;
-                    realEl[prop] = value;
+                    target[prop] = value;
                     return true;
                 }
             });
-        } catch(e) {}
+        } catch(e) {
+            console.warn('[fix.py] mobileWrap proxy failed:', e);
+        }
     })();
 /* FIX.PY - Lazy load preview + full data tu JSON (Co thong bao loading) */
 (function() {
