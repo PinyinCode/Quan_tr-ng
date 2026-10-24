@@ -531,6 +531,22 @@ def build_custom_practice_js():
         loadPinyinPro();
     }
 
+    // ⭐ HÀM KIỂM TRA TRẠNG THÁI HẾT HẠN CHUẨN XÁC
+    function checkIsExpired() {
+        if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') return true;
+        if (window.isUserExpired === true) return true;
+        if (typeof window.isExpired === 'boolean' && window.isExpired) return true;
+        
+        if (currentUser) {
+            if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.appTier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expire') return true;
+            if (currentUser.expiryDate) {
+                var expTime = new Date(currentUser.expiryDate).getTime();
+                if (!isNaN(expTime) && expTime < Date.now()) return true;
+            }
+        }
+        return false;
+    }
+
     function updateCooldownUI() {
         if (!tokenText || !tokenBadge) return;
         
@@ -610,19 +626,11 @@ def build_custom_practice_js():
         myBonusTokens = user.bonusTokens || 0;
         myTokensUsed = user.tokensUsed || 0;
 
-        var isExpired = false;
-        if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
-            isExpired = true;
-        } else if (user.isExpiredOnly === true || user.tier === 'expired' || user.tier === 'expire' || user.appTier === 'expired' || user.appTier === 'expire') {
-            isExpired = true;
-        } else if (user.expiryDate) {
-            var expTime = new Date(user.expiryDate).getTime();
-            if (!isNaN(expTime) && expTime < Date.now()) {
-                isExpired = true;
-            }
-        }
-
+        var isExpired = checkIsExpired();
         renderTokenUI(isExpired);
+
+        // ⭐ TỰ ĐỘNG GỌI NGẨM LÀM MỚI TỪ FIRESTORE NGAY KHI VỪA TẢI TRANG ĐỂ ĐẢM BẢO CHÍNH XÁC 100%
+        refreshTokenFromFirestore().catch(function() {});
 
         try {
             var savedRefreshTime = parseInt(localStorage.getItem('cp_last_token_refresh') || '0');
@@ -682,12 +690,7 @@ def build_custom_practice_js():
                 }
             } catch(e) {}
             
-            var isExpired = (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.appTier === 'expired');
-            if (currentUser.expiryDate) {
-                var expTime = new Date(currentUser.expiryDate).getTime();
-                if (!isNaN(expTime) && expTime < Date.now()) isExpired = true;
-            }
-            
+            var isExpired = checkIsExpired();
             renderTokenUI(isExpired);
             return true;
         } catch(e) {
@@ -769,7 +772,7 @@ def build_custom_practice_js():
 
     buyTokenBtn.addEventListener('click', function() {
         if (typeof openRenewalModal === 'function') openRenewalModal();
-        else alert('Vui lòng liên hệ Admin để mua thêm Token!');
+        else alert('Vui lòng liên hệ Admin để gia hạn tài khoản!');
     });
 
     function autoResizeTextarea() {
@@ -907,16 +910,8 @@ def build_custom_practice_js():
     startBtn.addEventListener('click', async function() {
         if (!currentUser) { alert('Vui lòng đăng nhập!'); return; }
 
-        var isExpired = false;
-        if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
-            isExpired = true;
-        } else if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expired' || currentUser.appTier === 'expire') {
-            isExpired = true;
-        } else if (currentUser.expiryDate) {
-            var expTime = new Date(currentUser.expiryDate).getTime();
-            if (!isNaN(expTime) && expTime < Date.now()) isExpired = true;
-        }
-        
+        // ⭐ KIỂM TRA CHẶN NGAY TRƯỚC KHI BẮT ĐẦU DỊCH
+        var isExpired = checkIsExpired();
         if (isExpired) {
             alert('Tài khoản của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục sử dụng tính năng Luyện tập tự do.\n(Số dư Token của bạn vẫn được bảo lưu an toàn).');
             if (typeof openRenewalModal === 'function') openRenewalModal();
@@ -1010,7 +1005,7 @@ def build_custom_practice_js():
 
             if (totalTokensThisSession > 0) {
                 myTokensUsed += totalTokensThisSession;
-                renderTokenUI(isExpired);
+                renderTokenUI(checkIsExpired());
                 try {
                     var cacheKey = 'user_cache_' + currentUser.email;
                     var cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
@@ -1049,16 +1044,7 @@ def build_custom_practice_js():
         setTimeout(function() { progressWrap.classList.remove('show'); }, 1200);
         
         if (currentUser) {
-            var isExp = false;
-            if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
-                isExp = true;
-            } else if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expired' || currentUser.appTier === 'expire') {
-                isExp = true;
-            } else if (currentUser.expiryDate) {
-                var expT = new Date(currentUser.expiryDate).getTime();
-                if (!isNaN(expT) && expT < Date.now()) isExp = true;
-            }
-            renderTokenUI(isExp);
+            renderTokenUI(checkIsExpired());
         }
     }
 
@@ -1231,19 +1217,7 @@ def build_custom_practice_js():
         historyBtn.addEventListener('click', async function() {
             if (!currentUser || !currentUser.email) { alert('Vui lòng đăng nhập để xem lịch sử!'); return; }
             
-            var isExpired = false;
-            var banner = document.getElementById('vocabWarningBanner') || document.querySelector('.vocab-warning-banner.tier-expired');
-            if (banner && (banner.innerText.includes('hết hạn') || banner.innerText.includes('Hết hạn'))) {
-                isExpired = true;
-            } else if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
-                isExpired = true;
-            } else if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expired' || currentUser.appTier === 'expire') {
-                isExpired = true;
-            } else if (currentUser.expiryDate) {
-                var expTime = new Date(currentUser.expiryDate).getTime();
-                if (!isNaN(expTime) && expTime < Date.now()) isExpired = true;
-            }
-
+            var isExpired = checkIsExpired();
             if (isExpired) {
                 alert('Tài khoản của bạn đã hết hạn. Vui lòng gia hạn để xem lịch sử dịch.\n(Số dư Token và lịch sử của bạn vẫn được bảo lưu an toàn).');
                 if (typeof openRenewalModal === 'function') openRenewalModal();
