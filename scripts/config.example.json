@@ -46,9 +46,9 @@
         { "id": "1y", "label": "Gói 1 năm", "amount": 300000, "days": 365, "popular": false, "save": "Tiết kiệm 58%" },
         { "id": "forever", "label": "Premium", "amount": 1000000, "days": 36500, "popular": false, "save": "Premium - Admin Hỗ trợ trực tiếp", "permanent": true },
 
-        { "id": "token_10k", "label": "10.000 Token", "amount": 10000, "days": 0, "is_token": true, "token_amount": 10000 },
-        { "id": "token_20k", "label": "20.000 Token", "amount": 18000, "days": 0, "is_token": true, "token_amount": 20000, "save": "Rẻ hơn 10%" },
-        { "id": "token_50k", "label": "50.000 Token", "amount": 40000, "days": 0, "is_token": true, "token_amount": 50000, "save": "Rẻ hơn 20%" }
+        { "id": "token_25k", "label": "25.000 Token", "amount": 30000, "days": 0, "is_token": true, "token_amount": 25000 },
+        { "id": "token_50k", "label": "50.000 Token", "amount": 50000, "days": 0, "is_token": true, "token_amount": 50000, "save": "Rẻ hơn 17%" },
+        { "id": "token_100k", "label": "120.000 Token", "amount": 100000, "days": 0, "is_token": true, "token_amount": 120000, "save": "Rẻ hơn 31%" }
     ],
 
     "renewal_support_zalo": "0922331886",
