@@ -374,10 +374,12 @@ def build_custom_practice_html():
 <div class="cp-card" id="cpSection">
     <div class="cp-header-row">
         <div class="cp-section-header">
-            <div class="cp-icon-badge"><i class="fas fa-wand-magic-sparkles"></i></div>
+            <div class="cp-icon-badge" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);">
+                <i class="fas fa-robot"></i>
+            </div>
             <div class="cp-title-group">
-                <h3>Luyện Dịch Tự Do</h3>
-                <p>Nhập văn bản bất kỳ để luyện tập</p>
+                <h3>Trợ Lý Dịch Thuật</h3>
+                <p>Dịch và tạo bài tập cá nhân hóa</p>
             </div>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
