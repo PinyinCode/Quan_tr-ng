@@ -506,7 +506,7 @@ def build_custom_practice_js():
     var historyCounter = document.getElementById('cpHistoryCounter');
 
     var myTokensUsed = 0;
-    var myTokenQuota = 20000;
+    var myTokenQuota = 0;
     var myBonusTokens = 0;
     var currentUser = null;
     var resolveModalAction = null;
@@ -701,15 +701,48 @@ def build_custom_practice_js():
     }
 
     function renderTokenUI(isExpired) {
-        if (currentUser && (currentUser.role === 'super_admin' || currentUser.isPermanent)) {
+        // ⭐ CHẶN HIỂN THỊ TOKEN KHI CHƯA ĐĂNG NHẬP
+        if (!currentUser) {
+            tokenText.textContent = 'Chưa đăng nhập';
+            tokenBadge.className = 'cp-token-badge warn';
+            tokenBadge.style.pointerEvents = 'none'; 
+            tokenBadge.style.opacity = '1';
+            tokenBadge.title = 'Vui lòng đăng nhập';
+            
+            startBtn.classList.add('cp-hidden');
+            buyTokenBtn.classList.remove('cp-hidden');
+            buyTokenBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Đăng nhập để sử dụng';
+            
+            inputArea.disabled = true;
+            inputArea.placeholder = 'Vui lòng đăng nhập để sử dụng Trợ lý dịch thuật.';
+            
+            var historyBtnEl = document.getElementById('cpHistoryBtn');
+            if (historyBtnEl) {
+                historyBtnEl.disabled = true;
+                historyBtnEl.style.opacity = '0.4';
+                historyBtnEl.style.cursor = 'not-allowed';
+                historyBtnEl.title = 'Vui lòng đăng nhập';
+                historyBtnEl.innerHTML = '<i class="fas fa-lock"></i>';
+            }
+            return; // Dừng ngay, không chạy xuống phần tính toán token
+        }
+
+        // ⭐ XỬ LÝ CHO ADMIN / PREMIUM
+        if (currentUser.role === 'super_admin' || currentUser.isPermanent) {
             tokenText.textContent = 'Không giới hạn';
             tokenBadge.className = 'cp-token-badge';
             tokenBadge.style.pointerEvents = 'auto';
             tokenBadge.style.opacity = '1';
             tokenBadge.title = 'Bấm để cập nhật số Token mới nhất';
+            
+            // Đảm bảo các nút mở khóa cho admin
+            startBtn.classList.remove('cp-hidden');
+            buyTokenBtn.classList.add('cp-hidden');
+            inputArea.disabled = false;
             return;
         }
 
+        // ⭐ TÍNH TOÁN TOKEN CHO USER THƯỜNG
         var totalAvailable = myTokenQuota + myBonusTokens;
         var remain = totalAvailable - myTokensUsed;
         if (remain < 0) remain = 0;
@@ -717,6 +750,7 @@ def build_custom_practice_js():
         tokenText.textContent = remain.toLocaleString('vi-VN') + ' token';
         tokenBadge.classList.remove('warn', 'danger');
         
+        // ⭐ XỬ LÝ NÚT LỊCH SỬ
         var historyBtnEl = document.getElementById('cpHistoryBtn');
         if (historyBtnEl) {
             if (isExpired) {
@@ -734,6 +768,7 @@ def build_custom_practice_js():
             }
         }
 
+        // ⭐ XỬ LÝ KHI HẾT HẠN
         if (isExpired) {
             tokenBadge.classList.add('danger');
             tokenBadge.style.pointerEvents = 'none';
@@ -742,13 +777,14 @@ def build_custom_practice_js():
             
             startBtn.classList.add('cp-hidden');
             buyTokenBtn.classList.remove('cp-hidden');
-            
             buyTokenBtn.innerHTML = '<i class="fas fa-crown"></i> Gia hạn ngay (Giữ nguyên Token)';
+            
             inputArea.disabled = true;
             inputArea.placeholder = 'Tài khoản đã hết hạn. Vui lòng gia hạn để tiếp tục sử dụng Luyện tập tự do.';
             return; 
         }
 
+        // ⭐ XỬ LÝ KHI CÒN HẠN (Mở khóa nút Refresh)
         tokenBadge.style.pointerEvents = 'auto';
         tokenBadge.style.opacity = '1';
         tokenBadge.title = 'Bấm để cập nhật số Token mới nhất';
@@ -756,11 +792,12 @@ def build_custom_practice_js():
         if (remain <= 2000) tokenBadge.classList.add('danger');
         else if (remain <= 5000) tokenBadge.classList.add('warn');
 
+        // ⭐ KIỂM TRA SỐ DƯ TOKEN
         if (remain <= 0 && currentUser.role !== 'admin') {
             startBtn.classList.add('cp-hidden');
             buyTokenBtn.classList.remove('cp-hidden');
-            
             buyTokenBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Mua thêm Token';
+            
             inputArea.disabled = true;
             inputArea.placeholder = 'Bạn đã hết Token. Vui lòng mua thêm để tiếp tục.';
         } else {
@@ -773,10 +810,17 @@ def build_custom_practice_js():
     }
 
     buyTokenBtn.addEventListener('click', function() {
+        // ⭐ NẾU CHƯA ĐĂNG NHẬP -> MỞ MODAL ĐĂNG NHẬP
+        if (!currentUser) {
+            if (typeof openLoginModal === 'function') openLoginModal();
+            else alert('Vui lòng đăng nhập để sử dụng tính năng này!');
+            return;
+        }
+        
+        // Nếu đã đăng nhập -> Mở modal gia hạn
         if (typeof openRenewalModal === 'function') openRenewalModal();
         else alert('Vui lòng liên hệ Admin để gia hạn tài khoản!');
     });
-
     function autoResizeTextarea() {
         inputArea.style.height = 'auto';
         var newHeight = inputArea.scrollHeight;
