@@ -1368,10 +1368,8 @@ def build_custom_practice_js():
             var now = Date.now();
             var timeSinceLastRefresh = now - lastTokenRefreshTime;
             
-            // 🛑 Chặn nếu đang refresh
             if (isTokenRefreshing || this.classList.contains('refreshing')) return;
             
-            // 🛑 Chặn nếu chưa hết cooldown
             if (timeSinceLastRefresh < TOKEN_REFRESH_COOLDOWN) {
                 var waitSec = Math.ceil((TOKEN_REFRESH_COOLDOWN - timeSinceLastRefresh) / 1000);
                 if (typeof showUserChangedToast === 'function') {
@@ -1380,7 +1378,6 @@ def build_custom_practice_js():
                 return;
             }
             
-            // ✅ Cho phép refresh
             isTokenRefreshing = true;
             lastTokenRefreshTime = now;
             try { localStorage.setItem('cp_last_token_refresh', String(now)); } catch(e) {}
@@ -1396,7 +1393,6 @@ def build_custom_practice_js():
             isTokenRefreshing = false;
             
             if (!ok) {
-                // Nếu lỗi → cho phép bấm lại ngay
                 lastTokenRefreshTime = 0;
                 try { localStorage.removeItem('cp_last_token_refresh'); } catch(e) {}
                 tokenText.textContent = originalText;
@@ -1411,68 +1407,74 @@ def build_custom_practice_js():
             }
         });
     }
+
     // ⭐ CƠ CHẾ BẢO VỆ TỐI ƯU BẰNG MUTATION OBSERVER
-    // Chỉ chạy khi Banner hết hạn xuất hiện/biến mất, không quét liên tục gây tốn pin.
-    var domObserver = new MutationObserver(function() {
-        var isExpiredOnUI = false;
-        var banner = document.getElementById('vocabWarningBanner') || document.querySelector('.vocab-warning-banner.tier-expired');
-        
-        // Kiểm tra xem banner có chứa chữ "hết hạn" không
-        if (banner && (banner.innerText.includes('hết hạn') || banner.innerText.includes('Hết hạn'))) {
-            isExpiredOnUI = true;
-        }
-        
-        // Dự phòng: Nếu cơ thể trang có class báo hết hạn
-        if (document.body.classList.contains('is-expired') || document.querySelector('.user-expired')) {
-            isExpiredOnUI = true;
-        }
-
-        var startBtnNode = document.getElementById('cpStartBtn');
-        var buyBtnNode = document.getElementById('cpBuyTokenBtn');
-        var inputNode = document.getElementById('cpInputZh');
-        var historyBtnNode = document.getElementById('cpHistoryBtn');
-
-        if (isExpiredOnUI) {
-            // NẾU HẾT HẠN: Khóa toàn bộ
-            if (startBtnNode) startBtnNode.classList.add('cp-hidden');
-            if (buyBtnNode) buyBtnNode.classList.remove('cp-hidden');
-            if (inputNode && !inputNode.disabled) {
-                inputNode.disabled = true;
-                inputNode.placeholder = 'Tài khoản đã hết hạn. Vui lòng gia hạn để tiếp tục.';
+    if (typeof MutationObserver !== 'undefined') {
+        var domObserver = new MutationObserver(function(mutations) {
+            var isExpiredOnUI = false;
+            var banner = document.getElementById('vocabWarningBanner') || document.querySelector('.vocab-warning-banner.tier-expired');
+            
+            if (banner && (banner.innerText.includes('hết hạn') || banner.innerText.includes('Hết hạn'))) {
+                isExpiredOnUI = true;
             }
-            if (historyBtnNode && !historyBtnNode.disabled) {
-                historyBtnNode.disabled = true;
-                historyBtnNode.style.opacity = '0.4';
-                historyBtnNode.style.cursor = 'not-allowed';
-                historyBtnNode.innerHTML = '<i class="fas fa-lock"></i>';
+            
+            if (document.body.classList.contains('is-expired') || document.querySelector('.user-expired')) {
+                isExpiredOnUI = true;
             }
-        } else {
-            // NẾU BÌNH THƯỜNG (Hoặc user vừa gia hạn xong): Mở khóa
-            if (startBtnNode && startBtnNode.innerHTML.indexOf('Đang dịch') === -1) {
-                var isOutOfToken = (typeof currentUser !== 'undefined' && currentUser && currentUser.role !== 'admin' && currentUser.role !== 'super_admin' && (myTokenQuota + myBonusTokens - myTokensUsed <= 0));
-                
-                if (!isOutOfToken) {
-                    startBtnNode.classList.remove('cp-hidden');
-                    if (buyBtnNode) buyBtnNode.classList.add('cp-hidden');
-                    if (inputNode && inputNode.disabled && !inputNode.placeholder.includes('hết Token')) {
-                         inputNode.disabled = false;
-                         inputNode.placeholder = currentMode === 'vi2zh' ? 'Nhập văn bản tiếng Việt vào đây...' : 'Dán văn bản tiếng Trung vào đây...';
-                    }
-                    if (historyBtnNode) {
-                        historyBtnNode.disabled = false;
-                        historyBtnNode.style.opacity = '1';
-                        historyBtnNode.style.cursor = 'pointer';
-                        historyBtnNode.innerHTML = '<i class="fas fa-clock-rotate-left"></i>';
+
+            var startBtnNode = document.getElementById('cpStartBtn');
+            var buyBtnNode = document.getElementById('cpBuyTokenBtn');
+            var inputNode = document.getElementById('cpInputZh');
+            var historyBtnNode = document.getElementById('cpHistoryBtn');
+
+            if (isExpiredOnUI) {
+                // NẾU HẾT HẠN: Khóa toàn bộ
+                if (startBtnNode) startBtnNode.classList.add('cp-hidden');
+                if (buyBtnNode) buyBtnNode.classList.remove('cp-hidden');
+                if (inputNode && !inputNode.disabled) {
+                    inputNode.disabled = true;
+                    inputNode.placeholder = 'Tài khoản đã hết hạn. Vui lòng gia hạn để tiếp tục.';
+                }
+                if (historyBtnNode && !historyBtnNode.disabled) {
+                    historyBtnNode.disabled = true;
+                    historyBtnNode.style.opacity = '0.4';
+                    historyBtnNode.style.cursor = 'not-allowed';
+                    historyBtnNode.innerHTML = '<i class="fas fa-lock"></i>';
+                }
+            } else {
+                // NẾU BÌNH THƯỜNG: Mở khóa
+                if (startBtnNode && startBtnNode.innerHTML.indexOf('Đang dịch') === -1) {
+                    var isOutOfToken = (typeof currentUser !== 'undefined' && currentUser && currentUser.role !== 'admin' && currentUser.role !== 'super_admin' && (myTokenQuota + myBonusTokens - myTokensUsed <= 0));
+                    
+                    if (!isOutOfToken) {
+                        startBtnNode.classList.remove('cp-hidden');
+                        if (buyBtnNode) buyBtnNode.classList.add('cp-hidden');
+                        if (inputNode && inputNode.disabled && !inputNode.placeholder.includes('hết Token')) {
+                             inputNode.disabled = false;
+                             inputNode.placeholder = currentMode === 'vi2zh' ? 'Nhập văn bản tiếng Việt vào đây...' : 'Dán văn bản tiếng Trung vào đây...';
+                        }
+                        if (historyBtnNode) {
+                            historyBtnNode.disabled = false;
+                            historyBtnNode.style.opacity = '1';
+                            historyBtnNode.style.cursor = 'pointer';
+                            historyBtnNode.innerHTML = '<i class="fas fa-clock-rotate-left"></i>';
+                        }
                     }
                 }
             }
-        }
-    });
+        });
 
-    // Bắt đầu theo dõi sự thay đổi cấu trúc DOM (khi banner được thêm vào hoặc xóa đi)
-    domObserver.observe(document.body, { childList: true, subtree: true });
+        // Đợi DOM load xong mới bắt đầu theo dõi để tránh lỗi null
+        if (document.body) {
+            domObserver.observe(document.body, { childList: true, subtree: true });
+        } else {
+            document.addEventListener('DOMContentLoaded', function() {
+                domObserver.observe(document.body, { childList: true, subtree: true });
+            });
+        }
+    }
+
     setTimeout(initTokenState, 100);
     setTimeout(initTokenState, 1500);
 
 })();
-"""
