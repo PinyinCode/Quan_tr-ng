@@ -6,6 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
@@ -13611,19 +13614,7 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-    <meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-    <meta name="author" content="Tuhoctiengtrung.org">
-    <link rel="canonical" href="https://tuhoctiengtrung.org/">
-    <meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-    <meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-    <meta property="og:url" content="https://tuhoctiengtrung.org/">
-    <meta property="og:type" content="website">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
-    <meta name="theme-color" content="#7c3aed">
-  </head>
+</head>
 <body>
 
 <div class="page-wrap">
@@ -13782,7 +13773,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
@@ -13829,8 +13820,9 @@ body.has-floating-group #quickSearchRoot{
             </div>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
-            <div class="cp-token-badge" id="cpTokenBadge">
-                <i class="fas fa-bolt"></i> <span id="cpTokenText">Đang tải...</span>
+            <div class="cp-token-badge" id="cpTokenBadge" title="Bấm để cập nhật số Token mới nhất">
+              <i class="fas fa-bolt"></i> <span id="cpTokenText">Đang tải...</span>
+              <span class="refresh-hint">🔄 Bấm để làm mới</span>
             </div>
             <button class="cp-btn-reset" id="cpHistoryBtn" type="button" title="Xem lịch sử">
                 <i class="fas fa-clock-rotate-left"></i>
@@ -38667,6 +38659,48 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             console.warn('[CP] Lỗi đọc trạng thái cooldown:', e);
         }
     }
+    // ⭐ HÀM LÀM MỚI TOKEN TỪ FIRESTORE (BỔ SUNG)
+    async function refreshTokenFromFirestore() {
+        if (!currentUser || !currentUser.email || typeof db === 'undefined' || !db) {
+            return false;
+        }
+        
+        try {
+            var doc = await db.collection('allowed_users').doc(currentUser.email).get({ source: 'server' });
+            if (!doc.exists) return false;
+            
+            var freshData = doc.data();
+            currentUser.bonusTokens = freshData.bonusTokens || 0;
+            currentUser.tokensUsed = freshData.tokensUsed || 0;
+            currentUser.tokenQuota = freshData.tokenQuota || 20000;
+            currentUser.isPermanent = freshData.isPermanent || false;
+            currentUser.role = freshData.role || currentUser.role;
+            
+            myTokenQuota = currentUser.tokenQuota;
+            myBonusTokens = currentUser.bonusTokens;
+            myTokensUsed = currentUser.tokensUsed;
+            
+            // Cập nhật lại cache để các nơi khác dùng
+            try {
+                var cacheKey = 'user_cache_' + currentUser.email;
+                var cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+                if (cached && cached.data) {
+                    cached.data.bonusTokens = currentUser.bonusTokens;
+                    cached.data.tokensUsed = currentUser.tokensUsed;
+                    cached.data.tokenQuota = currentUser.tokenQuota;
+                    cached.data.isPermanent = currentUser.isPermanent;
+                    localStorage.setItem(cacheKey, JSON.stringify(cached));
+                }
+            } catch(e) {}
+            
+            renderTokenUI();
+            return true;
+        } catch(e) {
+            console.warn('[CP] Refresh token error:', e.message);
+            return false;
+        }
+    }
+
 
     function renderTokenUI() {
         if (currentUser && (currentUser.role === 'super_admin' || currentUser.isPermanent)) {
@@ -39201,6 +39235,56 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     if (historyOverlay) {
         historyOverlay.addEventListener('click', function(e) {
             if (e.target === this) this.classList.remove('show');
+        });
+    }
+
+    // ⭐ SỰ KIỆN CLICK VÀO Ô TOKEN (BỔ SUNG) — COOLDOWN 60 GIÂY
+    if (tokenBadge) {
+        tokenBadge.addEventListener('click', async function() {
+            var now = Date.now();
+            var timeSinceLastRefresh = now - lastTokenRefreshTime;
+            
+            // 🛑 Chặn nếu đang refresh
+            if (isTokenRefreshing || this.classList.contains('refreshing')) return;
+            
+            // 🛑 Chặn nếu chưa hết cooldown
+            if (timeSinceLastRefresh < TOKEN_REFRESH_COOLDOWN) {
+                var waitSec = Math.ceil((TOKEN_REFRESH_COOLDOWN - timeSinceLastRefresh) / 1000);
+                if (typeof showUserChangedToast === 'function') {
+                    showUserChangedToast('⏳ Vui lòng đợi ' + waitSec + ' giây nữa', 'warn');
+                }
+                return;
+            }
+            
+            // ✅ Cho phép refresh
+            isTokenRefreshing = true;
+            lastTokenRefreshTime = now;
+            try { localStorage.setItem('cp_last_token_refresh', String(now)); } catch(e) {}
+            
+            this.classList.add('refreshing');
+            this.classList.remove('cooldown');
+            var originalText = tokenText.textContent;
+            tokenText.textContent = 'Đang cập nhật...';
+            
+            var ok = await refreshTokenFromFirestore();
+            
+            this.classList.remove('refreshing');
+            isTokenRefreshing = false;
+            
+            if (!ok) {
+                // Nếu lỗi → cho phép bấm lại ngay
+                lastTokenRefreshTime = 0;
+                try { localStorage.removeItem('cp_last_token_refresh'); } catch(e) {}
+                tokenText.textContent = originalText;
+                if (typeof showUserChangedToast === 'function') {
+                    showUserChangedToast('⚠️ Không thể cập nhật, vui lòng thử lại', 'warn');
+                }
+            } else {
+                if (typeof showUserChangedToast === 'function') {
+                    showUserChangedToast('✅ Đã cập nhật số dư Token. Đợi 60s để bấm tiếp.', 'success');
+                }
+                startCooldownTimer();
+            }
         });
     }
 
