@@ -6,6 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
@@ -13633,19 +13636,7 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-    <meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-    <meta name="author" content="Tuhoctiengtrung.org">
-    <link rel="canonical" href="https://tuhoctiengtrung.org/">
-    <meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-    <meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-    <meta property="og:url" content="https://tuhoctiengtrung.org/">
-    <meta property="og:type" content="website">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
-    <meta name="theme-color" content="#7c3aed">
-  </head>
+</head>
 <body>
 
 <div class="page-wrap">
@@ -13804,7 +13795,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
@@ -38572,6 +38563,22 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         loadPinyinPro();
     }
 
+    // ⭐ HÀM KIỂM TRA TRẠNG THÁI HẾT HẠN CHUẨN XÁC
+    function checkIsExpired() {
+        if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') return true;
+        if (window.isUserExpired === true) return true;
+        if (typeof window.isExpired === 'boolean' && window.isExpired) return true;
+        
+        if (currentUser) {
+            if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.appTier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expire') return true;
+            if (currentUser.expiryDate) {
+                var expTime = new Date(currentUser.expiryDate).getTime();
+                if (!isNaN(expTime) && expTime < Date.now()) return true;
+            }
+        }
+        return false;
+    }
+
     function updateCooldownUI() {
         if (!tokenText || !tokenBadge) return;
         
@@ -38651,19 +38658,11 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         myBonusTokens = user.bonusTokens || 0;
         myTokensUsed = user.tokensUsed || 0;
 
-        var isExpired = false;
-        if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
-            isExpired = true;
-        } else if (user.isExpiredOnly === true || user.tier === 'expired' || user.tier === 'expire' || user.appTier === 'expired' || user.appTier === 'expire') {
-            isExpired = true;
-        } else if (user.expiryDate) {
-            var expTime = new Date(user.expiryDate).getTime();
-            if (!isNaN(expTime) && expTime < Date.now()) {
-                isExpired = true;
-            }
-        }
-
+        var isExpired = checkIsExpired();
         renderTokenUI(isExpired);
+
+        // ⭐ TỰ ĐỘNG GỌI NGẨM LÀM MỚI TỪ FIRESTORE NGAY KHI VỪA TẢI TRANG ĐỂ ĐẢM BẢO CHÍNH XÁC 100%
+        refreshTokenFromFirestore().catch(function() {});
 
         try {
             var savedRefreshTime = parseInt(localStorage.getItem('cp_last_token_refresh') || '0');
@@ -38723,12 +38722,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
                 }
             } catch(e) {}
             
-            var isExpired = (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.appTier === 'expired');
-            if (currentUser.expiryDate) {
-                var expTime = new Date(currentUser.expiryDate).getTime();
-                if (!isNaN(expTime) && expTime < Date.now()) isExpired = true;
-            }
-            
+            var isExpired = checkIsExpired();
             renderTokenUI(isExpired);
             return true;
         } catch(e) {
@@ -38810,7 +38804,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
     buyTokenBtn.addEventListener('click', function() {
         if (typeof openRenewalModal === 'function') openRenewalModal();
-        else alert('Vui lòng liên hệ Admin để mua thêm Token!');
+        else alert('Vui lòng liên hệ Admin để gia hạn tài khoản!');
     });
 
     function autoResizeTextarea() {
@@ -38948,16 +38942,8 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     startBtn.addEventListener('click', async function() {
         if (!currentUser) { alert('Vui lòng đăng nhập!'); return; }
 
-        var isExpired = false;
-        if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
-            isExpired = true;
-        } else if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expired' || currentUser.appTier === 'expire') {
-            isExpired = true;
-        } else if (currentUser.expiryDate) {
-            var expTime = new Date(currentUser.expiryDate).getTime();
-            if (!isNaN(expTime) && expTime < Date.now()) isExpired = true;
-        }
-        
+        // ⭐ KIỂM TRA CHẶN NGAY TRƯỚC KHI BẮT ĐẦU DỊCH
+        var isExpired = checkIsExpired();
         if (isExpired) {
             alert('Tài khoản của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục sử dụng tính năng Luyện tập tự do.\n(Số dư Token của bạn vẫn được bảo lưu an toàn).');
             if (typeof openRenewalModal === 'function') openRenewalModal();
@@ -39051,7 +39037,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
 
             if (totalTokensThisSession > 0) {
                 myTokensUsed += totalTokensThisSession;
-                renderTokenUI(isExpired);
+                renderTokenUI(checkIsExpired());
                 try {
                     var cacheKey = 'user_cache_' + currentUser.email;
                     var cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
@@ -39090,16 +39076,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         setTimeout(function() { progressWrap.classList.remove('show'); }, 1200);
         
         if (currentUser) {
-            var isExp = false;
-            if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
-                isExp = true;
-            } else if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expired' || currentUser.appTier === 'expire') {
-                isExp = true;
-            } else if (currentUser.expiryDate) {
-                var expT = new Date(currentUser.expiryDate).getTime();
-                if (!isNaN(expT) && expT < Date.now()) isExp = true;
-            }
-            renderTokenUI(isExp);
+            renderTokenUI(checkIsExpired());
         }
     }
 
@@ -39272,19 +39249,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         historyBtn.addEventListener('click', async function() {
             if (!currentUser || !currentUser.email) { alert('Vui lòng đăng nhập để xem lịch sử!'); return; }
             
-            var isExpired = false;
-            var banner = document.getElementById('vocabWarningBanner') || document.querySelector('.vocab-warning-banner.tier-expired');
-            if (banner && (banner.innerText.includes('hết hạn') || banner.innerText.includes('Hết hạn'))) {
-                isExpired = true;
-            } else if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
-                isExpired = true;
-            } else if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expired' || currentUser.appTier === 'expire') {
-                isExpired = true;
-            } else if (currentUser.expiryDate) {
-                var expTime = new Date(currentUser.expiryDate).getTime();
-                if (!isNaN(expTime) && expTime < Date.now()) isExpired = true;
-            }
-
+            var isExpired = checkIsExpired();
             if (isExpired) {
                 alert('Tài khoản của bạn đã hết hạn. Vui lòng gia hạn để xem lịch sử dịch.\n(Số dư Token và lịch sử của bạn vẫn được bảo lưu an toàn).');
                 if (typeof openRenewalModal === 'function') openRenewalModal();
