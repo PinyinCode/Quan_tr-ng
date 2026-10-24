@@ -623,8 +623,11 @@ def build_custom_practice_js():
         myTokensUsed = user.tokensUsed || 0;
 
         // ⭐ KIỂM TRA TRẠNG THÁI HẾT HẠN
+        // ⭐ KIỂM TRA TRẠNG THÁI HẾT HẠN (Kết hợp User Cache và APP_TIER)
         var isExpired = false;
-        if (user.isExpiredOnly === true || user.tier === 'expired' || user.appTier === 'expired') {
+        if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
+            isExpired = true;
+        } else if (user.isExpiredOnly === true || user.tier === 'expired' || user.tier === 'expire' || user.appTier === 'expired' || user.appTier === 'expire') {
             isExpired = true;
         } else if (user.expiryDate) {
             var expTime = new Date(user.expiryDate).getTime();
@@ -938,11 +941,16 @@ def build_custom_practice_js():
         if (!currentUser) { alert('Vui lòng đăng nhập!'); return; }
 
         // ⭐ CHẶN NẾU TÀI KHOẢN HẾT HẠN (Đặt trước bước kiểm tra Token)
-        var isExpired = (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.appTier === 'expired');
-        if (currentUser.expiryDate) {
+        var isExpired = false;
+        if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
+            isExpired = true;
+        } else if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expired' || currentUser.appTier === 'expire') {
+            isExpired = true;
+        } else if (currentUser.expiryDate) {
             var expTime = new Date(currentUser.expiryDate).getTime();
             if (!isNaN(expTime) && expTime < Date.now()) isExpired = true;
         }
+        
         if (isExpired) {
             alert('Tài khoản của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục sử dụng tính năng Luyện tập tự do.\n(Số dư Token của bạn vẫn được bảo lưu an toàn).');
             if (typeof openRenewalModal === 'function') openRenewalModal();
@@ -1077,15 +1085,18 @@ def build_custom_practice_js():
         
         // ⭐ Cập nhật lại giao diện sau khi chạy xong để đảm bảo nút đúng trạng thái
         if (currentUser) {
-            var isExp = (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.appTier === 'expired');
-            if (currentUser.expiryDate) {
+            var isExp = false;
+            if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
+                isExp = true;
+            } else if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expired' || currentUser.appTier === 'expire') {
+                isExp = true;
+            } else if (currentUser.expiryDate) {
                 var expT = new Date(currentUser.expiryDate).getTime();
                 if (!isNaN(expT) && expT < Date.now()) isExp = true;
             }
             renderTokenUI(isExp);
         }
     }
-
     function loadPinyinPro() {
         if (window.pinyinPro) return Promise.resolve();
         return new Promise(function(resolve) {
