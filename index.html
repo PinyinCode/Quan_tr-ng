@@ -38658,16 +38658,15 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             return;
         }
 
-        if (user.role === 'super_admin' || user.role === 'admin' || user.isPermanent) {
-            if (user.role === 'admin' || user.role === 'super_admin') {
-                myTokenQuota = 100000;
-            } else {
-                tokenText.textContent = 'Không giới hạn';
-                tokenBadge.className = 'cp-token-badge';
-                return;
-            }
+        // Nếu là isPermanent thì không giới hạn
+        if (user.role === 'super_admin' || user.isPermanent) {
+            tokenText.textContent = 'Không giới hạn';
+            tokenBadge.className = 'cp-token-badge';
+            return;
         } else {
-            myTokenQuota = user.tokenQuota || 20000;
+            // Nếu user là admin thì hiển thị 20.000, user thường 10.000
+            var defaultQuota = (user.role === 'admin') ? 20000 : 10000;
+            myTokenQuota = user.tokenQuota || defaultQuota;
         }
 
         myBonusTokens = user.bonusTokens || 0;
@@ -38706,7 +38705,12 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             var freshData = doc.data();
             currentUser.bonusTokens = freshData.bonusTokens || 0;
             currentUser.tokensUsed = freshData.tokensUsed || 0;
-            currentUser.tokenQuota = freshData.tokenQuota || 10000;
+            // Nếu server trả về tokenQuota thì lấy, nếu không thì tự động gán theo role
+            if (freshData.tokenQuota) {
+                currentUser.tokenQuota = freshData.tokenQuota;
+            } else {
+                currentUser.tokenQuota = (currentUser.role === 'admin') ? 20000 : 10000;
+            }
             currentUser.isPermanent = freshData.isPermanent || false;
             currentUser.role = freshData.role || currentUser.role;
             
@@ -38771,7 +38775,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             return; // Dừng ngay, không chạy xuống phần tính toán token
         }
 
-        // ⭐ XỬ LÝ CHO ADMIN / PREMIUM
+        // ⭐ XỬ LÝ CHO SUPER ADMIN / PREMIUM
         if (currentUser.role === 'super_admin' || currentUser.isPermanent) {
             tokenText.textContent = 'Không giới hạn';
             tokenBadge.className = 'cp-token-badge';
@@ -38786,7 +38790,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             return;
         }
 
-        // ⭐ TÍNH TOÁN TOKEN CHO USER THƯỜNG
+        // ⭐ TÍNH TOÁN TOKEN
         var totalAvailable = myTokenQuota + myBonusTokens;
         var remain = totalAvailable - myTokensUsed;
         if (remain < 0) remain = 0;
@@ -38836,8 +38840,8 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         if (remain <= 2000) tokenBadge.classList.add('danger');
         else if (remain <= 5000) tokenBadge.classList.add('warn');
 
-        // ⭐ KIỂM TRA SỐ DƯ TOKEN
-        if (remain <= 0 && currentUser.role !== 'admin') {
+        // ⭐ KIỂM TRA SỐ DƯ TOKEN (Đã xóa điều kiện role admin)
+        if (remain <= 0) {
             startBtn.classList.add('cp-hidden');
             buyTokenBtn.classList.remove('cp-hidden');
             buyTokenBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Mua thêm Token';
@@ -38853,18 +38857,80 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         }
     }
 
-    buyTokenBtn.addEventListener('click', function() {
-        // ⭐ NẾU CHƯA ĐĂNG NHẬP -> MỞ MODAL ĐĂNG NHẬP
-        if (!currentUser) {
-            if (typeof openLoginModal === 'function') openLoginModal();
-            else alert('Vui lòng đăng nhập để sử dụng tính năng này!');
+    buyTokenBtn.addEventListener('click', async () => {
+    // 1. Kiểm tra đăng nhập
+    if (!currentUser) {
+        if (typeof openLoginModal === 'function') openLoginModal();
+        else alert('Vui lòng đăng nhập để sử dụng tính năng này!');
+        return;
+    }
+
+    // 2. NẾU LÀ ADMIN -> Yêu cầu nhập số lượng & mật khẩu để tự duyệt
+    if (currentUser.role === 'admin') {
+        const amountStr = prompt("Nhập số lượng Token bạn muốn nạp (Ví dụ: 5000):", "5000");
+        if (amountStr === null) return; // Bấm Hủy
+        
+        const amount = parseInt(amountStr, 10);
+        if (isNaN(amount) || amount <= 0) {
+            alert("Số lượng token không hợp lệ!");
             return;
         }
-        
-        // Nếu đã đăng nhập -> Mở modal gia hạn
-        if (typeof openRenewalModal === 'function') openRenewalModal();
-        else alert('Vui lòng liên hệ Admin để gia hạn tài khoản!');
-    });
+
+        const password = prompt(`Nhập MẬT KHẨU DUYỆT để xác nhận nạp ${amount} token:`);
+        if (password === null) return; // Bấm Hủy
+
+        if (!password.trim()) {
+            alert("Vui lòng nhập mật khẩu!");
+            return;
+        }
+
+        const originalText = buyTokenBtn.innerHTML;
+        buyTokenBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang duyệt...';
+        buyTokenBtn.disabled = true;
+
+        try {
+            const apiUrl = SERVER_API_URL.replace('/translate', '/admin/approve-token');
+            const res = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    admin_email: currentUser.email,
+                    target_email: currentUser.email, // Tự nạp cho chính mình
+                    amount,
+                    password
+                })
+            });
+
+            const json = await res.json();
+
+            if (!res.ok) {
+                alert(`❌ Lỗi: ${json.error || "Không thể duyệt token"}`);
+            } else {
+                if (typeof showUserChangedToast === 'function') {
+                    showUserChangedToast(`✅ ${json.message}`, 'success');
+                } else {
+                    alert(`✅ ${json.message}`);
+                }
+                
+                // Cập nhật lại số dư token trên giao diện nếu hàm tồn tại
+                if (typeof refreshTokenFromFirestore === 'function') {
+                    await refreshTokenFromFirestore();
+                }
+            }
+        } catch (e) {
+            alert(`Lỗi kết nối Server: ${e.message}`);
+        } finally {
+            buyTokenBtn.innerHTML = originalText;
+            buyTokenBtn.disabled = false;
+        }
+        return;
+    }
+
+    // 3. NẾU LÀ USER THƯỜNG -> Mở modal thanh toán
+    if (typeof openRenewalModal === 'function') openRenewalModal();
+    else alert('Vui lòng liên hệ Admin để gia hạn tài khoản!');
+});
+
     function autoResizeTextarea() {
         inputArea.style.height = 'auto';
         var newHeight = inputArea.scrollHeight;
@@ -39007,8 +39073,9 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             return;
         }
 
-        if (currentUser.role !== 'admin' && currentUser.role !== 'super_admin' && !currentUser.isPermanent && (myTokenQuota + myBonusTokens - myTokensUsed <= 0)) { 
-            alert('Bạn đã hết token!'); 
+        // ⭐ KIỂM TRA SỐ DƯ TOKEN (Áp dụng cho cả Admin)
+        if (!currentUser.isPermanent && currentUser.role !== 'super_admin' && (myTokenQuota + myBonusTokens - myTokensUsed <= 0)) { 
+            alert('Bạn đã hết token! Vui lòng mua thêm hoặc quay lại vào ngày mai (đối với Admin).'); 
             return; 
         }
 
@@ -39218,10 +39285,15 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         if (isUserAdmin) {
             historyCounter.innerHTML = '<span style="color:#059669; font-weight:700;"><i class="fas fa-shield-halved"></i> Admin: Không giới hạn Read/Save</span>';
         } else {
-            var saveRemain = 100 - currentTodayCount;
+            // ⭐ Sửa giới hạn Lưu thành 150
+            var saveRemain = 150 - currentTodayCount; 
             if (saveRemain < 0) saveRemain = 0;
-            var readRemainText = (typeof currentReadRemain !== 'undefined') ? currentReadRemain : 100;
-            historyCounter.innerHTML = '📖 Lượt xem hôm nay: <b style="color:' + (readRemainText > 0 ? '#4f46e5' : '#dc2626') + ';">' + readRemainText + '</b>/100 | ⏳ Đã lưu: <b>' + currentTodayCount + '</b>/100';
+            
+            // ⭐ Sửa giới hạn Đọc mặc định thành 250
+            var readRemainText = (typeof currentReadRemain !== 'undefined') ? currentReadRemain : 250; 
+            
+            // ⭐ Cập nhật chữ hiển thị: /250 cho lượt đọc và /150 cho lượt lưu
+            historyCounter.innerHTML = '📖 Lượt xem hôm nay: <b style="color:' + (readRemainText > 0 ? '#4f46e5' : '#dc2626') + ';">' + readRemainText + '</b>/250 | ⏳ Đã lưu: <b>' + currentTodayCount + '</b>/150';
         }
     }
 
@@ -39234,12 +39306,31 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         
         var html = '';
         cachedHistoryData.forEach(function(item, idx) {
+            // Xử lý thời gian: Ép kiểu về Date (UTC) và để trình duyệt tự đổi sang giờ máy
+            var timeDisplay = item.createdAt || '';
+            if (timeDisplay) {
+                try {
+                    var d = new Date(timeDisplay.replace(' ', 'T') + 'Z'); 
+                    if (!isNaN(d.getTime())) {
+                        var yyyy = d.getFullYear();
+                        var mm = String(d.getMonth() + 1).padStart(2, '0');
+                        var dd = String(d.getDate()).padStart(2, '0');
+                        var hh = String(d.getHours()).padStart(2, '0');
+                        var min = String(d.getMinutes()).padStart(2, '0');
+                        var ss = String(d.getSeconds()).padStart(2, '0');
+                        timeDisplay = yyyy + '-' + mm + '-' + dd + ' ' + hh + ':' + min + ':' + ss;
+                    }
+                } catch(e) {
+                    // Nếu lỗi thì giữ nguyên chuỗi gốc
+                }
+            }
+
             html += '<div class="cp-history-item" style="position:relative;" id="cp-hist-' + (item.id || idx) + '">' +
                 '<div class="cp-history-vi">' + (item.text_vi || '') + '</div>' +
                 '<div class="cp-history-zh">' + (item.text_zh || '') + '</div>' +
                 (item.pinyin ? '<div class="cp-history-pinyin">' + item.pinyin + '</div>' : '') +
                 '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">' +
-                    '<div class="cp-history-time">' + (item.createdAt || '') + '</div>' +
+                    '<div class="cp-history-time">' + timeDisplay + '</div>' +
                     '<div style="display:flex; gap:6px;">' +
                         '<button class="cp-delete-single-history" data-id="' + (item.id || '') + '" data-index="' + idx + '" style="background:#fee2e2; color:#ef4444; border:none; padding:5px 10px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer;" title="Xóa câu này">' +
                             '<i class="fas fa-trash-alt"></i> Xóa' +
@@ -39253,6 +39344,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         });
         historyList.innerHTML = html;
         
+        // ⭐ GẮN SỰ KIỆN CHO NÚT "LUYỆN TẬP"
         var singleBtns = historyList.querySelectorAll('.cp-load-single-history');
         singleBtns.forEach(function(btn) {
             btn.addEventListener('click', function() {
@@ -39275,6 +39367,7 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             });
         });
 
+        // ⭐ GẮN SỰ KIỆN CHO NÚT "XÓA"
         var deleteBtns = historyList.querySelectorAll('.cp-delete-single-history');
         deleteBtns.forEach(function(btn) {
             btn.addEventListener('click', async function() {
@@ -39301,7 +39394,6 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
             });
         });
     }
-
     if (historyBtn) {
         historyBtn.addEventListener('click', async function() {
             if (!currentUser || !currentUser.email) { alert('Vui lòng đăng nhập để xem lịch sử!'); return; }
