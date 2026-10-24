@@ -6,6 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
@@ -13628,19 +13631,7 @@ body.has-floating-group #quickSearchRoot{
 }
 
 </style>
-
-    <meta name="keywords" content="tiếng trung văn phòng, tiếng trung công xưởng, học tiếng trung miễn phí, từ vựng tiếng trung">
-    <meta name="author" content="Tuhoctiengtrung.org">
-    <link rel="canonical" href="https://tuhoctiengtrung.org/">
-    <meta property="og:title" content="Học tiếng Trung · Văn phòng & Công xưởng">
-    <meta property="og:description" content="Học tiếng Trung giao tiếp Văn phòng & Công xưởng miễn phí. Tổng hợp từ vựng, mẫu câu thông dụng, luyện viết chữ Hán và phát âm chuẩn.">
-    <meta property="og:url" content="https://tuhoctiengtrung.org/">
-    <meta property="og:type" content="website">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Học Tiếng Trung">
-    <meta name="theme-color" content="#7c3aed">
-  </head>
+</head>
 <body>
 
 <div class="page-wrap">
@@ -13799,7 +13790,7 @@ body.has-floating-group #quickSearchRoot{
 
 
 <!-- QUICK INTRO BANNER — Marquee thông báo tính năng luyện tập + 2 nút mock -->
-<div class="quick-intro-banner" id="quickIntroBanner" data-nosnippet>
+<div class="quick-intro-banner" id="quickIntroBanner">
     <div class="qib-icon">
         <i class="fas fa-bullhorn"></i>
     </div>
@@ -38657,8 +38648,11 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         myTokensUsed = user.tokensUsed || 0;
 
         // ⭐ KIỂM TRA TRẠNG THÁI HẾT HẠN
+        // ⭐ KIỂM TRA TRẠNG THÁI HẾT HẠN (Kết hợp User Cache và APP_TIER)
         var isExpired = false;
-        if (user.isExpiredOnly === true || user.tier === 'expired' || user.appTier === 'expired') {
+        if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
+            isExpired = true;
+        } else if (user.isExpiredOnly === true || user.tier === 'expired' || user.tier === 'expire' || user.appTier === 'expired' || user.appTier === 'expire') {
             isExpired = true;
         } else if (user.expiryDate) {
             var expTime = new Date(user.expiryDate).getTime();
@@ -38972,11 +38966,16 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         if (!currentUser) { alert('Vui lòng đăng nhập!'); return; }
 
         // ⭐ CHẶN NẾU TÀI KHOẢN HẾT HẠN (Đặt trước bước kiểm tra Token)
-        var isExpired = (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.appTier === 'expired');
-        if (currentUser.expiryDate) {
+        var isExpired = false;
+        if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
+            isExpired = true;
+        } else if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expired' || currentUser.appTier === 'expire') {
+            isExpired = true;
+        } else if (currentUser.expiryDate) {
             var expTime = new Date(currentUser.expiryDate).getTime();
             if (!isNaN(expTime) && expTime < Date.now()) isExpired = true;
         }
+        
         if (isExpired) {
             alert('Tài khoản của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục sử dụng tính năng Luyện tập tự do.\n(Số dư Token của bạn vẫn được bảo lưu an toàn).');
             if (typeof openRenewalModal === 'function') openRenewalModal();
@@ -39111,15 +39110,18 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         
         // ⭐ Cập nhật lại giao diện sau khi chạy xong để đảm bảo nút đúng trạng thái
         if (currentUser) {
-            var isExp = (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.appTier === 'expired');
-            if (currentUser.expiryDate) {
+            var isExp = false;
+            if (window.APP_TIER === 'expired' || window.APP_TIER === 'expire') {
+                isExp = true;
+            } else if (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.tier === 'expire' || currentUser.appTier === 'expired' || currentUser.appTier === 'expire') {
+                isExp = true;
+            } else if (currentUser.expiryDate) {
                 var expT = new Date(currentUser.expiryDate).getTime();
                 if (!isNaN(expT) && expT < Date.now()) isExp = true;
             }
             renderTokenUI(isExp);
         }
     }
-
     function loadPinyinPro() {
         if (window.pinyinPro) return Promise.resolve();
         return new Promise(function(resolve) {
