@@ -612,7 +612,19 @@ def build_custom_practice_js():
 
         myBonusTokens = user.bonusTokens || 0;
         myTokensUsed = user.tokensUsed || 0;
-        renderTokenUI();
+
+        // ⭐ KIỂM TRA TRẠNG THÁI HẾT HẠN
+        var isExpired = false;
+        if (user.isExpiredOnly === true || user.tier === 'expired' || user.appTier === 'expired') {
+            isExpired = true;
+        } else if (user.expiryDate) {
+            var expTime = new Date(user.expiryDate).getTime();
+            if (!isNaN(expTime) && expTime < Date.now()) {
+                isExpired = true;
+            }
+        }
+
+        renderTokenUI(isExpired);
 
         // ⭐ KHÔI PHỤC TRẠNG THÁI COOLDOWN NẾU USER F5 TRANG
         // (Đọc thời gian bấm gần nhất từ localStorage, nếu còn trong 60s thì đếm tiếp)
@@ -653,6 +665,12 @@ def build_custom_practice_js():
             currentUser.isPermanent = freshData.isPermanent || false;
             currentUser.role = freshData.role || currentUser.role;
             
+            // ⭐ BỔ SUNG: Lấy trạng thái hết hạn mới nhất từ server
+            currentUser.isExpiredOnly = freshData.isExpiredOnly || false;
+            currentUser.tier = freshData.tier || null;
+            currentUser.appTier = freshData.appTier || null;
+            currentUser.expiryDate = freshData.expiryDate || null;
+            
             myTokenQuota = currentUser.tokenQuota;
             myBonusTokens = currentUser.bonusTokens;
             myTokensUsed = currentUser.tokensUsed;
@@ -666,11 +684,25 @@ def build_custom_practice_js():
                     cached.data.tokensUsed = currentUser.tokensUsed;
                     cached.data.tokenQuota = currentUser.tokenQuota;
                     cached.data.isPermanent = currentUser.isPermanent;
+                    // ⭐ Lưu trạng thái hết hạn vào cache
+                    cached.data.isExpiredOnly = currentUser.isExpiredOnly;
+                    cached.data.tier = currentUser.tier;
+                    cached.data.appTier = currentUser.appTier;
+                    cached.data.expiryDate = currentUser.expiryDate;
+                    
                     localStorage.setItem(cacheKey, JSON.stringify(cached));
                 }
             } catch(e) {}
             
-            renderTokenUI();
+            // ⭐ Tính toán cờ isExpired trước khi render
+            var isExpired = (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.appTier === 'expired');
+            if (currentUser.expiryDate) {
+                var expTime = new Date(currentUser.expiryDate).getTime();
+                if (!isNaN(expTime) && expTime < Date.now()) isExpired = true;
+            }
+            
+            // ⭐ Truyền isExpired vào hàm render
+            renderTokenUI(isExpired);
             return true;
         } catch(e) {
             console.warn('[CP] Refresh token error:', e.message);
@@ -678,11 +710,14 @@ def build_custom_practice_js():
         }
     }
 
-
-    function renderTokenUI() {
+    function renderTokenUI(isExpired) {
         if (currentUser && (currentUser.role === 'super_admin' || currentUser.isPermanent)) {
             tokenText.textContent = 'Không giới hạn';
             tokenBadge.className = 'cp-token-badge';
+            // Đảm bảo nút refresh mở khóa cho admin
+            tokenBadge.style.pointerEvents = 'auto';
+            tokenBadge.style.opacity = '1';
+            tokenBadge.title = 'Bấm để cập nhật số Token mới nhất';
             return;
         }
 
@@ -692,17 +727,60 @@ def build_custom_practice_js():
 
         tokenText.textContent = remain.toLocaleString('vi-VN') + ' token';
         tokenBadge.classList.remove('warn', 'danger');
+        
+        // ⭐ KHÓA NÚT LỊCH SỬ NẾU HẾT HẠN
+        var historyBtnEl = document.getElementById('cpHistoryBtn');
+        if (historyBtnEl) {
+            if (isExpired) {
+                historyBtnEl.disabled = true;
+                historyBtnEl.style.opacity = '0.4';
+                historyBtnEl.style.cursor = 'not-allowed';
+                historyBtnEl.title = 'Tài khoản đã hết hạn - Không thể xem lịch sử';
+                historyBtnEl.innerHTML = '<i class="fas fa-lock"></i>';
+            } else {
+                historyBtnEl.disabled = false;
+                historyBtnEl.style.opacity = '1';
+                historyBtnEl.style.cursor = 'pointer';
+                historyBtnEl.title = 'Xem lịch sử';
+                historyBtnEl.innerHTML = '<i class="fas fa-clock-rotate-left"></i>';
+            }
+        }
+
+        // ⭐ KHÓA NÚT REFRESH TOKEN NẾU HẾT HẠN
+        if (isExpired) {
+            tokenBadge.classList.add('danger'); // Đổi màu đỏ
+            tokenBadge.style.pointerEvents = 'none'; // Chặn click
+            tokenBadge.style.opacity = '0.6';
+            tokenBadge.title = 'Tài khoản đã hết hạn - Không thể làm mới Token';
+            
+            startBtn.style.display = 'none';
+            buyTokenBtn.style.display = 'flex';
+            buyTokenBtn.innerHTML = '<i class="fas fa-crown"></i> Gia hạn ngay (Giữ nguyên Token)';
+            inputArea.disabled = true;
+            inputArea.placeholder = 'Tài khoản đã hết hạn. Vui lòng gia hạn để tiếp tục sử dụng Luyện tập tự do.';
+            return; 
+        }
+
+        // Nếu tài khoản bình thường (còn hạn) -> Mở khóa nút Refresh
+        tokenBadge.style.pointerEvents = 'auto';
+        tokenBadge.style.opacity = '1';
+        tokenBadge.title = 'Bấm để cập nhật số Token mới nhất';
+
+        // Xử lý giao diện bình thường
         if (remain <= 2000) tokenBadge.classList.add('danger');
         else if (remain <= 5000) tokenBadge.classList.add('warn');
 
         if (remain <= 0 && currentUser.role !== 'admin') {
             startBtn.style.display = 'none';
             buyTokenBtn.style.display = 'flex';
+            buyTokenBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Mua thêm Token';
             inputArea.disabled = true;
+            inputArea.placeholder = 'Bạn đã hết Token. Vui lòng mua thêm để tiếp tục.';
         } else {
             startBtn.style.display = 'flex';
             buyTokenBtn.style.display = 'none';
             inputArea.disabled = false;
+            inputArea.placeholder = currentMode === 'vi2zh' ? 'Nhập văn bản tiếng Việt vào đây...' : 'Dán văn bản tiếng Trung vào đây...';
         }
     }
 
@@ -845,6 +923,20 @@ def build_custom_practice_js():
 
     startBtn.addEventListener('click', async function() {
         if (!currentUser) { alert('Vui lòng đăng nhập!'); return; }
+
+        // ⭐ CHẶN NẾU TÀI KHOẢN HẾT HẠN (Đặt trước bước kiểm tra Token)
+        var isExpired = (currentUser.isExpiredOnly === true || currentUser.tier === 'expired' || currentUser.appTier === 'expired');
+        if (currentUser.expiryDate) {
+            var expTime = new Date(currentUser.expiryDate).getTime();
+            if (!isNaN(expTime) && expTime < Date.now()) isExpired = true;
+        }
+        if (isExpired) {
+            alert('Tài khoản của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục sử dụng tính năng Luyện tập tự do.\n(Số dư Token của bạn vẫn được bảo lưu an toàn).');
+            if (typeof openRenewalModal === 'function') openRenewalModal();
+            return;
+        }
+
+        // Kiểm tra số dư Token (đối với tài khoản còn hạn)
         if (currentUser.role !== 'admin' && currentUser.role !== 'super_admin' && !currentUser.isPermanent && (myTokenQuota + myBonusTokens - myTokensUsed <= 0)) { 
             alert('Bạn đã hết token!'); 
             return; 
@@ -932,7 +1024,7 @@ def build_custom_practice_js():
 
             if (totalTokensThisSession > 0) {
                 myTokensUsed += totalTokensThisSession;
-                renderTokenUI();
+                renderTokenUI(isExpired); // ⭐ Truyền isExpired (mặc dù lúc này chắc chắn là false vì đã qua bước chặn ở trên)
                 try {
                     var cacheKey = 'user_cache_' + currentUser.email;
                     var cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
@@ -951,7 +1043,6 @@ def build_custom_practice_js():
             finishProcess();
         }
     });
-
     function loadDataToPracticeScreen(customData) {
         if (typeof window.activateCustomPracticeMode === 'function') {
             window.activateCustomPracticeMode(customData);
