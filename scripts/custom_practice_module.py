@@ -1411,17 +1411,18 @@ def build_custom_practice_js():
             }
         });
     }
-    // ⭐ CƠ CHẾ BẢO VỆ ĐỘC LẬP (QUÉT DOM LIÊN TỤC)
-    setInterval(function() {
-        // 1. Tìm xem có Banner báo hết hạn không (Dựa vào id hoặc class từ hệ thống của bạn)
+    // ⭐ CƠ CHẾ BẢO VỆ TỐI ƯU BẰNG MUTATION OBSERVER
+    // Chỉ chạy khi Banner hết hạn xuất hiện/biến mất, không quét liên tục gây tốn pin.
+    var domObserver = new MutationObserver(function() {
         var isExpiredOnUI = false;
         var banner = document.getElementById('vocabWarningBanner') || document.querySelector('.vocab-warning-banner.tier-expired');
         
+        // Kiểm tra xem banner có chứa chữ "hết hạn" không
         if (banner && (banner.innerText.includes('hết hạn') || banner.innerText.includes('Hết hạn'))) {
             isExpiredOnUI = true;
         }
         
-        // Dự phòng: Nếu body có thuộc tính data-theme hoặc class báo hết hạn
+        // Dự phòng: Nếu cơ thể trang có class báo hết hạn
         if (document.body.classList.contains('is-expired') || document.querySelector('.user-expired')) {
             isExpiredOnUI = true;
         }
@@ -1432,7 +1433,7 @@ def build_custom_practice_js():
         var historyBtnNode = document.getElementById('cpHistoryBtn');
 
         if (isExpiredOnUI) {
-            // NẾU HẾT HẠN: Ẩn nút Bắt đầu, Khóa ô nhập, Khóa nút Lịch sử
+            // NẾU HẾT HẠN: Khóa toàn bộ
             if (startBtnNode) startBtnNode.classList.add('cp-hidden');
             if (buyBtnNode) buyBtnNode.classList.remove('cp-hidden');
             if (inputNode && !inputNode.disabled) {
@@ -1443,12 +1444,11 @@ def build_custom_practice_js():
                 historyBtnNode.disabled = true;
                 historyBtnNode.style.opacity = '0.4';
                 historyBtnNode.style.cursor = 'not-allowed';
+                historyBtnNode.innerHTML = '<i class="fas fa-lock"></i>';
             }
         } else {
             // NẾU BÌNH THƯỜNG (Hoặc user vừa gia hạn xong): Mở khóa
-            // Chỉ mở khóa nếu không phải đang trong quá trình dịch (startBtn bị disabled)
             if (startBtnNode && startBtnNode.innerHTML.indexOf('Đang dịch') === -1) {
-                // Kiểm tra xem có phải hết token không để tránh mở nhầm nút
                 var isOutOfToken = (typeof currentUser !== 'undefined' && currentUser && currentUser.role !== 'admin' && currentUser.role !== 'super_admin' && (myTokenQuota + myBonusTokens - myTokensUsed <= 0));
                 
                 if (!isOutOfToken) {
@@ -1462,12 +1462,15 @@ def build_custom_practice_js():
                         historyBtnNode.disabled = false;
                         historyBtnNode.style.opacity = '1';
                         historyBtnNode.style.cursor = 'pointer';
+                        historyBtnNode.innerHTML = '<i class="fas fa-clock-rotate-left"></i>';
                     }
                 }
             }
         }
-    }, 1000); // Quét 1 giây 1 lần
+    });
 
+    // Bắt đầu theo dõi sự thay đổi cấu trúc DOM (khi banner được thêm vào hoặc xóa đi)
+    domObserver.observe(document.body, { childList: true, subtree: true });
     setTimeout(initTokenState, 100);
     setTimeout(initTokenState, 1500);
 
