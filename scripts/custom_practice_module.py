@@ -381,8 +381,9 @@ def build_custom_practice_html():
             </div>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
-            <div class="cp-token-badge" id="cpTokenBadge">
-                <i class="fas fa-bolt"></i> <span id="cpTokenText">Đang tải...</span>
+            <div class="cp-token-badge" id="cpTokenBadge" title="Bấm để cập nhật số Token mới nhất">
+              <i class="fas fa-bolt"></i> <span id="cpTokenText">Đang tải...</span>
+              <span class="refresh-hint">🔄 Bấm để làm mới</span>
             </div>
             <button class="cp-btn-reset" id="cpHistoryBtn" type="button" title="Xem lịch sử">
                 <i class="fas fa-clock-rotate-left"></i>
@@ -643,6 +644,48 @@ def build_custom_practice_js():
             console.warn('[CP] Lỗi đọc trạng thái cooldown:', e);
         }
     }
+    // ⭐ HÀM LÀM MỚI TOKEN TỪ FIRESTORE (BỔ SUNG)
+    async function refreshTokenFromFirestore() {
+        if (!currentUser || !currentUser.email || typeof db === 'undefined' || !db) {
+            return false;
+        }
+        
+        try {
+            var doc = await db.collection('allowed_users').doc(currentUser.email).get({ source: 'server' });
+            if (!doc.exists) return false;
+            
+            var freshData = doc.data();
+            currentUser.bonusTokens = freshData.bonusTokens || 0;
+            currentUser.tokensUsed = freshData.tokensUsed || 0;
+            currentUser.tokenQuota = freshData.tokenQuota || 20000;
+            currentUser.isPermanent = freshData.isPermanent || false;
+            currentUser.role = freshData.role || currentUser.role;
+            
+            myTokenQuota = currentUser.tokenQuota;
+            myBonusTokens = currentUser.bonusTokens;
+            myTokensUsed = currentUser.tokensUsed;
+            
+            // Cập nhật lại cache để các nơi khác dùng
+            try {
+                var cacheKey = 'user_cache_' + currentUser.email;
+                var cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+                if (cached && cached.data) {
+                    cached.data.bonusTokens = currentUser.bonusTokens;
+                    cached.data.tokensUsed = currentUser.tokensUsed;
+                    cached.data.tokenQuota = currentUser.tokenQuota;
+                    cached.data.isPermanent = currentUser.isPermanent;
+                    localStorage.setItem(cacheKey, JSON.stringify(cached));
+                }
+            } catch(e) {}
+            
+            renderTokenUI();
+            return true;
+        } catch(e) {
+            console.warn('[CP] Refresh token error:', e.message);
+            return false;
+        }
+    }
+
 
     function renderTokenUI() {
         if (currentUser && (currentUser.role === 'super_admin' || currentUser.isPermanent)) {
@@ -1177,6 +1220,56 @@ def build_custom_practice_js():
     if (historyOverlay) {
         historyOverlay.addEventListener('click', function(e) {
             if (e.target === this) this.classList.remove('show');
+        });
+    }
+
+    // ⭐ SỰ KIỆN CLICK VÀO Ô TOKEN (BỔ SUNG) — COOLDOWN 60 GIÂY
+    if (tokenBadge) {
+        tokenBadge.addEventListener('click', async function() {
+            var now = Date.now();
+            var timeSinceLastRefresh = now - lastTokenRefreshTime;
+            
+            // 🛑 Chặn nếu đang refresh
+            if (isTokenRefreshing || this.classList.contains('refreshing')) return;
+            
+            // 🛑 Chặn nếu chưa hết cooldown
+            if (timeSinceLastRefresh < TOKEN_REFRESH_COOLDOWN) {
+                var waitSec = Math.ceil((TOKEN_REFRESH_COOLDOWN - timeSinceLastRefresh) / 1000);
+                if (typeof showUserChangedToast === 'function') {
+                    showUserChangedToast('⏳ Vui lòng đợi ' + waitSec + ' giây nữa', 'warn');
+                }
+                return;
+            }
+            
+            // ✅ Cho phép refresh
+            isTokenRefreshing = true;
+            lastTokenRefreshTime = now;
+            try { localStorage.setItem('cp_last_token_refresh', String(now)); } catch(e) {}
+            
+            this.classList.add('refreshing');
+            this.classList.remove('cooldown');
+            var originalText = tokenText.textContent;
+            tokenText.textContent = 'Đang cập nhật...';
+            
+            var ok = await refreshTokenFromFirestore();
+            
+            this.classList.remove('refreshing');
+            isTokenRefreshing = false;
+            
+            if (!ok) {
+                // Nếu lỗi → cho phép bấm lại ngay
+                lastTokenRefreshTime = 0;
+                try { localStorage.removeItem('cp_last_token_refresh'); } catch(e) {}
+                tokenText.textContent = originalText;
+                if (typeof showUserChangedToast === 'function') {
+                    showUserChangedToast('⚠️ Không thể cập nhật, vui lòng thử lại', 'warn');
+                }
+            } else {
+                if (typeof showUserChangedToast === 'function') {
+                    showUserChangedToast('✅ Đã cập nhật số dư Token. Đợi 60s để bấm tiếp.', 'success');
+                }
+                startCooldownTimer();
+            }
         });
     }
 
