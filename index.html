@@ -11758,6 +11758,20 @@ html body .tiktok-float-btn > i {
 @media (min-width: 768px) {
     .cp-btn-start, .cp-btn-buy-token { width: auto; min-width: 280px; align-self: flex-end; }
 }
+/* ⭐ TRẠNG THÁI COOLDOWN CHO Ô TOKEN */
+.cp-token-badge.cooldown {
+    background: rgba(100, 116, 139, 0.15) !important;
+    color: #64748b !important;
+    border-color: rgba(100, 116, 139, 0.3) !important;
+    cursor: not-allowed !important;
+}
+.cp-token-badge.cooldown:hover {
+    transform: none;
+    box-shadow: none;
+}
+.cp-token-badge.cooldown .refresh-hint {
+    display: none;
+}
 
 
 /* FIX.PY: AUTO-FIT LAYOUT */
@@ -38515,11 +38529,80 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
     var currentTodayCount = 0;
     var isUserAdmin = false;
     var currentReadRemain = 100;
+    var myTokensUsed = 0;
+    var myTokenQuota = 20000;
+    var myBonusTokens = 0;
+    var currentUser = null;
+    var resolveModalAction = null;
+    var cachedHistoryData = [];
+    var currentTodayCount = 0;
+    var isUserAdmin = false;
+    var currentReadRemain = 100;
+    
+    // ⭐ BIẾN CHỐNG SPAM TOKEN (Cooldown 60 giây)
+    var TOKEN_REFRESH_COOLDOWN = 60000; // 60 giây
+    var lastTokenRefreshTime = 0;
+    var isTokenRefreshing = false;
+    var cooldownTimerInterval = null;
+    
+    // Khôi phục thời gian cooldown từ lần bấm trước (nếu có)
+    try {
+        var savedTime = parseInt(localStorage.getItem('cp_last_token_refresh') || '0');
+        if (savedTime > 0) lastTokenRefreshTime = savedTime;
+    } catch(e) {}
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', loadPinyinPro);
     } else {
         loadPinyinPro();
+    }
+    // ⭐ Hàm kiểm tra và hiển thị trạng thái Cooldown
+    function updateCooldownUI() {
+        if (!tokenText || !tokenBadge) return;
+        
+        var now = Date.now();
+        var timeSinceLastRefresh = now - lastTokenRefreshTime;
+        
+        // Nếu chưa bấm lần nào, hoặc đã hết cooldown
+        if (lastTokenRefreshTime === 0 || timeSinceLastRefresh >= TOKEN_REFRESH_COOLDOWN) {
+            // Xóa trạng thái cooldown
+            tokenBadge.classList.remove('cooldown');
+            tokenBadge.style.cursor = 'pointer';
+            
+            // Khôi phục text hiển thị token
+            if (currentUser && !isTokenRefreshing) {
+                var totalAvailable = myTokenQuota + myBonusTokens;
+                var remain = totalAvailable - myTokensUsed;
+                if (remain < 0) remain = 0;
+                tokenText.textContent = remain.toLocaleString('vi-VN') + ' token';
+            }
+            
+            // Hủy interval nếu có
+            if (cooldownTimerInterval) {
+                clearInterval(cooldownTimerInterval);
+                cooldownTimerInterval = null;
+            }
+            return;
+        }
+        
+        // Đang trong cooldown → hiển thị đếm ngược
+        var remainMs = TOKEN_REFRESH_COOLDOWN - timeSinceLastRefresh;
+        var remainSec = Math.ceil(remainMs / 1000);
+        
+        tokenBadge.classList.add('cooldown');
+        tokenBadge.style.cursor = 'not-allowed';
+        
+        // Nếu đang không trong quá trình refresh thì mới đè text đếm ngược
+        if (!isTokenRefreshing) {
+            tokenText.textContent = '⏳ Đợi ' + remainSec + 's';
+        }
+    }
+
+    // ⭐ Hàm đếm ngược (chạy mỗi giây)
+    function startCooldownTimer() {
+        if (cooldownTimerInterval) clearInterval(cooldownTimerInterval);
+        updateCooldownUI();
+        cooldownTimerInterval = setInterval(updateCooldownUI, 1000);
     }
 
     function initTokenState() {
@@ -38560,6 +38643,28 @@ console.log('[Mnemonic] Module loaded OK — API: ' + VOCAB_API_URL);
         myBonusTokens = user.bonusTokens || 0;
         myTokensUsed = user.tokensUsed || 0;
         renderTokenUI();
+
+        // ⭐ KHÔI PHỤC TRẠNG THÁI COOLDOWN NẾU USER F5 TRANG
+        // (Đọc thời gian bấm gần nhất từ localStorage, nếu còn trong 60s thì đếm tiếp)
+        try {
+            var savedRefreshTime = parseInt(localStorage.getItem('cp_last_token_refresh') || '0');
+            if (savedRefreshTime > 0) {
+                lastTokenRefreshTime = savedRefreshTime;
+                var timePassed = Date.now() - savedRefreshTime;
+                
+                if (timePassed < TOKEN_REFRESH_COOLDOWN) {
+                    // Vẫn đang trong cooldown → Bắt đầu đếm ngược
+                    console.log('[CP] Khôi phục cooldown: còn ' + Math.ceil((TOKEN_REFRESH_COOLDOWN - timePassed) / 1000) + 's');
+                    startCooldownTimer();
+                } else {
+                    // Đã qua 60s → Xóa trạng thái, cho phép bấm lại
+                    lastTokenRefreshTime = 0;
+                    try { localStorage.removeItem('cp_last_token_refresh'); } catch(e) {}
+                }
+            }
+        } catch(e) {
+            console.warn('[CP] Lỗi đọc trạng thái cooldown:', e);
+        }
     }
 
     function renderTokenUI() {
