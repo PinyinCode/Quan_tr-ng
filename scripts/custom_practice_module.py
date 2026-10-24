@@ -498,15 +498,7 @@ def build_custom_practice_js():
     var selectAllHistoryBtn = document.getElementById('cpSelectAllHistoryBtn');
     var historyCounter = document.getElementById('cpHistoryCounter');
 
-    var myTokensUsed = 0;
-    var myTokenQuota = 20000;
-    var myBonusTokens = 0;
-    var currentUser = null;
-    var resolveModalAction = null;
-    var cachedHistoryData = [];
-    var currentTodayCount = 0;
-    var isUserAdmin = false;
-    var currentReadRemain = 100;
+    
     var myTokensUsed = 0;
     var myTokenQuota = 20000;
     var myBonusTokens = 0;
